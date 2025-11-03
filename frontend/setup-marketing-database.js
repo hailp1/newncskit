@@ -1,0 +1,75 @@
+console.log('🚀 Setting up Marketing Knowledge Base Database...')
+
+const fs = require('fs')
+const path = require('path')
+
+// Read the marketing database SQL file
+const sqlFile = path.join(__dirname, 'database', 'marketing-knowledge-base.sql')
+const sqlContent = fs.readFileSync(sqlFile, 'utf8')
+
+console.log('📋 Marketing Database Setup Guide')
+console.log('=' .repeat(50))
+
+console.log('\n🎯 SETUP STEPS:')
+console.log('')
+
+console.log('1. 📊 SUPABASE SETUP:')
+console.log('   - Go to: https://supabase.com/dashboard')
+console.log('   - Open your project SQL Editor')
+console.log('   - Copy and paste the SQL below')
+console.log('   - Click "Run" to execute')
+console.log('')
+
+console.log('2. 🔗 FRONTEND CONNECTION:')
+console.log('   - Update .env.local with your Supabase credentials')
+console.log('   - Test connection: http://localhost:3000/test-gemini')
+console.log('')
+
+console.log('3. 🧪 TEST FEATURES:')
+console.log('   - Create new project: http://localhost:3000/projects/new')
+console.log('   - Test AI outline generation')
+console.log('   - Test survey question generation')
+console.log('')
+
+console.log('📝 SQL TO EXECUTE IN SUPABASE:')
+console.log('=' .repeat(50))
+console.log(sqlContent)
+console.log('=' .repeat(50))
+
+console.log('\n✅ EXPECTED RESULTS:')
+console.log('')
+console.log('After running the SQL, you should have:')
+console.log('✅ business_domains table (6 domains)')
+console.log('✅ marketing_models table (8 models)')
+console.log('✅ research_variables table (14 variables)')
+console.log('✅ variable_relationships table (relationships)')
+console.log('✅ survey_questions table (sample questions)')
+console.log('✅ Updated projects table with new columns')
+console.log('')
+
+console.log('🔍 VERIFY SETUP:')
+console.log('Run these queries in Supabase SQL Editor:')
+console.log('')
+console.log('-- Check domains')
+console.log('SELECT * FROM business_domains;')
+console.log('')
+console.log('-- Check models')
+console.log('SELECT * FROM marketing_models;')
+console.log('')
+console.log('-- Check variables')
+console.log('SELECT * FROM research_variables;')
+console.log('')
+
+console.log('🚀 NEXT STEPS:')
+console.log('1. Execute the SQL in Supabase')
+console.log('2. Test Gemini connection: npm run dev → http://localhost:3000/test-gemini')
+console.log('3. Create a marketing project: http://localhost:3000/projects/new')
+console.log('4. Test AI outline generation')
+console.log('')
+
+console.log('💡 GEMINI API KEY:')
+console.log('Already configured: AIzaSyCo8p2IapVdrr03Ed4Aforvd68mdUg7RDI')
+console.log('Ready to generate research outlines and survey questions!')
+console.log('')
+
+console.log('🎊 Marketing Research Platform is ready! 🎊')
