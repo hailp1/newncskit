@@ -6,7 +6,7 @@ import {
   PresentationChartBarIcon,
   SparklesIcon,
   ChartPieIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline'
 
 export default function AnalyticsPage() {
@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
                 <p className="text-sm text-gray-600">Words written, references added</p>
               </div>
               <div className="text-center p-4">
-                <TrendingUpIcon className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+                <ArrowTrendingUpIcon className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
                 <h4 className="font-medium">Progress Tracking</h4>
                 <p className="text-sm text-gray-600">Project milestones and timelines</p>
               </div>
