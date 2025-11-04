@@ -10,9 +10,6 @@ export const authConfig = {
     '/about',
     '/features',
     '/auth/callback',
-    '/demo-register',
-    '/test-supabase',
-    '/auth-info',
   ],
   
   // Protected routes that require authentication

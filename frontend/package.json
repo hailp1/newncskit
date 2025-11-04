@@ -6,7 +6,9 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "vercel-build": "next build --webpack"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
