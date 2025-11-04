@@ -29,30 +29,8 @@ export default function AuthCallbackPage() {
             .single()
 
           if (profileError && profileError.code === 'PGRST116') {
-            // User profile doesn't exist, create it
-            const userMetadata = data.session.user.user_metadata
-            
-            const { data: newProfile, error: createError } = await supabase
-              .from('users')
-              .insert({
-                id: data.session.user.id,
-                email: data.session.user.email!,
-                first_name: userMetadata.first_name || userMetadata.given_name || 'User',
-                last_name: userMetadata.last_name || userMetadata.family_name || '',
-                avatar_url: userMetadata.avatar_url || userMetadata.picture,
-                subscription_type: 'free',
-                research_domains: [],
-              })
-              .select()
-              .single()
-
-            if (createError) {
-              console.error('Create profile error:', createError)
-              router.push('/login?error=profile_creation_failed')
-              return
-            }
-
-            // Redirect to complete profile
+            // User profile doesn't exist, redirect to complete profile
+            console.log('User profile not found, redirecting to complete profile')
             router.push('/complete-profile')
             return
           }

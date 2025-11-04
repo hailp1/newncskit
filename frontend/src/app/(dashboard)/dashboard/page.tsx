@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ProjectCard } from '@/components/dashboard/project-card'
 import { useAuthStore } from '@/store/auth'
 import { dashboardService, type DashboardStats, type RecentActivity, type RecentProject } from '@/services/dashboard'
-import type { ProjectSummary } from '@/types'
 import {
   PlusIcon,
   BeakerIcon,
@@ -17,86 +15,19 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline'
 
-// Mock data for demonstration
-const mockDashboardData: DashboardData = {
-  projects: [
-    {
-      id: '1',
-      title: 'Machine Learning Applications in Healthcare',
-      phase: 'writing',
-      progress: 75,
-      lastActivity: new Date('2024-01-15'),
-      collaboratorCount: 3,
-    },
-    {
-      id: '2',
-      title: 'Sustainable Energy Systems Research',
-      phase: 'execution',
-      progress: 45,
-      lastActivity: new Date('2024-01-14'),
-      collaboratorCount: 2,
-    },
-    {
-      id: '3',
-      title: 'Quantum Computing Algorithms',
-      phase: 'planning',
-      progress: 20,
-      lastActivity: new Date('2024-01-13'),
-      collaboratorCount: 1,
-    },
-  ],
-  recentActivity: [
-    {
-      id: '1',
-      type: 'document_edit',
-      description: 'Updated methodology section',
-      timestamp: new Date('2024-01-15T10:30:00'),
-      projectId: '1',
-    },
-    {
-      id: '2',
-      type: 'reference_added',
-      description: 'Added 5 new references to literature review',
-      timestamp: new Date('2024-01-15T09:15:00'),
-      projectId: '2',
-    },
-  ],
-  upcomingDeadlines: [
-    {
-      id: '1',
-      title: 'Submit to Nature Medicine',
-      date: new Date('2024-02-01'),
-      type: 'submission',
-      priority: 'high',
-      projectId: '1',
-    },
-    {
-      id: '2',
-      title: 'Complete data analysis',
-      date: new Date('2024-01-25'),
-      type: 'milestone',
-      priority: 'medium',
-      projectId: '2',
-    },
-  ],
-  productivity: {
-    wordsWritten: 2450,
-    referencesAdded: 12,
-    milestonesCompleted: 3,
-    collaborationHours: 8,
-    period: 'week',
-  },
-}
+
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuthStore()
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalProjects: 0,
     activeProjects: 0,
-    totalWords: 0,
-    totalReferences: 0,
     completedProjects: 0,
-    recentActivityCount: 0
+    totalOutlines: 0,
+    recentActivityCount: 0,
+    weeklyProgress: [],
+    modelUsage: []
   })
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
@@ -104,14 +35,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      if (!user) return
+      
       try {
-        // Use demo user ID for now - in production, get from auth
-        const userId = 'demo-user-123'
-        
         const [stats, activities, projects] = await Promise.all([
-          dashboardService.getDashboardStats(userId),
-          dashboardService.getRecentActivities(userId, 5),
-          dashboardService.getRecentProjects(userId, 3)
+          dashboardService.getDashboardStats(),
+          dashboardService.getRecentActivities(5),
+          dashboardService.getRecentProjects(3)
         ])
 
         setDashboardStats(stats)
@@ -125,7 +55,7 @@ export default function DashboardPage() {
     }
 
     loadDashboardData()
-  }, [])
+  }, [user])
 
   return (
     <div className="space-y-6">
@@ -158,30 +88,30 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Words Written</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
             <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? '...' : dashboardStats.totalWords.toLocaleString()}
+              {isLoading ? '...' : dashboardStats.totalProjects}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total across all projects
+              All research projects
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">References Added</CardTitle>
+            <CardTitle className="text-sm font-medium">AI Outlines</CardTitle>
             <BookOpenIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? '...' : dashboardStats.totalReferences}
+              {isLoading ? '...' : dashboardStats.totalOutlines}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total references collected
+              Generated outlines
             </p>
           </CardContent>
         </Card>
@@ -257,8 +187,8 @@ export default function DashboardPage() {
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>{project.word_count} words</span>
-                      <span>{project.reference_count} refs</span>
+                      <span>{project.business_domain?.name_vi || 'No domain'}</span>
+                      <span className="capitalize">{project.status.replace('_', ' ')}</span>
                     </div>
                     <p className="text-xs text-gray-500">
                       Updated {new Date(project.last_activity).toLocaleDateString()}
@@ -356,15 +286,15 @@ export default function DashboardPage() {
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Words</span>
+                <span className="text-sm text-gray-600">Total Projects</span>
                 <span className="font-medium">
-                  {isLoading ? '...' : dashboardStats.totalWords.toLocaleString()}
+                  {isLoading ? '...' : dashboardStats.totalProjects}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total References</span>
+                <span className="text-sm text-gray-600">AI Outlines</span>
                 <span className="font-medium">
-                  {isLoading ? '...' : dashboardStats.totalReferences}
+                  {isLoading ? '...' : dashboardStats.totalOutlines}
                 </span>
               </div>
               <div className="flex justify-between items-center">

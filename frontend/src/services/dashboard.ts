@@ -1,133 +1,211 @@
 import { supabase } from '@/lib/supabase'
 
 export interface DashboardStats {
+  totalProjects: number
   activeProjects: number
-  totalWords: number
-  totalReferences: number
   completedProjects: number
+  totalOutlines: number
   recentActivityCount: number
+  weeklyProgress: WeeklyProgress[]
+  modelUsage: ModelUsage[]
 }
 
 export interface RecentActivity {
-  id: number
+  id: string
   activity_type: string
   description: string
   project_title: string
   created_at: string
-  metadata?: any
+  resource_id?: string
 }
 
 export interface RecentProject {
   id: string
   title: string
+  description: string
   status: string
   progress: number
   last_activity: string
-  word_count: number
-  reference_count: number
+  business_domain?: {
+    name: string
+    name_vi: string
+    icon?: string
+    color?: string
+  }
+}
+
+export interface WeeklyProgress {
+  date: string
+  projects: number
+  outlines: number
+}
+
+export interface ModelUsage {
+  modelName: string
+  count: number
+  percentage: number
 }
 
 export const dashboardService = {
   // Get dashboard statistics
-  async getDashboardStats(userId: string): Promise<DashboardStats> {
+  async getDashboardStats(): Promise<DashboardStats> {
     try {
-      // Try RPC function first, fallback to manual queries
-      try {
-        const { data, error } = await supabase
-          .rpc('get_user_dashboard_stats', { p_user_id: userId })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
 
-        if (!error && data && data.length > 0) {
-          const stats = data[0]
-          return {
-            activeProjects: stats.active_projects,
-            totalWords: stats.total_words,
-            totalReferences: stats.total_references,
-            completedProjects: stats.completed_projects,
-            recentActivityCount: stats.recent_activity_count
-          }
-        }
-      } catch (rpcError) {
-        console.log('RPC function not available, using fallback queries')
+      // Get projects stats with business domain info
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          id, 
+          title, 
+          status, 
+          progress, 
+          updated_at, 
+          created_at,
+          business_domains(name, name_vi)
+        `)
+        .eq('user_id', user.id)
+
+      if (projectsError) throw projectsError
+
+      const totalProjects = projects?.length || 0
+      const activeProjects = projects?.filter(p => p.status === 'in_progress').length || 0
+      const completedProjects = projects?.filter(p => p.status === 'completed').length || 0
+
+      // Get outlines count
+      const { data: outlines, error: outlinesError } = await supabase
+        .from('research_outlines')
+        .select('id, project_id, created_at')
+        .in('project_id', projects?.map(p => p.id) || [])
+
+      if (outlinesError) throw outlinesError
+
+      const totalOutlines = outlines?.length || 0
+
+      // Get recent activity count (last 7 days)
+      const { data: activities, error: activitiesError } = await supabase
+        .from('user_activities')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+
+      const recentActivityCount = activities?.length || 0
+
+      // Get weekly progress (last 7 days)
+      const weeklyProgress: WeeklyProgress[] = []
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0]
+        
+        const dayProjects = projects?.filter(p => 
+          p.created_at.startsWith(dateStr)
+        ).length || 0
+        
+        const dayOutlines = outlines?.filter(o => 
+          o.created_at.startsWith(dateStr)
+        ).length || 0
+
+        weeklyProgress.push({
+          date: dateStr,
+          projects: dayProjects,
+          outlines: dayOutlines
+        })
       }
 
-      // Fallback to manual queries
-      const [projectsData, activitiesData] = await Promise.all([
-        supabase
-          .from('projects')
-          .select('status, word_count, reference_count, is_active')
-          .eq('owner_id', userId),
-        supabase
-          .from('activities')
-          .select('id')
-          .eq('user_id', userId)
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      ])
+      // Get model usage statistics
+      const { data: projectModels, error: modelsError } = await supabase
+        .from('project_models')
+        .select(`
+          marketing_models(name, name_vi)
+        `)
+        .in('project_id', projects?.map(p => p.id) || [])
 
-      const projects = projectsData.data || []
-      const activities = activitiesData.data || []
+      const modelUsage: ModelUsage[] = []
+      if (projectModels && projectModels.length > 0) {
+        const modelCounts: { [key: string]: number } = {}
+        projectModels.forEach(pm => {
+          const modelName = pm.marketing_models?.name_vi || pm.marketing_models?.name || 'Unknown'
+          modelCounts[modelName] = (modelCounts[modelName] || 0) + 1
+        })
+
+        const total = Object.values(modelCounts).reduce((sum, count) => sum + count, 0)
+        Object.entries(modelCounts).forEach(([name, count]) => {
+          modelUsage.push({
+            modelName: name,
+            count,
+            percentage: total > 0 ? (count / total) * 100 : 0
+          })
+        })
+      }
 
       return {
-        activeProjects: projects.filter(p => p.is_active !== false).length,
-        totalWords: projects.reduce((sum, p) => sum + (p.word_count || 0), 0),
-        totalReferences: projects.reduce((sum, p) => sum + (p.reference_count || 0), 0),
-        completedProjects: projects.filter(p => p.status === 'completed').length,
-        recentActivityCount: activities.length
+        totalProjects,
+        activeProjects,
+        completedProjects,
+        totalOutlines,
+        recentActivityCount,
+        weeklyProgress,
+        modelUsage
       }
     } catch (error) {
       console.error('Get dashboard stats error:', error)
-      // Return default stats on error
       return {
+        totalProjects: 0,
         activeProjects: 0,
-        totalWords: 0,
-        totalReferences: 0,
         completedProjects: 0,
-        recentActivityCount: 0
+        totalOutlines: 0,
+        recentActivityCount: 0,
+        weeklyProgress: [],
+        modelUsage: []
       }
     }
   },
 
   // Get recent activities
-  async getRecentActivities(userId: string, limit: number = 10): Promise<RecentActivity[]> {
+  async getRecentActivities(limit: number = 10): Promise<RecentActivity[]> {
     try {
-      // Try RPC function first, fallback to manual query
-      try {
-        const { data, error } = await supabase
-          .rpc('get_recent_activities', { 
-            p_user_id: userId, 
-            p_limit: limit 
-          })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
 
-        if (!error && data) {
-          return data
-        }
-      } catch (rpcError) {
-        console.log('RPC function not available, using fallback query')
-      }
-
-      // Fallback to manual query
-      const { data, error } = await supabase
-        .from('activities')
+      const { data: activities, error } = await supabase
+        .from('user_activities')
         .select(`
           id,
           activity_type,
-          description,
+          details,
           created_at,
-          metadata,
-          projects(title)
+          resource_id
         `)
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit)
 
       if (error) throw error
 
-      return (data || []).map(activity => ({
+      // Get project titles for activities that have resource_id
+      const projectIds = activities?.filter(a => a.resource_id).map(a => a.resource_id) || []
+      let projectTitles: { [key: string]: string } = {}
+
+      if (projectIds.length > 0) {
+        const { data: projects } = await supabase
+          .from('projects')
+          .select('id, title')
+          .in('id', projectIds)
+
+        projects?.forEach(p => {
+          projectTitles[p.id] = p.title
+        })
+      }
+
+      return (activities || []).map(activity => ({
         id: activity.id,
         activity_type: activity.activity_type,
-        description: activity.description,
-        project_title: activity.projects?.title || 'Unknown Project',
+        description: activity.details?.description || activity.details?.title || 'Activity',
+        project_title: activity.resource_id ? projectTitles[activity.resource_id] || 'Unknown Project' : 'System',
         created_at: activity.created_at,
-        metadata: activity.metadata
+        resource_id: activity.resource_id
       }))
     } catch (error) {
       console.error('Get recent activities error:', error)
@@ -136,41 +214,36 @@ export const dashboardService = {
   },
 
   // Get recent projects
-  async getRecentProjects(userId: string, limit: number = 5): Promise<RecentProject[]> {
+  async getRecentProjects(limit: number = 5): Promise<RecentProject[]> {
     try {
-      // Try RPC function first, fallback to manual query
-      try {
-        const { data, error } = await supabase
-          .rpc('get_recent_projects', { 
-            p_user_id: userId, 
-            p_limit: limit 
-          })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
 
-        if (!error && data) {
-          return data
-        }
-      } catch (rpcError) {
-        console.log('RPC function not available, using fallback query')
-      }
-
-      // Fallback to manual query
-      const { data, error } = await supabase
+      const { data: projects, error } = await supabase
         .from('projects')
-        .select('id, title, status, progress, updated_at, word_count, reference_count')
-        .eq('owner_id', userId)
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          progress,
+          updated_at,
+          business_domains(name, name_vi, icon, color)
+        `)
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(limit)
 
       if (error) throw error
 
-      return (data || []).map(project => ({
+      return (projects || []).map(project => ({
         id: project.id,
         title: project.title,
+        description: project.description || '',
         status: project.status,
         progress: project.progress || 0,
         last_activity: project.updated_at,
-        word_count: project.word_count || 0,
-        reference_count: project.reference_count || 0
+        business_domain: project.business_domains
       }))
     } catch (error) {
       console.error('Get recent projects error:', error)
@@ -180,48 +253,51 @@ export const dashboardService = {
 
   // Add activity
   async addActivity(
-    userId: string, 
-    projectId: string | null, 
     activityType: string, 
-    description: string,
-    metadata?: any
+    details: any,
+    resourceId?: string
   ): Promise<void> {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
       const { error } = await supabase
-        .from('activities')
+        .from('user_activities')
         .insert({
-          user_id: userId,
-          project_id: projectId,
+          user_id: user.id,
           activity_type: activityType,
-          description,
-          metadata: metadata || null
+          details,
+          resource_id: resourceId || null
         })
 
       if (error) throw error
     } catch (error) {
       console.error('Add activity error:', error)
-      throw error
+      // Don't throw error for activity logging failures
+      console.warn('Failed to log activity, continuing...')
     }
   },
 
   // Get project statistics by status
-  async getProjectStatsByStatus(userId: string) {
+  async getProjectStatsByStatus() {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase
         .from('projects')
-        .select('status, phase')
-        .eq('owner_id', userId)
+        .select('status')
+        .eq('user_id', user.id)
 
       if (error) throw error
 
       const stats = {
         total: data.length,
-        planning: data.filter(p => p.phase === 'planning').length,
-        execution: data.filter(p => p.phase === 'execution').length,
-        writing: data.filter(p => p.phase === 'writing').length,
-        submission: data.filter(p => p.phase === 'submission').length,
-        completed: data.filter(p => p.status === 'completed').length,
+        draft: data.filter(p => p.status === 'draft').length,
         in_progress: data.filter(p => p.status === 'in_progress').length,
+        completed: data.filter(p => p.status === 'completed').length,
+        published: data.filter(p => p.status === 'published').length,
+        archived: data.filter(p => p.status === 'archived').length,
       }
 
       return stats
@@ -229,61 +305,74 @@ export const dashboardService = {
       console.error('Get project stats by status error:', error)
       return {
         total: 0,
-        planning: 0,
-        execution: 0,
-        writing: 0,
-        submission: 0,
-        completed: 0,
+        draft: 0,
         in_progress: 0,
+        completed: 0,
+        published: 0,
+        archived: 0,
       }
     }
   },
 
-  // Get writing progress over time
-  async getWritingProgress(userId: string, days: number = 30) {
+  // Get research progress over time
+  async getResearchProgress(days: number = 30) {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase
-        .from('activities')
-        .select('created_at, metadata')
-        .eq('user_id', userId)
-        .eq('activity_type', 'document_updated')
+        .from('user_activities')
+        .select('created_at, details, activity_type')
+        .eq('user_id', user.id)
+        .in('activity_type', ['project_created', 'outline_generated', 'project_updated'])
         .gte('created_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: true })
 
       if (error) throw error
 
-      // Group by date and sum words added
+      // Group by date and count activities
       const progressByDate = data.reduce((acc: any, activity) => {
         const date = activity.created_at.split('T')[0]
-        const wordsAdded = activity.metadata?.words_added || 0
         
         if (!acc[date]) {
-          acc[date] = 0
+          acc[date] = { projects: 0, outlines: 0, updates: 0 }
         }
-        acc[date] += wordsAdded
+        
+        if (activity.activity_type === 'project_created') {
+          acc[date].projects += 1
+        } else if (activity.activity_type === 'outline_generated') {
+          acc[date].outlines += 1
+        } else if (activity.activity_type === 'project_updated') {
+          acc[date].updates += 1
+        }
         
         return acc
       }, {})
 
-      return Object.entries(progressByDate).map(([date, words]) => ({
+      return Object.entries(progressByDate).map(([date, counts]: [string, any]) => ({
         date,
-        words
+        projects: counts.projects,
+        outlines: counts.outlines,
+        updates: counts.updates
       }))
     } catch (error) {
-      console.error('Get writing progress error:', error)
+      console.error('Get research progress error:', error)
       return []
     }
   },
 
   // Get user productivity metrics
-  async getProductivityMetrics(userId: string) {
+  async getProductivityMetrics() {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
       const [stats, activities] = await Promise.all([
-        this.getDashboardStats(userId),
+        this.getDashboardStats(),
         supabase
-          .from('activities')
+          .from('user_activities')
           .select('activity_type, created_at')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       ])
 
@@ -308,11 +397,13 @@ export const dashboardService = {
     } catch (error) {
       console.error('Get productivity metrics error:', error)
       return {
+        totalProjects: 0,
         activeProjects: 0,
-        totalWords: 0,
-        totalReferences: 0,
         completedProjects: 0,
+        totalOutlines: 0,
         recentActivityCount: 0,
+        weeklyProgress: [],
+        modelUsage: [],
         dailyActivities: 0,
         activityDistribution: {},
         totalActivities: 0

@@ -81,11 +81,13 @@ export default function ProjectDetailPage() {
 
       // Add activity
       await dashboardService.addActivity(
-        project.owner_id,
-        project.id,
         'project_updated',
-        `Updated project: ${editData.title}`,
-        { updated_fields: ['title', 'description', 'status', 'progress'] }
+        {
+          title: editData.title,
+          description: `Updated project: ${editData.title}`,
+          updated_fields: ['title', 'description', 'status', 'progress']
+        },
+        project.id
       )
     } catch (err) {
       console.error('Failed to update project:', err)

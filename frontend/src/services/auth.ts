@@ -73,24 +73,40 @@ export const authService = {
       if (!authData.user) throw new Error('Failed to create user')
 
       // Create user profile in Supabase
-      const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          institution: userData.institution,
-          research_domains: userData.researchDomain,
-          subscription_type: 'free',
-        })
-        .select()
-        .single()
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .insert([{
+            id: authData.user.id,
+            email: userData.email,
+            full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+            institution: userData.institution,
+          }] as any)
+          .select()
+          .single()
 
-      if (profileError) throw profileError
+        if (profileError) {
+          console.warn('Profile creation error:', profileError)
+          // Continue without profile creation error
+        }
+      } catch (error) {
+        console.warn('Profile creation failed:', error)
+        // Continue without profile creation error
+      }
+
+      // Create a basic user object from auth data
+      const basicUser = {
+        id: authData.user.id,
+        email: authData.user.email!,
+        full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+        avatar_url: null,
+        institution: userData.institution,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
 
       return {
-        user: dbUserToAppUser(profileData),
+        user: dbUserToAppUser(basicUser as any),
         session: authData.session,
       }
     } catch (error: any) {

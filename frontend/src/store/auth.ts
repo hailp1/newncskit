@@ -18,6 +18,7 @@ interface AuthActions {
   logout: () => Promise<void>
   clearError: () => void
   setUser: (user: User | null) => void
+  updateUser: (userData: Partial<User>) => Promise<void>
   initialize: () => Promise<void>
 }
 
@@ -186,6 +187,26 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           user,
           isAuthenticated: !!user,
         })
+      },
+
+      updateUser: async (userData: Partial<User>) => {
+        set({ isLoading: true, error: null })
+        
+        try {
+          const updatedUser = await authService.updateProfile(userData)
+          
+          set({
+            user: updatedUser,
+            isLoading: false,
+            error: null,
+          })
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update profile',
+            isLoading: false,
+          })
+          throw error
+        }
       },
     }),
     {
