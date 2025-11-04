@@ -10,60 +10,6 @@ import { geminiService } from '@/services/gemini'
 import { marketingProjectsService } from '@/services/marketing-projects'
 import { useAuthStore } from '@/store/auth'
 
-const BUSINESS_DOMAINS = [
-  { id: 1, name: 'Marketing', description: 'Nghiên cứu hành vi tiêu dùng, thương hiệu, quảng cáo', icon: '📊' },
-  { id: 2, name: 'Du lịch & Khách sạn', description: 'Nghiên cứu trải nghiệm khách hàng, dịch vụ du lịch', icon: '🗺️' },
-  { id: 3, name: 'Nhân sự', description: 'Nghiên cứu động lực làm việc, văn hóa tổ chức', icon: '👥' },
-  { id: 4, name: 'Hệ thống thông tin quản lý', description: 'Nghiên cứu chấp nhận công nghệ, chuyển đổi số', icon: '💻' },
-  { id: 5, name: 'Tài chính & Ngân hàng', description: 'Nghiên cứu hành vi đầu tư, dịch vụ tài chính', icon: '💰' },
-  { id: 6, name: 'Bán lẻ & Thương mại điện tử', description: 'Nghiên cứu mua sắm online, trải nghiệm khách hàng', icon: '🛒' }
-]
-
-const MARKETING_MODELS = [
-  { 
-    id: 1, 
-    name: 'Theory of Planned Behavior (TPB)', 
-    description: 'Mô hình dự đoán hành vi dựa trên thái độ, chuẩn mực chủ quan và kiểm soát hành vi', 
-    category: 'consumer_behavior',
-    variables: ['Attitude', 'Subjective Norm', 'Perceived Behavioral Control', 'Behavioral Intention']
-  },
-  { 
-    id: 2, 
-    name: 'Technology Acceptance Model (TAM)', 
-    description: 'Mô hình chấp nhận công nghệ dựa trên tính hữu ích và dễ sử dụng', 
-    category: 'technology_adoption',
-    variables: ['Perceived Usefulness', 'Perceived Ease of Use', 'Attitude', 'Behavioral Intention']
-  },
-  { 
-    id: 3, 
-    name: 'SERVQUAL Model', 
-    description: 'Mô hình đo lường chất lượng dịch vụ qua 5 thành phần', 
-    category: 'service_quality',
-    variables: ['Tangibles', 'Reliability', 'Responsiveness', 'Assurance', 'Empathy']
-  },
-  { 
-    id: 4, 
-    name: 'Customer Satisfaction Model', 
-    description: 'Mô hình sự hài lòng khách hàng và ý định tái mua', 
-    category: 'customer_satisfaction',
-    variables: ['Expectation', 'Performance', 'Satisfaction', 'Repurchase Intention']
-  },
-  { 
-    id: 5, 
-    name: 'Brand Equity Model', 
-    description: 'Mô hình giá trị thương hiệu của Aaker', 
-    category: 'brand_management',
-    variables: ['Brand Awareness', 'Brand Loyalty', 'Perceived Quality', 'Brand Associations']
-  },
-  { 
-    id: 6, 
-    name: 'E-Service Quality (E-S-QUAL)', 
-    description: 'Mô hình chất lượng dịch vụ điện tử', 
-    category: 'digital_service',
-    variables: ['Efficiency', 'System Availability', 'Fulfillment', 'Privacy']
-  }
-]
-
 interface MarketingProjectFormProps {
   onSuccess?: (project: any) => void
   onCancel?: () => void
@@ -71,9 +17,14 @@ interface MarketingProjectFormProps {
 
 export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFormProps) {
   const router = useRouter()
+  const { user } = useAuthStore()
   const [step, setStep] = useState(1) // 1: Basic Info, 2: Select Models, 3: Generate Outline
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Data from Supabase
+  const [businessDomains, setBusinessDomains] = useState<any[]>([])
+  const [marketingModels, setMarketingModels] = useState<any[]>([])
   
   // Form data
   const [projectData, setProjectData] = useState({
@@ -86,8 +37,28 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
   
   const [generatedOutline, setGeneratedOutline] = useState<any>(null)
 
-  const selectedDomain = BUSINESS_DOMAINS.find(d => d.id === projectData.businessDomainId)
-  const selectedModelObjects = MARKETING_MODELS.filter(m => projectData.selectedModels.includes(m.id))
+  // Load data from Supabase on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [domains, models] = await Promise.all([
+          marketingProjectsService.getBusinessDomains(),
+          marketingProjectsService.getMarketingModels()
+        ])
+        
+        setBusinessDomains(domains)
+        setMarketingModels(models)
+      } catch (err) {
+        console.error('Failed to load data:', err)
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.')
+      }
+    }
+
+    loadData()
+  }, [])
+
+  const selectedDomain = businessDomains.find(d => d.id === projectData.businessDomainId)
+  const selectedModelObjects = marketingModels.filter(m => projectData.selectedModels.includes(m.id))
 
   const handleBasicInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -144,36 +115,28 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
   }
 
   const createProject = async () => {
+    if (!user) {
+      setError('Vui lòng đăng nhập để tạo dự án')
+      return
+    }
+
     setIsLoading(true)
     
     try {
-      // Create project object with all data
-      const newProject = {
-        id: Date.now().toString(), // Generate temporary ID
+      // Create project in Supabase
+      const newProject = await marketingProjectsService.createProject(user.id, {
         title: generatedOutline?.title || projectData.title,
         description: projectData.description,
-        businessDomain: selectedDomain?.name || '',
-        businessDomainId: projectData.businessDomainId,
-        selectedModels: projectData.selectedModels,
-        selectedModelNames: selectedModelObjects.map(m => m.name),
-        researchOutline: generatedOutline,
+        business_domain_id: projectData.businessDomainId,
+        selected_models: projectData.selectedModels,
+        research_outline: generatedOutline,
         status: 'outline_generated',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        owner: 'current_user', // In real app, get from auth
-        progress: 60, // Outline generated = 60% progress
-        collaborators: [],
-        tags: selectedModelObjects.map(m => m.category),
-      }
-      
-      // Save to localStorage for persistence (in real app, save to Supabase)
-      const existingProjects = JSON.parse(localStorage.getItem('ncskit_projects') || '[]')
-      const updatedProjects = [...existingProjects, newProject]
-      localStorage.setItem('ncskit_projects', JSON.stringify(updatedProjects))
+        progress: 60
+      })
       
       console.log('✅ Project created successfully:', newProject)
       
-      // Call success callback with the created project
+      // Call success callback
       onSuccess?.(newProject)
       
       // Redirect to projects list with success message
@@ -251,7 +214,7 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
               <div className="space-y-2">
                 <label className="text-sm font-medium">Lĩnh vực kinh doanh *</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {BUSINESS_DOMAINS.map((domain) => (
+                  {businessDomains.map((domain) => (
                     <div
                       key={domain.id}
                       onClick={() => setProjectData(prev => ({ ...prev, businessDomainId: domain.id }))}
@@ -262,7 +225,7 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <span className="text-2xl">{domain.icon}</span>
+                        <span className="text-2xl">{domain.icon || '📊'}</span>
                         <div>
                           <h3 className="font-medium">{domain.name}</h3>
                           <p className="text-sm text-gray-600">{domain.description}</p>
@@ -307,7 +270,7 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {MARKETING_MODELS.map((model) => (
+              {marketingModels.map((model) => (
                 <div
                   key={model.id}
                   onClick={() => toggleModel(model.id)}
@@ -331,9 +294,9 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
                       <h3 className="font-medium">{model.name}</h3>
                       <p className="text-sm text-gray-600 mb-2">{model.description}</p>
                       <div className="flex flex-wrap gap-1">
-                        {model.variables.map((variable, idx) => (
+                        {model.key_concepts?.map((concept: string, idx: number) => (
                           <span key={idx} className="px-2 py-1 bg-gray-100 text-xs rounded">
-                            {variable}
+                            {concept}
                           </span>
                         ))}
                       </div>

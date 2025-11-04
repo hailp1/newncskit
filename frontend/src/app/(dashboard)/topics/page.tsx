@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   AcademicCapIcon,
   SparklesIcon,
-  TrendingUpIcon,
+  ChartBarIcon,
   LightBulbIcon,
 } from '@heroicons/react/24/outline'
 
@@ -39,7 +39,7 @@ export default function TopicsPage() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
               <div className="text-center p-4">
-                <TrendingUpIcon className="mx-auto h-8 w-8 text-green-500 mb-2" />
+                <ChartBarIcon className="mx-auto h-8 w-8 text-green-500 mb-2" />
                 <h4 className="font-medium">Trend Analysis</h4>
                 <p className="text-sm text-gray-600">Identify emerging research areas</p>
               </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MarketingProjectForm } from '@/components/projects/marketing-project-form'
+import { MarketingProjectForm } from '@/components/projects/marketing-project-form-supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/button'

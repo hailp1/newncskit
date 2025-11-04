@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import {
   PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 
 // Mock projects data
@@ -58,9 +60,62 @@ const mockProjects: ProjectSummary[] = [
 ]
 
 export default function ProjectsPage() {
-  const [projects] = useState<ProjectSummary[]>(mockProjects)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPhase, setSelectedPhase] = useState<string>('all')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [newProjectId, setNewProjectId] = useState<string | null>(null)
+
+  // Load projects from Supabase
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        // In real app, get user ID from auth
+        const userId = 'demo-user-id' // Replace with actual user ID
+        
+        // Load projects from Supabase
+        const { marketingProjectsService } = await import('@/services/marketing-projects')
+        const marketingProjects = await marketingProjectsService.getUserProjects(userId)
+        
+        // Convert to ProjectSummary format
+        const projectSummaries: ProjectSummary[] = marketingProjects.map((project: any) => ({
+          id: project.id,
+          title: project.title,
+          phase: project.status === 'outline_generated' ? 'planning' : 'execution',
+          progress: project.progress || 60,
+          lastActivity: new Date(project.updated_at),
+          collaboratorCount: 1, // Default for now
+        }))
+        
+        // Combine with mock projects for demo
+        setProjects([...projectSummaries, ...mockProjects])
+      } catch (error) {
+        console.error('Failed to load projects from Supabase:', error)
+        // Fallback to mock data
+        setProjects(mockProjects)
+      }
+    }
+
+    loadProjects()
+
+    // Check for success message
+    const created = searchParams.get('created')
+    const projectId = searchParams.get('id')
+    
+    if (created === 'true') {
+      setShowSuccess(true)
+      setNewProjectId(projectId)
+      
+      // Auto hide success message after 5 seconds
+      setTimeout(() => {
+        setShowSuccess(false)
+        // Clean up URL
+        router.replace('/projects')
+      }, 5000)
+    }
+  }, [searchParams, router])
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -72,13 +127,31 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {showSuccess && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <CheckCircleIcon className="w-6 h-6 text-green-600 mr-3" />
+              <div>
+                <h3 className="text-green-800 font-medium">Dự án đã được tạo thành công!</h3>
+                <p className="text-green-700 text-sm">
+                  Đề cương nghiên cứu đã được tạo bằng AI và dự án đã được lưu vào danh sách.
+                  {newProjectId && ` ID: ${newProjectId}`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Research Projects</h1>
           <p className="text-gray-600">Manage and track your research projects</p>
         </div>
-        <Button>
+        <Button onClick={() => router.push('/projects/new')}>
           <PlusIcon className="w-4 h-4 mr-2" />
           New Project
         </Button>
