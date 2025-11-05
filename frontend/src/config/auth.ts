@@ -9,6 +9,8 @@ export const authConfig = {
     '/register',
     '/about',
     '/features',
+    '/blog',
+    '/blog/*',
     '/auth/callback',
   ],
   

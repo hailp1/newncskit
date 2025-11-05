@@ -7,6 +7,7 @@ import {
   UsersIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline'
+import { GraduationCap } from 'lucide-react'
 
 const values = [
   {
@@ -40,33 +41,7 @@ const stats = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-blue-600">
-                NCSKIT
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-600 hover:text-gray-900">
-                Home
-              </Link>
-              <Link href="/features" className="text-gray-600 hover:text-gray-900">
-                Features
-              </Link>
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
-                Dashboard
-              </Link>
-              <Button asChild>
-                <Link href="/dashboard">Try Demo</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="bg-white">
 
       {/* Hero Section */}
       <div className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -145,6 +120,144 @@ export default function AboutPage() {
         </div>
       </div>
 
+      {/* Team Section */}
+      <div className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Team</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Meet the researchers and developers behind NCSKIT
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            {/* Lead Developer & Research Scientist */}
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="pt-8">
+                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <GraduationCap className="h-12 w-12 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Lê Phúc Hải</h3>
+                <p className="text-blue-600 font-semibold mb-2">Lead Developer & Research Scientist</p>
+                <p className="text-gray-500 text-sm mb-4">PhD Candidate in Business Management</p>
+                
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Key Responsibilities:</h4>
+                  <ul className="text-gray-600 text-sm space-y-2">
+                    <li>• System architecture and programming development</li>
+                    <li>• Statistical analysis methodology implementation</li>
+                    <li>• Research methodology design and validation</li>
+                    <li>• AI-powered analytics engine development</li>
+                    <li>• Scientific accuracy and quality assurance</li>
+                  </ul>
+                </div>
+
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Expertise:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Statistical Analysis</span>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">SEM & Factor Analysis</span>
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Research Methods</span>
+                    <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Full-Stack Development</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-2">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">PhD Candidate</span>
+                  <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">Business Management</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Research Assistant & Data Specialist */}
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="pt-8">
+                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <UsersIcon className="h-12 w-12 text-green-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Tín Nguyễn</h3>
+                <p className="text-green-600 font-semibold mb-2">Research Assistant & Data Specialist</p>
+                <p className="text-gray-500 text-sm mb-4">Master of Tourism Management</p>
+                
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Key Responsibilities:</h4>
+                  <ul className="text-gray-600 text-sm space-y-2">
+                    <li>• Research literature collection and curation</li>
+                    <li>• Data entry and database management</li>
+                    <li>• Content quality control and validation</li>
+                    <li>• Research documentation and archiving</li>
+                    <li>• User support and data assistance</li>
+                  </ul>
+                </div>
+
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Expertise:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Data Management</span>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Literature Review</span>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Content Curation</span>
+                    <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Quality Assurance</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-2">
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">Master's Degree</span>
+                  <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm rounded-full">Tourism Management</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Team Collaboration */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-0">
+              <CardContent className="pt-8">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Our Collaborative Approach</h3>
+                  <p className="text-gray-600 mb-6 max-w-3xl mx-auto">
+                    NCSKIT is built on the synergy between technical expertise and research experience. 
+                    Our team combines deep statistical knowledge with practical software development skills, 
+                    ensuring that every feature is both scientifically sound and user-friendly.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AcademicCapIcon className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Research Excellence</h4>
+                      <p className="text-sm text-gray-600">
+                        Grounded in academic rigor and statistical best practices
+                      </p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <LightBulbIcon className="h-8 w-8 text-green-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Technical Innovation</h4>
+                      <p className="text-sm text-gray-600">
+                        Cutting-edge technology meets practical research needs
+                      </p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <UsersIcon className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">User-Centric Design</h4>
+                      <p className="text-sm text-gray-600">
+                        Built by researchers, for researchers worldwide
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
       {/* Story Section */}
       <div className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -153,31 +266,38 @@ export default function AboutPage() {
             
             <div className="prose prose-lg mx-auto text-gray-600">
               <p className="text-lg leading-relaxed mb-6">
-                NCSKIT was founded by a team of researchers, technologists, and academics 
-                who experienced firsthand the challenges of modern research publication. 
-                After years of struggling with fragmented tools, inefficient workflows, 
-                and the overwhelming complexity of the academic publishing landscape, 
-                we decided to build the solution we wished we had.
+                NCSKIT was born from the collaboration between Lê Phúc Hải, a PhD candidate in Business Management 
+                with deep expertise in statistical analysis and research methodology, and Tín Nguyễn, a Master's 
+                graduate in Tourism Management specializing in data management and research documentation. 
+                Together, they experienced firsthand the challenges of modern academic research and publication.
               </p>
               
               <p className="text-lg leading-relaxed mb-6">
-                Our journey began in 2023 when we started developing AI-powered tools 
-                to assist with literature review and topic identification. As we shared 
-                our early prototypes with the research community, we discovered that 
-                the need for comprehensive research management tools was universal.
+                After years of struggling with fragmented tools, inefficient workflows, and the overwhelming 
+                complexity of statistical analysis software, they decided to build the comprehensive solution 
+                they wished they had. Combining Hải's technical programming skills and statistical expertise 
+                with Tín's meticulous approach to data curation and research support, they created NCSKIT.
               </p>
               
               <p className="text-lg leading-relaxed mb-6">
-                Today, NCSKIT serves thousands of researchers across 120+ countries, 
-                helping them publish high-quality research more efficiently than ever before. 
-                Our platform has facilitated the publication of over 50,000 papers and 
-                continues to evolve based on the needs of our global research community.
+                Our journey began in 2023 when we started developing AI-powered tools to assist with literature 
+                review, statistical analysis, and research methodology. As we shared our early prototypes with 
+                the research community, we discovered that the need for comprehensive, user-friendly research 
+                management tools was universal across disciplines and countries.
+              </p>
+              
+              <p className="text-lg leading-relaxed mb-6">
+                Today, NCSKIT serves researchers across multiple countries, helping them conduct rigorous 
+                statistical analysis and publish high-quality research more efficiently than ever before. 
+                Our platform continues to evolve based on the needs of our growing research community, 
+                with new features and analytical capabilities added regularly.
               </p>
               
               <p className="text-lg leading-relaxed">
-                We're just getting started. Our vision is to become the indispensable 
-                platform that every researcher relies on to advance human knowledge 
-                and make meaningful contributions to their fields.
+                We're just getting started. Our vision is to become the indispensable platform that every 
+                researcher relies on to conduct sophisticated statistical analysis, manage their research 
+                workflow, and make meaningful contributions to their fields. By combining academic rigor 
+                with technological innovation, we're democratizing access to advanced research tools worldwide.
               </p>
             </div>
           </div>

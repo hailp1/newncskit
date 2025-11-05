@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: PresentationChartBarIcon },
   { name: 'Projects', href: '/projects', icon: BeakerIcon },
-  { name: 'References', href: '/references', icon: BookOpenIcon },
+  { name: 'Blog', href: '/blog', icon: BookOpenIcon },
   { name: 'Editor', href: '/editor', icon: DocumentTextIcon },
 ]
 
@@ -153,8 +153,11 @@ export function Navbar() {
               </div>
             ) : (
               <>
-                <Link href="/login" className="text-gray-600 hover:text-gray-900">
+                <Link href="/features" className="text-gray-600 hover:text-gray-900">
                   Features
+                </Link>
+                <Link href="/blog" className="text-gray-600 hover:text-gray-900">
+                  Blog
                 </Link>
                 <Link href="/about" className="text-gray-600 hover:text-gray-900">
                   About

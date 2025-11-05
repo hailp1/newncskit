@@ -8,20 +8,22 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorMessageComponent, InlineError } from '@/components/ui/error-message'
 import { useAuthStore } from '@/store/auth'
+import { ErrorHandler } from '@/services/error-handler'
 import type { UserRegistration } from '@/types'
 
 const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
+  lastName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
+  email: z.string().email('Địa chỉ email không hợp lệ'),
+  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
   confirmPassword: z.string(),
   institution: z.string().optional(),
-  researchDomain: z.array(z.string()).min(1, 'Please select at least one research domain'),
-  agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms'),
+  researchDomain: z.array(z.string()).min(1, 'Vui lòng chọn ít nhất một lĩnh vực nghiên cứu'),
+  agreeToTerms: z.boolean().refine(val => val === true, 'Bạn phải đồng ý với điều khoản sử dụng'),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Mật khẩu xác nhận không khớp",
   path: ["confirmPassword"],
 })
 
@@ -43,6 +45,7 @@ export function RegisterForm() {
   const { register: registerUser, isLoading, error } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [selectedDomains, setSelectedDomains] = useState<string[]>([])
+  const [processedError, setProcessedError] = useState<any>(null)
 
   const {
     register,
@@ -54,8 +57,14 @@ export function RegisterForm() {
   })
 
   const onSubmit = async (data: UserRegistration & { confirmPassword: string; agreeToTerms: boolean }) => {
-    const { confirmPassword, agreeToTerms, ...registrationData } = data
-    await registerUser(registrationData)
+    setProcessedError(null)
+    try {
+      const { confirmPassword, agreeToTerms, ...registrationData } = data
+      await registerUser(registrationData)
+    } catch (err) {
+      const errorMessage = ErrorHandler.handleAuthError(err)
+      setProcessedError(errorMessage)
+    }
   }
 
   const { loginWithOAuth } = useAuthStore()

@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  },
+  "name": "newncskit",
+  "version": "1.0.0",
+  "description": "**Professional Vietnamese Marketing Research Platform** with AI integration and comprehensive admin management system.",
+  "main": "verify-local-db.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hailp1/newncskit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hailp1/newncskit/issues"
+  },
+  "homepage": "https://github.com/hailp1/newncskit#readme"
+}

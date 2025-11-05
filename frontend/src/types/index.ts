@@ -5,6 +5,9 @@ export interface User {
   profile: UserProfile
   subscription: SubscriptionPlan
   preferences: UserPreferences
+  role?: string
+  status?: string
+  full_name?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -296,3 +299,7 @@ export interface ProjectCreation {
     endDate?: Date
   }
 }
+
+// Re-export workflow types
+export * from './workflow'
+export * from './database'

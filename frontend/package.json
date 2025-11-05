@@ -1,14 +1,16 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "ncskit-frontend",
+  "version": "1.0.0",
   "private": true,
+  "description": "NCSKIT - AI-Powered Vietnamese Marketing Research Platform",
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "vercel-build": "next build --webpack"
+    "clean": "rm -rf .next",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -16,14 +18,24 @@
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.78.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.15.6",
     "axios": "^1.13.1",
+    "bcryptjs": "^2.4.3",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
+    "papaparse": "^5.5.3",
+    "pg": "^8.16.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.66.0",
     "tailwind-merge": "^3.3.1",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
@@ -35,6 +47,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "next-sitemap": "^4.2.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/auth'
+import ChangePasswordForm from '@/components/auth/change-password-form'
 
 const RESEARCH_DOMAINS = [
   'Marketing',
@@ -222,43 +223,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Password Change */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium mb-4">Đổi mật khẩu</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Mật khẩu hiện tại</label>
-                      <Input
-                        type="password"
-                        value={formData.currentPassword}
-                        onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        placeholder="Nhập mật khẩu hiện tại"
-                      />
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Mật khẩu mới</label>
-                        <Input
-                          type="password"
-                          value={formData.newPassword}
-                          onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                          placeholder="Nhập mật khẩu mới"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Xác nhận mật khẩu mới</label>
-                        <Input
-                          type="password"
-                          value={formData.confirmPassword}
-                          onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                          placeholder="Xác nhận mật khẩu mới"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Error Display */}
                 {error && (
@@ -337,6 +302,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Change Password Section */}
+          <ChangePasswordForm />
         </div>
       </div>
     </div>

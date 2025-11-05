@@ -89,28 +89,22 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             error: null,
           })
 
+          console.log('Login successful, session persisted')
+
           // Redirect to dashboard after successful login
           if (typeof window !== 'undefined') {
             window.location.href = '/dashboard'
           }
         } catch (error) {
           console.error('Login error:', error)
-          let errorMessage = 'Login failed'
-          
-          if (error instanceof Error) {
-            if (error.message.includes('Invalid login credentials')) {
-              errorMessage = 'Invalid email or password. Please check your credentials.'
-            } else if (error.message.includes('Email not confirmed')) {
-              errorMessage = 'Please check your email and confirm your account.'
-            } else {
-              errorMessage = error.message
-            }
-          }
           
           set({
-            error: errorMessage,
+            error: error instanceof Error ? error.message : 'Đăng nhập thất bại',
             isLoading: false,
           })
+          
+          // Re-throw error so login form can handle it with ErrorHandler
+          throw error
         }
       },
 
@@ -147,9 +141,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           }
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Registration failed',
+            error: error instanceof Error ? error.message : 'Đăng ký thất bại',
             isLoading: false,
           })
+          
+          // Re-throw error so register form can handle it with ErrorHandler
+          throw error
         }
       },
 
@@ -163,6 +160,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             error: null,
           })
 
+          // Clear any stored auth data
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth-storage')
+          }
+
           // Redirect to home after logout
           if (typeof window !== 'undefined') {
             window.location.href = '/'
@@ -175,6 +177,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             isAuthenticated: false,
             error: null,
           })
+          
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth-storage')
+            window.location.href = '/'
+          }
         }
       },
 
@@ -193,7 +200,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const updatedUser = await authService.updateProfile(userData)
+          const currentUser = get().user;
+          if (!currentUser) throw new Error('No user logged in');
+          const updatedUser = await authService.updateProfile(currentUser.id, userData.profile || {})
           
           set({
             user: updatedUser,

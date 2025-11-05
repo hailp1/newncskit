@@ -5,10 +5,45 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   
   // Vercel deployment optimization
-  output: 'standalone',
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+  
+  // Turbopack configuration - empty for now
+  turbopack: {},
+  
+  // Webpack configuration to exclude server-only modules from client bundle
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Exclude PostgreSQL and other server-only modules from client bundle
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        dns: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+      };
+      
+      config.externals = config.externals || [];
+      config.externals.push({
+        'pg': 'commonjs pg',
+        'pg-native': 'commonjs pg-native',
+        'pg-pool': 'commonjs pg-pool',
+        'pg-cursor': 'commonjs pg-cursor',
+      });
+    }
+    
+    return config;
+  },
   
   // Image optimization
   images: {

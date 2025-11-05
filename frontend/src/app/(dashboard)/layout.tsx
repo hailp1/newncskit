@@ -12,8 +12,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading, initialized } = useAuthStore()
+  const { isAuthenticated, isLoading, initialized, initialize } = useAuthStore()
   const router = useRouter()
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initialize()
+  }, [initialize])
 
   useEffect(() => {
     // Wait for auth to be initialized before checking

@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ErrorMessageComponent } from '@/components/ui/error-message'
 import { ProjectCard } from '@/components/dashboard/project-card'
 import type { ProjectSummary } from '@/types'
+import { useErrorHandling } from '@/hooks/use-error-handling'
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -67,38 +69,89 @@ export default function ProjectsPage() {
   const [selectedPhase, setSelectedPhase] = useState<string>('all')
   const [showSuccess, setShowSuccess] = useState(false)
   const [newProjectId, setNewProjectId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Load projects from Supabase
-  useEffect(() => {
-    const loadProjects = async () => {
+  const {
+    error,
+    isRecovering,
+    recoveryActions,
+    handleError,
+    executeRecovery,
+    clearError,
+    withErrorHandling
+  } = useErrorHandling({
+    component: 'projects-page',
+    onError: (error, context) => {
+      console.error('Projects page error:', error, context);
+    }
+  })
+
+  // Load projects from Supabase with error handling
+  const loadProjects = withErrorHandling(async () => {
+    setIsLoading(true);
+    
+    try {
+      // Get user ID from auth store or use fallback for testing
+      let userId = 'demo-user-id' // Default fallback
+      
       try {
-        // In real app, get user ID from auth
-        const userId = 'demo-user-id' // Replace with actual user ID
-        
-        // Load projects from Supabase
-        const { marketingProjectsService } = await import('@/services/marketing-projects')
-        const marketingProjects = await marketingProjectsService.getUserProjects(userId)
-        
-        // Convert to ProjectSummary format
-        const projectSummaries: ProjectSummary[] = marketingProjects.map((project: any) => ({
-          id: project.id,
-          title: project.title,
-          phase: project.status === 'outline_generated' ? 'planning' : 'execution',
-          progress: project.progress || 60,
-          lastActivity: new Date(project.updated_at),
-          collaboratorCount: 1, // Default for now
-        }))
-        
-        // Combine with mock projects for demo
+        const { useAuthStore } = await import('@/store/auth')
+        const authStore = useAuthStore.getState()
+        if (authStore.user?.id) {
+          userId = authStore.user.id
+        } else {
+          // Use researcher ID for testing
+          userId = 'e875be23-309c-4e04-a899-3f88a605f704' // researcher@ncskit.com
+        }
+      } catch (authError) {
+        console.warn('Auth store not available, using fallback user ID')
+        // Use researcher ID as fallback
+        userId = 'e875be23-309c-4e04-a899-3f88a605f704'
+      }
+      
+      console.log('Loading projects for user:', userId.substring(0, 8) + '...')
+      
+      // Load projects from Supabase
+      const { marketingProjectsService } = await import('@/services/marketing-projects-no-auth')
+      const marketingProjects = await marketingProjectsService.getUserProjects(userId)
+      
+      console.log('Marketing projects loaded:', marketingProjects?.length || 0)
+      
+      // Convert to ProjectSummary format
+      const projectSummaries: ProjectSummary[] = marketingProjects.map((project: any) => ({
+        id: project.id,
+        title: project.title,
+        phase: project.status === 'draft' ? 'planning' : 
+               project.status === 'outline_generated' ? 'planning' : 'execution',
+        progress: project.progress || 25,
+        lastActivity: new Date(project.updated_at || project.created_at),
+        collaboratorCount: 1, // Default for now
+      }))
+      
+      console.log('Project summaries created:', projectSummaries.length)
+      
+      // Use real projects if available, otherwise show mock projects for demo
+      if (projectSummaries.length > 0) {
         setProjects([...projectSummaries, ...mockProjects])
-      } catch (error) {
-        console.error('Failed to load projects from Supabase:', error)
-        // Fallback to mock data
+      } else {
         setProjects(mockProjects)
       }
+    } catch (error: any) {
+      console.error('Failed to load projects:', error)
+      
+      // Always show mock projects as fallback
+      setProjects(mockProjects)
+      
+      // Handle the error through our error handling system
+      await handleError(error, 'loadProjects', { userId: 'masked' });
+    } finally {
+      setIsLoading(false);
     }
+  }, 'loadProjects', { retries: 2 });
 
-    loadProjects()
+  useEffect(() => {
+
+    loadProjects();
 
     // Check for success message
     const created = searchParams.get('created')
@@ -127,6 +180,37 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Error Display */}
+      {error && (
+        <ErrorMessageComponent 
+          error={error} 
+          onDismiss={clearError}
+        />
+      )}
+
+      {/* Recovery Actions */}
+      {recoveryActions.length > 0 && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <h4 className="text-sm font-medium text-blue-800 mb-2">
+            Suggested Actions:
+          </h4>
+          <div className="space-y-2">
+            {recoveryActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => executeRecovery(action)}
+                disabled={isRecovering}
+                className="mr-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                {isRecovering ? 'Processing...' : action.label}
+              </Button>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Success Message */}
       {showSuccess && (
         <Card className="bg-green-50 border-green-200">
@@ -149,12 +233,27 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Research Projects</h1>
-          <p className="text-gray-600">Manage and track your research projects</p>
+          <p className="text-gray-600">
+            Manage and track your research projects
+            {isLoading && <span className="text-blue-600"> (Loading...)</span>}
+          </p>
         </div>
-        <Button onClick={() => router.push('/projects/new')}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          New Project
-        </Button>
+        <div className="flex items-center space-x-2">
+          {error && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadProjects()}
+              disabled={isLoading}
+            >
+              Retry
+            </Button>
+          )}
+          <Button onClick={() => router.push('/projects/new')}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}

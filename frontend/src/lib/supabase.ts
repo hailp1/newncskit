@@ -1,25 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+// Use mock Supabase for blog system to avoid authentication requirements
+import { supabase as mockSupabase } from './supabase-mock'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Check if we have real Supabase credentials
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-})
-
-// Helper functions for common operations
-export const supabaseAdmin = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
+if (supabaseUrl && supabaseAnonKey && !supabaseAnonKey.includes('example')) {
+  // Use real Supabase if properly configured
+  const { createClient } = require('@supabase/supabase-js')
+  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  export const supabaseAdmin = createClient(supabaseUrl, supabaseAnonKey)
+} else {
+  // Use mock Supabase for blog demo
+  export const supabase = mockSupabase
+  export const supabaseAdmin = mockSupabase
+}

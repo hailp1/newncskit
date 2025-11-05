@@ -8,7 +8,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorMessageComponent, InlineError } from '@/components/ui/error-message'
 import { useAuthStore } from '@/store/auth'
+import { ErrorHandler } from '@/services/error-handler'
 import type { LoginCredentials } from '@/types'
 
 const loginSchema = z.object({
@@ -19,6 +21,7 @@ const loginSchema = z.object({
 export function LoginForm() {
   const { login, isLoading, error } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
+  const [processedError, setProcessedError] = useState<any>(null)
 
   const {
     register,
@@ -29,7 +32,13 @@ export function LoginForm() {
   })
 
   const onSubmit = async (data: LoginCredentials) => {
-    await login(data)
+    setProcessedError(null)
+    try {
+      await login(data)
+    } catch (err) {
+      const errorMessage = ErrorHandler.handleAuthError(err)
+      setProcessedError(errorMessage)
+    }
   }
 
   const { loginWithOAuth } = useAuthStore()
@@ -113,12 +122,12 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="Nhập địa chỉ email"
               {...register('email')}
               className={errors.email ? 'border-red-500' : ''}
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <InlineError message={errors.email.message || 'Email không hợp lệ'} />
             )}
           </div>
 
@@ -130,7 +139,7 @@ export function LoginForm() {
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu"
                 {...register('password')}
                 className={errors.password ? 'border-red-500' : ''}
               />
@@ -139,43 +148,45 @@ export function LoginForm() {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-600"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? 'Ẩn' : 'Hiện'}
               </button>
             </div>
             {errors.password && (
-              <p className="text-sm text-red-500">{errors.password.message}</p>
+              <InlineError message={errors.password.message || 'Mật khẩu không hợp lệ'} />
             )}
           </div>
 
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
-              {error}
-            </div>
+          {processedError && (
+            <ErrorMessageComponent 
+              error={processedError} 
+              onDismiss={() => setProcessedError(null)}
+            />
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign in with Email'}
-          </Button>
-
-          <div className="text-center text-sm">
-            <Link href="/forgot-password" className="text-blue-600 hover:underline">
-              Forgot your password?
-            </Link>
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link href="/forgot-password" className="text-blue-600 hover:text-blue-500">
+                Quên mật khẩu?
+              </Link>
+            </div>
           </div>
 
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          </Button>
+
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-            <p className="font-medium text-blue-900 mb-2">Demo Accounts:</p>
+            <p className="font-medium text-blue-900 mb-2">Tài khoản demo:</p>
             <div className="space-y-1 text-blue-800">
-              <p><strong>Demo User:</strong> demo@ncskit.com / demo123</p>
-              <p><strong>Researcher:</strong> researcher@ncskit.com / researcher123</p>
-              <p><strong>Student:</strong> student@ncskit.com / student123</p>
+              <p><strong>Người dùng:</strong> test@ncskit.com / test123</p>
+              <p><strong>Quản trị:</strong> admin@ncskit.com / admin123</p>
             </div>
           </div>
 
           <div className="text-center text-sm text-gray-600">
-            Don't have an account?{' '}
+            Chưa có tài khoản?{' '}
             <Link href="/register" className="text-blue-600 hover:underline">
-              Sign up
+              Đăng ký ngay
             </Link>
           </div>
         </form>

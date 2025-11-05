@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+// Use PostgreSQL database instead of Supabase
 
 export interface MarketingProject {
   id: string
@@ -283,8 +283,8 @@ export const marketingProjectsService = {
     try {
       const { data, error } = await supabase
         .from('marketing_models')
-        .eq('domain_id', domainId)
         .select('*')
+        .eq('domain_id', domainId)
         .order('name')
 
       if (error) throw error

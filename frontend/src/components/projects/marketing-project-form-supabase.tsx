@@ -5,17 +5,53 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeftIcon, CheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { 
+  ArrowLeftIcon, 
+  CheckIcon, 
+  SparklesIcon,
+  ChartBarIcon,
+  GlobeAltIcon,
+  UsersIcon,
+  ComputerDesktopIcon,
+  CurrencyDollarIcon,
+  ShoppingBagIcon,
+  CogIcon,
+  UserGroupIcon,
+  LightBulbIcon,
+  HeartIcon,
+  AcademicCapIcon
+} from '@heroicons/react/24/outline'
 import { geminiService } from '@/services/gemini'
-import { marketingProjectsService } from '@/services/marketing-projects'
+import { marketingProjectsService } from '@/services/marketing-projects-no-auth'
 import { useAuthStore } from '@/store/auth'
 
 interface MarketingProjectFormProps {
   onSuccess?: (project: any) => void
   onCancel?: () => void
+  hideNavigation?: boolean
 }
 
-export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFormProps) {
+// Icon mapping function
+const getIconComponent = (iconName: string) => {
+  const iconMap: { [key: string]: any } = {
+    'chart-bar': ChartBarIcon,
+    'globe-alt': GlobeAltIcon,
+    'users': UsersIcon,
+    'computer-desktop': ComputerDesktopIcon,
+    'currency-dollar': CurrencyDollarIcon,
+    'shopping-bag': ShoppingBagIcon,
+    'chess-knight': CogIcon, // Using CogIcon as substitute
+    'cog': CogIcon,
+    'user-group': UserGroupIcon,
+    'lightbulb': LightBulbIcon,
+    'heart': HeartIcon,
+    'academic-cap': AcademicCapIcon
+  }
+  
+  return iconMap[iconName] || ChartBarIcon // Default fallback
+}
+
+export function MarketingProjectForm({ onSuccess, onCancel, hideNavigation = false }: MarketingProjectFormProps) {
   const router = useRouter()
   const { user } = useAuthStore()
   const [step, setStep] = useState(1) // 1: Basic Info, 2: Select Models, 3: Generate Outline
@@ -70,10 +106,24 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
       setError('Mô tả phải có ít nhất 20 ký tự')
       return
     }
-    if (!projectData.businessDomainId) {
+    if (!projectData.businessDomainId || projectData.businessDomainId === 0) {
       setError('Vui lòng chọn lĩnh vực kinh doanh')
       return
     }
+    
+    // Verify domain exists in available domains
+    const domainExists = businessDomains.find(d => d.id === projectData.businessDomainId)
+    if (!domainExists) {
+      setError('Lĩnh vực kinh doanh đã chọn không hợp lệ. Vui lòng chọn lại.')
+      return
+    }
+    
+    console.log('✅ Form validation passed:', {
+      title: projectData.title,
+      businessDomainId: projectData.businessDomainId,
+      domainName: domainExists.name
+    })
+    
     setError(null)
     setStep(2)
   }
@@ -115,22 +165,20 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
   }
 
   const createProject = async () => {
-    if (!user) {
-      setError('Vui lòng đăng nhập để tạo dự án')
-      return
-    }
-
     setIsLoading(true)
     
     try {
+      // Use test user ID when no auth (RLS disabled mode)
+      const testUserId = user?.id || '9adc5570-5708-4cea-b150-4d37958509bb'
+      
       // Create project in Supabase
-      const newProject = await marketingProjectsService.createProject(user.id, {
+      const newProject = await marketingProjectsService.createProject(testUserId, {
         title: generatedOutline?.title || projectData.title,
         description: projectData.description,
         business_domain_id: projectData.businessDomainId,
         selected_models: projectData.selectedModels,
         research_outline: generatedOutline,
-        status: 'outline_generated',
+        status: 'draft',
         progress: 60
       })
       
@@ -142,9 +190,17 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
       // Redirect to projects list with success message
       router.push('/projects?created=true&id=' + newProject.id)
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Failed to create project:', err)
-      setError('Không thể tạo dự án. Vui lòng thử lại.')
+      
+      // Show specific error message
+      if (err.message) {
+        setError(err.message)
+      } else if (err.toString().includes('row-level security')) {
+        setError('Lỗi bảo mật: Vui lòng đăng nhập lại và thử lại.')
+      } else {
+        setError('Không thể tạo dự án. Vui lòng thử lại.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -184,7 +240,9 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <span>📝</span>
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <ComputerDesktopIcon className="w-5 h-5 text-blue-600" />
+              </div>
               Thông tin cơ bản dự án
             </CardTitle>
           </CardHeader>
@@ -218,17 +276,25 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
                     <div
                       key={domain.id}
                       onClick={() => setProjectData(prev => ({ ...prev, businessDomainId: domain.id }))}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                         projectData.businessDomainId === domain.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <span className="text-2xl">{domain.icon || '📊'}</span>
-                        <div>
-                          <h3 className="font-medium">{domain.name}</h3>
-                          <p className="text-sm text-gray-600">{domain.description}</p>
+                        <div 
+                          className="w-10 h-10 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: domain.color + '20', color: domain.color }}
+                        >
+                          {(() => {
+                            const IconComponent = getIconComponent(domain.icon)
+                            return <IconComponent className="w-5 h-5" />
+                          })()}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{domain.name_vi || domain.name}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{domain.description_vi || domain.description}</p>
                         </div>
                       </div>
                     </div>
@@ -261,7 +327,9 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <span>🧠</span>
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <LightBulbIcon className="w-5 h-5 text-purple-600" />
+              </div>
               Chọn mô hình lý thuyết
             </CardTitle>
             <p className="text-sm text-gray-600">
@@ -274,32 +342,51 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
                 <div
                   key={model.id}
                   onClick={() => toggleModel(model.id)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  className={`p-5 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                     projectData.selectedModels.includes(model.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-1 ${
+                  <div className="flex items-start gap-4">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 ${
                       projectData.selectedModels.includes(model.id)
                         ? 'border-blue-500 bg-blue-500'
                         : 'border-gray-300'
                     }`}>
                       {projectData.selectedModels.includes(model.id) && (
-                        <CheckIcon className="w-3 h-3 text-white" />
+                        <CheckIcon className="w-4 h-4 text-white" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{model.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{model.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {model.key_concepts?.map((concept: string, idx: number) => (
-                          <span key={idx} className="px-2 py-1 bg-gray-100 text-xs rounded">
-                            {concept}
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-gray-900">{model.name_vi || model.name}</h3>
+                        {model.abbreviation && (
+                          <span className="px-2 py-1 bg-gray-100 text-xs font-medium rounded-md">
+                            {model.abbreviation}
                           </span>
-                        ))}
+                        )}
                       </div>
+                      <p className="text-sm text-gray-600 mb-3">{model.description_vi || model.description}</p>
+                      
+                      {model.category && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-md">
+                            {model.category}
+                          </span>
+                          {model.year_developed && (
+                            <span className="text-xs text-gray-500">
+                              {model.year_developed}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {model.key_authors && model.key_authors.length > 0 && (
+                        <p className="text-xs text-gray-500 italic">
+                          {model.key_authors.join(', ')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -330,7 +417,9 @@ export function MarketingProjectForm({ onSuccess, onCancel }: MarketingProjectFo
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <SparklesIcon className="w-5 h-5" />
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                <SparklesIcon className="w-5 h-5 text-purple-600" />
+              </div>
               Tạo đề cương nghiên cứu với AI
             </CardTitle>
           </CardHeader>

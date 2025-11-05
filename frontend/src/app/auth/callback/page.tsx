@@ -2,40 +2,17 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
-  const { setUser } = useAuthStore()
+  const { user } = useAuthStore()
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Auth callback error:', error)
-          router.push('/login?error=auth_failed')
-          return
-        }
-
-        if (data.session?.user) {
-          // Check if user profile exists
-          const { data: profileData, error: profileError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single()
-
-          if (profileError && profileError.code === 'PGRST116') {
-            // User profile doesn't exist, redirect to complete profile
-            console.log('User profile not found, redirecting to complete profile')
-            router.push('/complete-profile')
-            return
-          }
-
-          // Profile exists, redirect to dashboard
+        // For blog system with mock auth, just redirect to dashboard if user exists
+        if (user) {
           router.push('/dashboard')
         } else {
           router.push('/login?error=no_session')
@@ -47,7 +24,7 @@ export default function AuthCallbackPage() {
     }
 
     handleAuthCallback()
-  }, [router, setUser])
+  }, [router, user])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

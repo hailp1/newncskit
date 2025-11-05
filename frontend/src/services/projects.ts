@@ -1,8 +1,8 @@
-import { supabase } from '@/lib/supabase'
 import type { Project, ProjectCreation, ProjectSummary } from '@/types'
-import type { Database } from '@/types/database'
 
-type DbProject = Database['public']['Tables']['projects']['Row']
+// Use PostgreSQL database instead of Supabase
+
+type DbProject = any;
 
 // Convert database project to app project format
 function dbProjectToAppProject(dbProject: DbProject): Project {
@@ -11,10 +11,10 @@ function dbProjectToAppProject(dbProject: DbProject): Project {
     title: dbProject.title,
     description: dbProject.description,
     phase: dbProject.phase,
-    status: dbProject.status,
+    status: dbProject.status as any,
     timeline: {
-      startDate: dbProject.start_date ? new Date(dbProject.start_date) : new Date(),
-      endDate: dbProject.end_date ? new Date(dbProject.end_date) : undefined,
+      startDate: (dbProject as any).start_date ? new Date((dbProject as any).start_date) : new Date(),
+      endDate: (dbProject as any).end_date ? new Date((dbProject as any).end_date) : undefined,
       milestones: [], // Will be loaded separately
     },
     collaborators: [], // Will be loaded separately
@@ -40,7 +40,7 @@ export const projectsService = {
 
       if (error) throw error
 
-      return data.map(project => ({
+      return data.map((project: any) => ({
         id: project.id,
         title: project.title,
         phase: project.phase,

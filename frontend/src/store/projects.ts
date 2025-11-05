@@ -85,7 +85,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set, get) 
       // Update projects list
       const updatedProjects = projects.map(p => 
         p.id === id 
-          ? { ...p, title: updatedProject.title, phase: updatedProject.phase, progress: updatedProject.progress || p.progress }
+          ? { ...p, title: updatedProject.title, phase: updatedProject.phase, progress: (updatedProject as any).progress || (p as any).progress }
           : p
       )
       
