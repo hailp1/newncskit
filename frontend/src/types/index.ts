@@ -8,6 +8,8 @@ export interface User {
   role?: string
   status?: string
   full_name?: string
+  is_staff?: boolean
+  is_superuser?: boolean
   createdAt: Date
   updatedAt: Date
 }

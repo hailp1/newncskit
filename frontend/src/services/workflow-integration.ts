@@ -196,6 +196,7 @@ class WorkflowIntegrationService {
       await progressTrackingService.addTimelineEvent(projectId, {
         eventType: 'project_created',
         description: 'Project created with integrated workflow',
+        metadata: {},
         data: {
           milestonesCreated: milestones.length,
           workflowType: 'integrated'
@@ -266,7 +267,7 @@ class WorkflowIntegrationService {
       // Update project data collection status
       await this.updateProjectDataCollection(projectId, {
         campaignId,
-        status: 'active'
+        status: 'active' as any
       });
 
       // Estimate completion based on campaign settings

@@ -56,7 +56,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set, get) 
       // Add activity
       await projectsService.addActivity(
         user.id,
-        newProject.id,
+        newProject.id.toString(),
         'collaboration',
         `Created new project: ${newProject.title}`
       )
@@ -91,7 +91,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set, get) 
       
       set({
         projects: updatedProjects,
-        currentProject: currentProject?.id === id ? updatedProject : currentProject,
+        currentProject: currentProject?.id === id ? updatedProject as any : currentProject,
         isLoading: false,
       })
 

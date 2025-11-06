@@ -1,15 +1,22 @@
-import { RegisterForm } from '@/components/auth/register-form'
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to unified auth page with register mode
+    router.replace('/auth?mode=register');
+  }, [router]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-lg w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">NCSKIT</h1>
-          <p className="text-gray-600">Join the Research Revolution</p>
-        </div>
-        <RegisterForm />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to sign up...</p>
       </div>
     </div>
-  )
+  );
 }

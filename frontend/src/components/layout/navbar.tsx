@@ -86,7 +86,22 @@ export function Navbar() {
           
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
-              <div className="relative" ref={userMenuRef}>
+              <>
+                {/* Admin Panel Button - Show for admin users */}
+                {(user?.is_staff || user?.is_superuser || user?.role === 'admin' || 
+                  user?.email === 'admin@ncskit.com' || user?.email === 'admin@ncskit.org') && (
+                  <Link href="/admin">
+                    <Button 
+                      size="sm"
+                      className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-md shadow-sm transition-colors"
+                    >
+                      <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
+                
+                <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -151,6 +166,7 @@ export function Navbar() {
                   </div>
                 )}
               </div>
+              </>
             ) : (
               <>
                 <Link href="/features" className="text-gray-600 hover:text-gray-900">

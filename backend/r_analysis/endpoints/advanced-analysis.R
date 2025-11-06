@@ -1,311 +1,488 @@
-# Advanced Analysis Endpoints
-# Functions for cluster analysis, time series, survival analysis, etc.
+# Advanced Statistical Analysis Endpoints
+# SEM, Mediation, Moderation, Multi-group Analysis
 
-library(cluster)
-library(factoextra)
-library(survival)
-library(forecast)
-library(arules)
-library(arulesViz)
-library(conjoint)
+library(lavaan)
+library(semTools)
+library(mediation)
+library(interactions)
+library(boot)
 
-#' Perform Cluster Analysis
-#' @param data Data frame
-#' @param variables Variables for clustering
-#' @param method Clustering method ("kmeans", "hierarchical", "pam")
-#' @param k Number of clusters (if NULL, will determine optimal)
-perform_cluster_analysis <- function(data, variables, method = "kmeans", k = NULL) {
-  # Prepare data
-  cluster_data <- data[variables]
-  cluster_data <- na.omit(cluster_data)
-  
-  # Standardize variables
-  cluster_data_scaled <- scale(cluster_data)
-  
-  # Determine optimal number of clusters if not specified
-  if (is.null(k)) {
-    # Elbow method
-    wss <- sapply(1:10, function(k) {
-      if (method == "kmeans") {
-        kmeans(cluster_data_scaled, k, nstart = 25)$tot.withinss
-      } else {
-        sum(cluster::pam(cluster_data_scaled, k)$objective)
-      }
-    })
+#* Structural Equation Modeling with advanced features
+#* @post /analysis/sem-advanced
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    model_syntax <- data$model_syntax
+    estimator <- data$estimator %||% "ML"
+    bootstrap <- data$bootstrap %||% FALSE
+    bootstrap_samples <- data$bootstrap_samples %||% 1000
     
-    # Silhouette method
-    sil_scores <- sapply(2:10, function(k) {
-      if (method == "kmeans") {
-        km <- kmeans(cluster_data_scaled, k, nstart = 25)
-        sil <- silhouette(km$cluster, dist(cluster_data_scaled))
-      } else {
-        pam_result <- cluster::pam(cluster_data_scaled, k)
-        sil <- silhouette(pam_result$clustering, dist(cluster_data_scaled))
-      }
-      mean(sil[, 3])
-    })
+    # Fit SEM model with advanced options
+    if (bootstrap) {
+      sem_model <- sem(model_syntax, data = df, 
+                      estimator = estimator,
+                      se = "bootstrap",
+                      bootstrap = bootstrap_samples,
+                      missing = "ml")
+    } else {
+      sem_model <- sem(model_syntax, data = df, 
+                      estimator = estimator,
+                      missing = "ml")
+    }
     
-    k <- which.max(sil_scores) + 1  # +1 because we start from k=2
-  }
-  
-  # Perform clustering
-  if (method == "kmeans") {
-    cluster_result <- kmeans(cluster_data_scaled, k, nstart = 25)
-    clusters <- cluster_result$cluster
-    centers <- cluster_result$centers
+    # Comprehensive fit indices
+    fit_measures <- fitMeasures(sem_model, c(
+      "chisq", "df", "pvalue", "chisq.scaled", "df.scaled", "pvalue.scaled",
+      "cfi", "tli", "cfi.scaled", "tli.scaled",
+      "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "rmsea.pvalue",
+      "rmsea.scaled", "rmsea.ci.lower.scaled", "rmsea.ci.upper.scaled",
+      "srmr", "srmr_bentler", "aic", "bic", "bic2"
+    ))
     
-    results <- list(
-      clusters = clusters,
-      centers = centers,
-      within_ss = cluster_result$withinss,
-      total_ss = cluster_result$totss,
-      between_ss = cluster_result$betweenss,
-      size = cluster_result$size
-    )
-  } else if (method == "hierarchical") {
-    dist_matrix <- dist(cluster_data_scaled)
-    hc_result <- hclust(dist_matrix, method = "ward.D2")
-    clusters <- cutree(hc_result, k = k)
+    # Parameter estimates with standardized solutions
+    param_estimates <- parameterEstimates(sem_model, standardized = TRUE, 
+                                         ci = TRUE, level = 0.95)
+    
+    # R-squared values
+    r_squared <- inspect(sem_model, "r2")
+    
+    # Reliability measures
+    reliability_measures <- tryCatch({
+      reliability(sem_model)
+    }, error = function(e) NULL)
+    
+    # Modification indices
+    mod_indices <- modificationIndices(sem_model, sort = TRUE, maximum.number = 20)
+    
+    # Residual correlations
+    residuals_cor <- residuals(sem_model, type = "cor")
+    
+    # Factor scores (if applicable)
+    factor_scores <- tryCatch({
+      predict(sem_model)
+    }, error = function(e) NULL)
     
     results <- list(
-      clusters = clusters,
-      dendrogram = hc_result,
-      height = hc_result$height
+      fit_indices = fit_measures,
+      parameter_estimates = param_estimates,
+      r_squared = r_squared,
+      reliability = reliability_measures,
+      modification_indices = mod_indices,
+      residual_correlations = residuals_cor,
+      factor_scores = factor_scores,
+      model_syntax = model_syntax,
+      sample_size = nrow(df),
+      estimator = estimator,
+      bootstrap_used = bootstrap
     )
-  } else if (method == "pam") {
-    pam_result <- cluster::pam(cluster_data_scaled, k)
-    clusters <- pam_result$clustering
     
-    results <- list(
-      clusters = clusters,
-      medoids = pam_result$medoids,
-      silhouette = pam_result$silinfo
-    )
-  }
-  
-  # Calculate silhouette scores
-  sil <- silhouette(clusters, dist(cluster_data_scaled))
-  avg_sil_width <- mean(sil[, 3])
-  
-  # Cluster validation
-  results$validation <- list(
-    silhouette_score = avg_sil_width,
-    silhouette_plot_data = sil
-  )
-  
-  results$method <- method
-  results$k <- k
-  results$variables <- variables
-  results$n_observations <- nrow(cluster_data)
-  
-  return(results)
-}
-
-#' Perform Time Series Analysis
-#' @param data Data frame with time series data
-#' @param value_col Column name for values
-#' @param date_col Column name for dates
-#' @param forecast_periods Number of periods to forecast
-perform_time_series_analysis <- function(data, value_col, date_col, forecast_periods = 12) {
-  # Prepare time series data
-  ts_data <- data[order(data[[date_col]]), ]
-  values <- ts_data[[value_col]]
-  
-  # Create time series object
-  ts_obj <- ts(values, frequency = 12)  # Assuming monthly data
-  
-  # Decomposition
-  decomp <- decompose(ts_obj, type = "additive")
-  
-  # ARIMA model
-  arima_model <- auto.arima(ts_obj)
-  
-  # Forecast
-  forecast_result <- forecast(arima_model, h = forecast_periods)
-  
-  # Accuracy measures
-  accuracy_measures <- accuracy(arima_model)
-  
-  results <- list(
-    original_data = values,
-    decomposition = list(
-      trend = as.numeric(decomp$trend),
-      seasonal = as.numeric(decomp$seasonal),
-      residual = as.numeric(decomp$random)
-    ),
-    arima_model = list(
-      order = arima_model$arma[c(1, 6, 2)],
-      aic = AIC(arima_model),
-      bic = BIC(arima_model),
-      coefficients = coef(arima_model)
-    ),
-    forecast = list(
-      point_forecast = as.numeric(forecast_result$mean),
-      lower_80 = as.numeric(forecast_result$lower[, 1]),
-      upper_80 = as.numeric(forecast_result$upper[, 1]),
-      lower_95 = as.numeric(forecast_result$lower[, 2]),
-      upper_95 = as.numeric(forecast_result$upper[, 2])
-    ),
-    accuracy = accuracy_measures,
-    n_observations = length(values)
-  )
-  
-  return(results)
-}
-
-#' Perform Market Basket Analysis
-#' @param data Transaction data frame
-#' @param transaction_col Column name for transaction ID
-#' @param item_col Column name for items
-#' @param min_support Minimum support threshold
-#' @param min_confidence Minimum confidence threshold
-perform_market_basket_analysis <- function(data, transaction_col, item_col, 
-                                         min_support = 0.01, min_confidence = 0.5) {
-  # Prepare transaction data
-  transactions <- split(data[[item_col]], data[[transaction_col]])
-  trans_obj <- as(transactions, "transactions")
-  
-  # Generate frequent itemsets
-  frequent_items <- apriori(trans_obj, 
-                           parameter = list(support = min_support, 
-                                          confidence = min_confidence,
-                                          target = "frequent itemsets"))
-  
-  # Generate association rules
-  rules <- apriori(trans_obj, 
-                   parameter = list(support = min_support, 
-                                  confidence = min_confidence,
-                                  target = "rules"))
-  
-  # Sort rules by lift
-  rules_sorted <- sort(rules, by = "lift", decreasing = TRUE)
-  
-  # Extract rule metrics
-  rule_metrics <- data.frame(
-    lhs = labels(lhs(rules_sorted)),
-    rhs = labels(rhs(rules_sorted)),
-    support = quality(rules_sorted)$support,
-    confidence = quality(rules_sorted)$confidence,
-    lift = quality(rules_sorted)$lift,
-    count = quality(rules_sorted)$count
-  )
-  
-  results <- list(
-    rules = rule_metrics,
-    frequent_itemsets = frequent_items,
-    summary = list(
-      n_transactions = length(trans_obj),
-      n_items = length(itemLabels(trans_obj)),
-      n_rules = length(rules),
-      avg_transaction_size = mean(size(trans_obj))
-    ),
-    parameters = list(
-      min_support = min_support,
-      min_confidence = min_confidence
-    )
-  )
-  
-  return(results)
-}
-
-#' Perform Survival Analysis
-#' @param data Data frame
-#' @param time_col Column name for time to event
-#' @param event_col Column name for event indicator (1 = event, 0 = censored)
-#' @param group_col Optional grouping variable
-perform_survival_analysis <- function(data, time_col, event_col, group_col = NULL) {
-  # Create survival object
-  surv_obj <- Surv(data[[time_col]], data[[event_col]])
-  
-  # Kaplan-Meier estimator
-  if (is.null(group_col)) {
-    km_fit <- survfit(surv_obj ~ 1, data = data)
-    formula_used <- paste("Surv(", time_col, ",", event_col, ") ~ 1")
-  } else {
-    km_fit <- survfit(surv_obj ~ data[[group_col]], data = data)
-    formula_used <- paste("Surv(", time_col, ",", event_col, ") ~", group_col)
-  }
-  
-  # Extract survival probabilities
-  km_summary <- summary(km_fit)
-  
-  # Log-rank test (if groups exist)
-  logrank_test <- NULL
-  if (!is.null(group_col)) {
-    logrank_test <- survdiff(surv_obj ~ data[[group_col]], data = data)
-  }
-  
-  # Cox proportional hazards model (if groups exist)
-  cox_model <- NULL
-  if (!is.null(group_col)) {
-    cox_formula <- as.formula(paste("surv_obj ~", group_col))
-    cox_model <- coxph(cox_formula, data = data)
-  }
-  
-  results <- list(
-    kaplan_meier = list(
-      time = km_summary$time,
-      n_risk = km_summary$n.risk,
-      n_event = km_summary$n.event,
-      survival = km_summary$surv,
-      std_err = km_summary$std.err,
-      lower_ci = km_summary$lower,
-      upper_ci = km_summary$upper
-    ),
-    median_survival = summary(km_fit)$table[, "median"],
-    logrank_test = if (!is.null(logrank_test)) {
-      list(
-        chisq = logrank_test$chisq,
-        df = length(logrank_test$n) - 1,
-        p_value = 1 - pchisq(logrank_test$chisq, length(logrank_test$n) - 1)
-      )
-    } else NULL,
-    cox_model = if (!is.null(cox_model)) {
-      list(
-        coefficients = summary(cox_model)$coefficients,
-        hazard_ratios = exp(coef(cox_model)),
-        concordance = cox_model$concordance
-      )
-    } else NULL,
-    formula = formula_used,
-    n_observations = nrow(data),
-    n_events = sum(data[[event_col]])
-  )
-  
-  return(results)
-}
-
-#' Perform Conjoint Analysis
-#' @param data Data frame with conjoint data
-#' @param rating_col Column name for ratings
-#' @param attribute_cols Vector of attribute column names
-perform_conjoint_analysis <- function(data, rating_col, attribute_cols) {
-  # Prepare design matrix
-  design_matrix <- data[attribute_cols]
-  ratings <- data[[rating_col]]
-  
-  # Perform conjoint analysis
-  conjoint_result <- lm(ratings ~ ., data = design_matrix)
-  
-  # Calculate part-worth utilities
-  part_worths <- coef(conjoint_result)
-  
-  # Calculate relative importance
-  ranges <- sapply(attribute_cols, function(attr) {
-    attr_coeffs <- part_worths[grepl(attr, names(part_worths))]
-    max(attr_coeffs) - min(attr_coeffs)
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
   })
-  
-  relative_importance <- ranges / sum(ranges) * 100
-  
-  results <- list(
-    part_worth_utilities = part_worths,
-    relative_importance = relative_importance,
-    model_summary = summary(conjoint_result),
-    r_squared = summary(conjoint_result)$r.squared,
-    attributes = attribute_cols,
-    n_observations = nrow(data)
-  )
-  
-  return(results)
+}
+
+#* Multi-group SEM analysis
+#* @post /analysis/multigroup-sem
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    model_syntax <- data$model_syntax
+    group_variable <- data$group_variable
+    estimator <- data$estimator %||% "ML"
+    
+    # Fit configural model (no constraints)
+    configural_model <- sem(model_syntax, data = df, 
+                           group = group_variable,
+                           estimator = estimator,
+                           missing = "ml")
+    
+    # Fit metric invariance model (factor loadings constrained)
+    metric_model <- sem(model_syntax, data = df, 
+                       group = group_variable,
+                       group.equal = c("loadings"),
+                       estimator = estimator,
+                       missing = "ml")
+    
+    # Fit scalar invariance model (loadings + intercepts constrained)
+    scalar_model <- sem(model_syntax, data = df, 
+                       group = group_variable,
+                       group.equal = c("loadings", "intercepts"),
+                       estimator = estimator,
+                       missing = "ml")
+    
+    # Model comparisons
+    configural_fit <- fitMeasures(configural_model, c("chisq", "df", "cfi", "rmsea", "srmr"))
+    metric_fit <- fitMeasures(metric_model, c("chisq", "df", "cfi", "rmsea", "srmr"))
+    scalar_fit <- fitMeasures(scalar_model, c("chisq", "df", "cfi", "rmsea", "srmr"))
+    
+    # Chi-square difference tests
+    metric_vs_configural <- anova(configural_model, metric_model)
+    scalar_vs_metric <- anova(metric_model, scalar_model)
+    
+    # Group-specific parameter estimates
+    configural_params <- parameterEstimates(configural_model, standardized = TRUE)
+    
+    results <- list(
+      configural_model = list(
+        fit_indices = configural_fit,
+        parameters = configural_params
+      ),
+      metric_model = list(
+        fit_indices = metric_fit
+      ),
+      scalar_model = list(
+        fit_indices = scalar_fit
+      ),
+      invariance_tests = list(
+        metric_vs_configural = metric_vs_configural,
+        scalar_vs_metric = scalar_vs_metric
+      ),
+      group_variable = group_variable,
+      groups = unique(df[[group_variable]])
+    )
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
+}
+
+#* Mediation analysis using bootstrap
+#* @post /analysis/mediation
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    x_var <- data$x_variable
+    m_var <- data$mediator
+    y_var <- data$y_variable
+    covariates <- data$covariates %||% NULL
+    bootstrap_samples <- data$bootstrap_samples %||% 5000
+    
+    # Create formula strings
+    if (is.null(covariates)) {
+      mediator_formula <- as.formula(paste(m_var, "~", x_var))
+      outcome_formula <- as.formula(paste(y_var, "~", x_var, "+", m_var))
+    } else {
+      cov_string <- paste(covariates, collapse = " + ")
+      mediator_formula <- as.formula(paste(m_var, "~", x_var, "+", cov_string))
+      outcome_formula <- as.formula(paste(y_var, "~", x_var, "+", m_var, "+", cov_string))
+    }
+    
+    # Fit models
+    mediator_model <- lm(mediator_formula, data = df)
+    outcome_model <- lm(outcome_formula, data = df)
+    
+    # Bootstrap mediation analysis
+    mediation_result <- mediate(mediator_model, outcome_model, 
+                               treat = x_var, mediator = m_var,
+                               boot = TRUE, sims = bootstrap_samples)
+    
+    # Extract results
+    results <- list(
+      mediation_summary = summary(mediation_result),
+      acme = mediation_result$d0,  # Average Causal Mediation Effect
+      acme_ci = c(mediation_result$d0.ci[1], mediation_result$d0.ci[2]),
+      ade = mediation_result$z0,   # Average Direct Effect
+      ade_ci = c(mediation_result$z0.ci[1], mediation_result$z0.ci[2]),
+      total_effect = mediation_result$tau.coef,
+      total_effect_ci = c(mediation_result$tau.ci[1], mediation_result$tau.ci[2]),
+      prop_mediated = mediation_result$n0,
+      prop_mediated_ci = c(mediation_result$n0.ci[1], mediation_result$n0.ci[2]),
+      mediator_model_summary = summary(mediator_model),
+      outcome_model_summary = summary(outcome_model),
+      bootstrap_samples = bootstrap_samples
+    )
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
+}
+
+#* Moderation analysis with simple slopes
+#* @post /analysis/moderation
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    x_var <- data$x_variable
+    w_var <- data$moderator
+    y_var <- data$y_variable
+    covariates <- data$covariates %||% NULL
+    
+    # Center variables for interpretation
+    df[[paste0(x_var, "_c")]] <- scale(df[[x_var]], center = TRUE, scale = FALSE)[,1]
+    df[[paste0(w_var, "_c")]] <- scale(df[[w_var]], center = TRUE, scale = FALSE)[,1]
+    
+    # Create interaction term
+    df$interaction <- df[[paste0(x_var, "_c")]] * df[[paste0(w_var, "_c")]]
+    
+    # Create formula
+    if (is.null(covariates)) {
+      formula_str <- paste(y_var, "~", paste0(x_var, "_c"), "+", paste0(w_var, "_c"), "+ interaction")
+    } else {
+      cov_string <- paste(covariates, collapse = " + ")
+      formula_str <- paste(y_var, "~", paste0(x_var, "_c"), "+", paste0(w_var, "_c"), "+ interaction +", cov_string)
+    }
+    
+    # Fit moderation model
+    mod_model <- lm(as.formula(formula_str), data = df)
+    
+    # Simple slopes analysis
+    # Calculate slopes at -1 SD, mean, and +1 SD of moderator
+    w_sd <- sd(df[[w_var]], na.rm = TRUE)
+    w_mean <- mean(df[[w_var]], na.rm = TRUE)
+    
+    simple_slopes <- list(
+      low_moderator = list(
+        value = w_mean - w_sd,
+        slope = coef(mod_model)[paste0(x_var, "_c")] + coef(mod_model)["interaction"] * (-w_sd)
+      ),
+      mean_moderator = list(
+        value = w_mean,
+        slope = coef(mod_model)[paste0(x_var, "_c")]
+      ),
+      high_moderator = list(
+        value = w_mean + w_sd,
+        slope = coef(mod_model)[paste0(x_var, "_c")] + coef(mod_model)["interaction"] * w_sd
+      )
+    )
+    
+    # Johnson-Neyman technique for regions of significance
+    jn_result <- tryCatch({
+      johnson_neyman(mod_model, pred = paste0(x_var, "_c"), modx = paste0(w_var, "_c"))
+    }, error = function(e) NULL)
+    
+    results <- list(
+      model_summary = summary(mod_model),
+      interaction_effect = coef(mod_model)["interaction"],
+      interaction_p_value = summary(mod_model)$coefficients["interaction", "Pr(>|t|)"],
+      simple_slopes = simple_slopes,
+      johnson_neyman = jn_result,
+      r_squared = summary(mod_model)$r.squared,
+      adj_r_squared = summary(mod_model)$adj.r.squared
+    )
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
+}
+
+#* Longitudinal analysis with growth curve modeling
+#* @post /analysis/longitudinal
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    time_var <- data$time_variable
+    outcome_var <- data$outcome_variable
+    id_var <- data$id_variable
+    covariates <- data$covariates %||% NULL
+    
+    # Reshape data to long format if needed
+    # Assuming data is already in long format
+    
+    # Create time-centered variable
+    df$time_centered <- df[[time_var]] - min(df[[time_var]], na.rm = TRUE)
+    
+    # Fit linear growth model
+    if (is.null(covariates)) {
+      growth_syntax <- paste0("
+        # Growth factors
+        intercept =~ 1*", outcome_var, "
+        slope =~ ", paste(unique(df$time_centered), collapse = "*"), "*", outcome_var, "
+        
+        # Variances
+        intercept ~~ intercept
+        slope ~~ slope
+        intercept ~~ slope
+        
+        # Residual variances
+        ", outcome_var, " ~~ ", outcome_var)
+    } else {
+      # Include covariates predicting growth factors
+      cov_string <- paste(covariates, collapse = " + ")
+      growth_syntax <- paste0("
+        # Growth factors
+        intercept =~ 1*", outcome_var, "
+        slope =~ ", paste(unique(df$time_centered), collapse = "*"), "*", outcome_var, "
+        
+        # Regressions on covariates
+        intercept ~ ", cov_string, "
+        slope ~ ", cov_string, "
+        
+        # Variances
+        intercept ~~ intercept
+        slope ~~ slope
+        intercept ~~ slope
+        
+        # Residual variances
+        ", outcome_var, " ~~ ", outcome_var)
+    }
+    
+    # Fit growth model
+    growth_model <- growth(growth_syntax, data = df, missing = "ml")
+    
+    # Extract results
+    fit_measures <- fitMeasures(growth_model, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea", "srmr"))
+    param_estimates <- parameterEstimates(growth_model, standardized = TRUE)
+    
+    # Growth factor means and variances
+    growth_factors <- inspect(growth_model, "est")
+    
+    results <- list(
+      fit_indices = fit_measures,
+      parameter_estimates = param_estimates,
+      growth_factors = growth_factors,
+      model_syntax = growth_syntax,
+      sample_size = length(unique(df[[id_var]])),
+      time_points = length(unique(df[[time_var]]))
+    )
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
+}
+
+#* Robust statistical methods with bootstrap confidence intervals
+#* @post /analysis/robust-methods
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    df <- as.data.frame(data$data)
+    analysis_type <- data$analysis_type
+    variables <- data$variables
+    bootstrap_samples <- data$bootstrap_samples %||% 2000
+    
+    results <- list()
+    
+    if (analysis_type == "robust_correlation") {
+      # Robust correlation using bootstrap
+      cor_matrix <- cor(df[variables], use = "pairwise.complete.obs", method = "spearman")
+      
+      # Bootstrap confidence intervals for correlations
+      boot_cors <- replicate(bootstrap_samples, {
+        boot_sample <- df[sample(nrow(df), replace = TRUE), ]
+        cor(boot_sample[variables], use = "pairwise.complete.obs", method = "spearman")
+      }, simplify = FALSE)
+      
+      # Calculate CI for each correlation
+      cor_cis <- array(NA, dim = c(length(variables), length(variables), 2))
+      for (i in 1:length(variables)) {
+        for (j in 1:length(variables)) {
+          if (i != j) {
+            boot_values <- sapply(boot_cors, function(x) x[i, j])
+            cor_cis[i, j, ] <- quantile(boot_values, c(0.025, 0.975), na.rm = TRUE)
+          }
+        }
+      }
+      
+      results <- list(
+        correlation_matrix = cor_matrix,
+        confidence_intervals = cor_cis,
+        method = "Spearman with bootstrap CI"
+      )
+      
+    } else if (analysis_type == "robust_regression") {
+      # Robust regression using M-estimators
+      formula_str <- paste(variables[1], "~", paste(variables[-1], collapse = " + "))
+      
+      # Fit robust regression
+      robust_model <- rlm(as.formula(formula_str), data = df, method = "MM")
+      
+      # Bootstrap for confidence intervals
+      boot_coefs <- replicate(bootstrap_samples, {
+        boot_sample <- df[sample(nrow(df), replace = TRUE), ]
+        boot_model <- rlm(as.formula(formula_str), data = boot_sample, method = "MM")
+        coef(boot_model)
+      })
+      
+      # Calculate bootstrap CIs
+      coef_cis <- apply(boot_coefs, 1, quantile, c(0.025, 0.975), na.rm = TRUE)
+      
+      results <- list(
+        coefficients = coef(robust_model),
+        confidence_intervals = t(coef_cis),
+        residual_scale = robust_model$s,
+        weights = weights(robust_model),
+        method = "MM-estimation with bootstrap CI"
+      )
+    }
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
+}
+
+#* Power analysis for various statistical tests
+#* @post /analysis/power-analysis
+function(req) {
+  tryCatch({
+    data <- fromJSON(req$postBody)
+    analysis_type <- data$analysis_type
+    effect_size <- data$effect_size
+    alpha <- data$alpha %||% 0.05
+    power <- data$power %||% 0.80
+    sample_size <- data$sample_size %||% NULL
+    
+    results <- list()
+    
+    if (analysis_type == "correlation") {
+      if (is.null(sample_size)) {
+        # Calculate required sample size
+        n_required <- pwr.r.test(r = effect_size, sig.level = alpha, power = power)$n
+        results$required_sample_size <- ceiling(n_required)
+      } else {
+        # Calculate achieved power
+        achieved_power <- pwr.r.test(r = effect_size, n = sample_size, sig.level = alpha)$power
+        results$achieved_power <- achieved_power
+      }
+      results$effect_size <- effect_size
+      results$alpha <- alpha
+      
+    } else if (analysis_type == "ttest") {
+      if (is.null(sample_size)) {
+        n_required <- pwr.t.test(d = effect_size, sig.level = alpha, power = power, type = "two.sample")$n
+        results$required_sample_size <- ceiling(n_required)
+      } else {
+        achieved_power <- pwr.t.test(d = effect_size, n = sample_size, sig.level = alpha, type = "two.sample")$power
+        results$achieved_power <- achieved_power
+      }
+      
+    } else if (analysis_type == "anova") {
+      k <- data$groups %||% 3  # number of groups
+      if (is.null(sample_size)) {
+        n_required <- pwr.anova.test(k = k, f = effect_size, sig.level = alpha, power = power)$n
+        results$required_sample_size <- ceiling(n_required)
+      } else {
+        achieved_power <- pwr.anova.test(k = k, f = effect_size, n = sample_size, sig.level = alpha)$power
+        results$achieved_power <- achieved_power
+      }
+    }
+    
+    results$analysis_type <- analysis_type
+    results$assumptions <- list(
+      alpha = alpha,
+      effect_size = effect_size,
+      power_target = power
+    )
+    
+    list(status = "success", results = results)
+    
+  }, error = function(e) {
+    list(status = "error", message = e$message)
+  })
 }

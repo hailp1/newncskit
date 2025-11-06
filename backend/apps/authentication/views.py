@@ -212,4 +212,10 @@ def calculate_profile_completion(user):
     except:
         pass
     
-    return round((completed_fields / total_fields) * 100, 1)
+    return round((completed_fields / total_fields) * 100, 1)\nfrom .throttles import (
+    LoginRateThrottle, 
+    RegisterRateThrottle, 
+    PasswordResetRateThrottle,
+    SensitiveOperationThrottle
+)
+\n\n

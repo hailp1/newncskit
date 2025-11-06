@@ -15,6 +15,13 @@ class User(AbstractUser):
     orcid_id = models.CharField(max_length=50, blank=True, null=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     
+    # OAuth fields
+    oauth_provider = models.CharField(max_length=50, blank=True, null=True)
+    oauth_id = models.CharField(max_length=255, blank=True, null=True)
+    profile_image = models.URLField(blank=True, null=True)
+    email_verified = models.BooleanField(default=False)
+    last_login = models.DateTimeField(blank=True, null=True)
+    
     # Research-specific fields
     research_domains = models.JSONField(default=list, blank=True)
     

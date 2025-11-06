@@ -2,12 +2,30 @@
 import { Pool, PoolClient } from 'pg';
 
 // PostgreSQL connection configuration with enhanced error handling
+// In production, require all env vars. In development, use defaults.
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`${envVar} environment variable is required in production`);
+    }
+  }
+}
+
+// Validate required environment variables
+const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD'];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`${envVar} environment variable is required`);
+  }
+}
+
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
+  host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB || 'ncskit',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres',
+  database: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

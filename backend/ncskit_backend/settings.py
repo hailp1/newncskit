@@ -11,7 +11,11 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
+SECRET_KEY = config('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError('SECRET_KEY environment variable is required')
+if len(SECRET_KEY) < 50:
+    raise ValueError('SECRET_KEY must be at least 50 characters long')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
@@ -30,6 +34,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_extensions',
+    'django_filters',
 ]
 
 LOCAL_APPS = [
@@ -39,6 +44,9 @@ LOCAL_APPS = [
     'apps.documents',
     'apps.analytics',
     'apps.surveys',
+    'apps.question_bank',
+    'apps.admin_management',
+    'apps.blog',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -52,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.admin_management.middleware.AdminActivityMiddleware',
 ]
 
 ROOT_URLCONF = 'ncskit_backend.urls'
@@ -76,9 +85,10 @@ WSGI_APPLICATION = 'ncskit_backend.wsgi.application'
 
 # Database
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='sqlite:///db.sqlite3')
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation
@@ -114,6 +124,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom User Model
+AUTH_USER_MODEL = 'authentication.User'
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -161,11 +174,10 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
-    cast=lambda v: [s.strip() for s in v.split(',')]
-)
+CORS_ALLOWED_ORIGINS_ENV = config('CORS_ALLOWED_ORIGINS', default='')
+if not CORS_ALLOWED_ORIGINS_ENV:
+    raise ValueError('CORS_ALLOWED_ORIGINS environment variable is required')
+CORS_ALLOWED_ORIGINS = [s.strip() for s in CORS_ALLOWED_ORIGINS_ENV.split(',')]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -179,7 +191,19 @@ CORS_ALLOWED_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-oauth-state',
+    'x-oauth-provider',
 ]
+
+# OAuth-specific CORS settings
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.ncskit\.org$",  # Allow all ncskit.org subdomains
+    r"^http://localhost:\d+$",      # Allow localhost with any port
+]
+
+# Additional security headers for OAuth
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
@@ -237,3 +261,31 @@ LOGGING = {
         },
     },
 }
+# O
+Auth Configuration
+OAUTH_PROVIDERS = {
+    'google': {
+        'client_id': config('GOOGLE_CLIENT_ID', default=''),
+        'client_secret': config('GOOGLE_CLIENT_SECRET', default=''),
+        'redirect_uri': config('OAUTH_GOOGLE_REDIRECT_URI', default=''),
+        'scope': 'openid email profile',
+    },
+    'linkedin': {
+        'client_id': config('LINKEDIN_CLIENT_ID', default=''),
+        'client_secret': config('LINKEDIN_CLIENT_SECRET', default=''),
+        'redirect_uri': config('OAUTH_LINKEDIN_REDIRECT_URI', default=''),
+        'scope': 'r_liteprofile r_emailaddress',
+    },
+    'orcid': {
+        'client_id': config('ORCID_CLIENT_ID', default=''),
+        'client_secret': config('ORCID_CLIENT_SECRET', default=''),
+        'redirect_uri': config('OAUTH_ORCID_REDIRECT_URI', default=''),
+        'scope': '/authenticate',
+    },
+}
+
+# OAuth Security Settings
+OAUTH_STATE_SECRET = config('OAUTH_STATE_SECRET', default=SECRET_KEY)
+OAUTH_SESSION_TIMEOUT = config('OAUTH_SESSION_TIMEOUT', default=3600, cast=int)
+OAUTH_MAX_ATTEMPTS = config('OAUTH_MAX_ATTEMPTS', default=3, cast=int)
+OAUTH_RATE_LIMIT = config('OAUTH_RATE_LIMIT', default=10, cast=int)  # requests per minute

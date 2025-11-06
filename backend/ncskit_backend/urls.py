@@ -19,12 +19,21 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .health import health_check, readiness_check, liveness_check
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/projects/", include("apps.projects.urls")),
-    path("", include("apps.surveys.urls")),
+    path("api/surveys/", include("apps.surveys.urls")),
+    path("api/question-bank/", include("apps.question_bank.urls")),
+    path("api/admin/", include("apps.admin_management.urls")),
+    path("api/blog/", include("apps.blog.urls")),
+    
+    # Health check endpoints
+    path('health/', health_check, name='health_check'),
+    path('ready/', readiness_check, name='readiness_check'),
+    path('alive/', liveness_check, name='liveness_check'),
 ]
 
 # Serve media files in development

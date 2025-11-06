@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from . import views, demo_views
+from . import views
+from . import oauth_views
 
 app_name = 'authentication'
 
@@ -11,9 +12,7 @@ urlpatterns = [
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # Demo endpoints (for development)
-    path('demo/login/', demo_views.demo_login, name='demo_login'),
-    path('demo/create-users/', demo_views.create_demo_users, name='create_demo_users'),
+    # Demo endpoints (for development) - TODO: Create demo_views.py
     
     # User profile endpoints
     path('profile/', views.UserProfileView.as_view(), name='profile'),
@@ -22,4 +21,9 @@ urlpatterns = [
     
     # Password management
     path('password/change/', views.PasswordChangeView.as_view(), name='password_change'),
+    
+    # OAuth endpoints
+    path('oauth/callback/', oauth_views.oauth_callback, name='oauth_callback'),
+    path('oauth/link/', oauth_views.link_oauth_account, name='link_oauth'),
+    path('oauth/unlink/', oauth_views.unlink_oauth_account, name='unlink_oauth'),
 ]

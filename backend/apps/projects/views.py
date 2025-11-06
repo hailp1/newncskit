@@ -48,6 +48,142 @@ class ProjectViewSet(viewsets.ModelViewSet):
             activity_type='created',
             description=f'Created project: {project.title}'
         )
+    
+    @action(detail=True, methods=['get', 'put', 'patch'])
+    def research_design(self, request, pk=None):
+        """Get or update project research design"""
+        project = self.get_object()
+        
+        if request.method == 'GET':
+            return Response(project.research_design)
+        
+        elif request.method in ['PUT', 'PATCH']:
+            if request.method == 'PUT':
+                project.research_design = request.data
+            else:  # PATCH
+                project.research_design.update(request.data)
+            
+            project.save(update_fields=['research_design', 'updated_at'])
+            
+            # Log activity
+            ProjectActivity.objects.create(
+                project=project,
+                user=request.user,
+                activity_type='updated',
+                description='Updated research design configuration'
+            )
+            
+            return Response(project.research_design)
+    
+    @action(detail=True, methods=['get', 'put', 'patch'])
+    def data_collection(self, request, pk=None):
+        """Get or update project data collection configuration"""
+        project = self.get_object()
+        
+        if request.method == 'GET':
+            return Response(project.data_collection)
+        
+        elif request.method in ['PUT', 'PATCH']:
+            if request.method == 'PUT':
+                project.data_collection = request.data
+            else:  # PATCH
+                project.data_collection.update(request.data)
+            
+            project.save(update_fields=['data_collection', 'updated_at'])
+            
+            # Log activity
+            ProjectActivity.objects.create(
+                project=project,
+                user=request.user,
+                activity_type='updated',
+                description='Updated data collection configuration'
+            )
+            
+            return Response(project.data_collection)
+    
+    @action(detail=True, methods=['get', 'put', 'patch'])
+    def progress_tracking(self, request, pk=None):
+        """Get or update project progress tracking"""
+        project = self.get_object()
+        
+        if request.method == 'GET':
+            return Response(project.progress_tracking)
+        
+        elif request.method in ['PUT', 'PATCH']:
+            if request.method == 'PUT':
+                project.progress_tracking = request.data
+            else:  # PATCH
+                project.progress_tracking.update(request.data)
+            
+            project.save(update_fields=['progress_tracking', 'updated_at'])
+            
+            # Log activity
+            ProjectActivity.objects.create(
+                project=project,
+                user=request.user,
+                activity_type='updated',
+                description='Updated progress tracking configuration'
+            )
+            
+            return Response(project.progress_tracking)
+    
+    @action(detail=True, methods=['get'])
+    def analytics(self, request, pk=None):
+        """Get project analytics and reporting data"""
+        project = self.get_object()
+        
+        # Calculate various analytics
+        milestones = project.milestones.all()
+        activities = project.activities.all()
+        
+        analytics = {
+            'project_info': {
+                'id': project.id,
+                'title': project.title,
+                'phase': project.phase,
+                'status': project.status,
+                'progress': project.progress,
+                'created_at': project.created_at,
+                'updated_at': project.updated_at,
+            },
+            'milestone_analytics': {
+                'total_milestones': milestones.count(),
+                'completed_milestones': milestones.filter(completed=True).count(),
+                'overdue_milestones': sum(1 for m in milestones if m.is_overdue),
+                'completion_rate': project.calculate_progress(),
+                'milestones_by_priority': {
+                    priority: milestones.filter(priority=priority).count()
+                    for priority, _ in Milestone.PRIORITY_CHOICES
+                },
+            },
+            'activity_analytics': {
+                'total_activities': activities.count(),
+                'activities_by_type': {
+                    activity_type: activities.filter(activity_type=activity_type).count()
+                    for activity_type, _ in ProjectActivity.ACTIVITY_TYPES
+                },
+                'recent_activity_count': activities.filter(
+                    created_at__gte=timezone.now() - timezone.timedelta(days=7)
+                ).count(),
+            },
+            'collaboration_analytics': {
+                'total_collaborators': project.collaborator_count,
+                'collaborators_by_role': {
+                    role: project.collaborators.filter(role=role).count()
+                    for role, _ in ProjectCollaborator.ROLE_CHOICES
+                },
+            },
+            'timeline_analytics': {
+                'project_duration_days': (
+                    (project.end_date - project.start_date).days
+                    if project.start_date and project.end_date else None
+                ),
+                'days_since_creation': (timezone.now().date() - project.created_at.date()).days,
+                'estimated_completion': project.end_date,
+            }
+        }
+        
+        return Response(analytics)
 
 
 class MilestoneViewSet(viewsets.ModelViewSet):

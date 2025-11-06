@@ -131,9 +131,9 @@ export default function ProjectDetailPage() {
         {
           title: editData.title,
           description: `Updated project: ${editData.title}`,
-          updated_fields: ['title', 'description', 'status', 'progress']
-        },
-        project.id
+          updated_fields: ['title', 'description', 'status', 'progress'],
+          project_id: project.id
+        }
       )
     } catch (err) {
       console.error('Failed to update project:', err)

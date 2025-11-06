@@ -3,8 +3,9 @@ import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
+// Use DATABASE_URL if available, otherwise construct from individual env vars
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ncskit'
+  connectionString: process.env.DATABASE_URL || `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${process.env.POSTGRES_DB || 'ncskit'}`
 })
 
 export async function POST(request: NextRequest) {
@@ -58,9 +59,14 @@ export async function POST(request: NextRequest) {
       )
 
       // Generate JWT token
+      const jwtSecret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'development' ? 'temp-dev-jwt-secret-key-change-in-production' : null);
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET environment variable is required');
+      }
+      
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key',
+        jwtSecret,
         { expiresIn: '7d' }
       )
 

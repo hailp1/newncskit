@@ -1,8 +1,10 @@
-# Kiến trúc Hệ thống NCSKit
+# NCSKIT System Architecture
 
-## 🏗️ Tổng quan Kiến trúc
+## 🏗️ Tổng quan kiến trúc
 
-NCSKit được thiết kế theo kiến trúc microservices với các thành phần độc lập, có thể mở rộng và bảo trì dễ dàng.
+NCSKIT được thiết kế theo kiến trúc microservices với frontend và backend tách biệt, đảm bảo khả năng mở rộng và bảo trì cao.
+
+## 🎯 Kiến trúc tổng thể
 
 ```mermaid
 graph TB
@@ -11,29 +13,33 @@ graph TB
         MOBILE[Mobile App]
     end
     
+    subgraph "CDN & Load Balancer"
+        CDN[CloudFlare CDN]
+        LB[Load Balancer]
+    end
+    
     subgraph "Frontend Layer"
-        NEXTJS[Next.js 14 App]
-        COMPONENTS[React Components]
-        SERVICES[API Services]
-        STORE[State Management]
+        NEXT[Next.js App]
+        STATIC[Static Assets]
     end
     
     subgraph "API Gateway"
-        GATEWAY[API Gateway/Load Balancer]
+        GATEWAY[Django REST API]
+        AUTH[Authentication Service]
+        RATE[Rate Limiting]
     end
     
-    subgraph "Backend Services"
-        AUTH[Authentication Service]
-        PROJECT[Project Service]
+    subgraph "Application Services"
         SURVEY[Survey Service]
-        CAMPAIGN[Campaign Service]
-        ANALYSIS[Analysis Service]
+        ANALYTICS[Analytics Service]
+        ADMIN[Admin Service]
+        PROJECTS[Projects Service]
     end
     
     subgraph "Data Processing"
-        R_ENGINE[R Statistical Engine]
-        AI_SERVICE[AI/ML Service]
-        QUEUE[Message Queue]
+        R_ENGINE[R Analysis Engine]
+        CELERY[Celery Workers]
+        SCHEDULER[Task Scheduler]
     end
     
     subgraph "Data Layer"
@@ -42,487 +48,383 @@ graph TB
         FILES[File Storage]
     end
     
-    WEB --> NEXTJS
-    MOBILE --> NEXTJS
-    NEXTJS --> GATEWAY
+    WEB --> CDN
+    MOBILE --> CDN
+    CDN --> LB
+    LB --> NEXT
+    NEXT --> GATEWAY
     GATEWAY --> AUTH
-    GATEWAY --> PROJECT
     GATEWAY --> SURVEY
-    GATEWAY --> CAMPAIGN
-    GATEWAY --> ANALYSIS
+    GATEWAY --> ANALYTICS
+    GATEWAY --> ADMIN
+    GATEWAY --> PROJECTS
     
-    ANALYSIS --> R_ENGINE
-    PROJECT --> AI_SERVICE
-    SURVEY --> QUEUE
+    ANALYTICS --> R_ENGINE
+    SURVEY --> CELERY
+    ANALYTICS --> CELERY
     
-    AUTH --> POSTGRES
-    PROJECT --> POSTGRES
     SURVEY --> POSTGRES
-    CAMPAIGN --> POSTGRES
-    ANALYSIS --> POSTGRES
+    ANALYTICS --> POSTGRES
+    ADMIN --> POSTGRES
+    PROJECTS --> POSTGRES
     
-    R_ENGINE --> REDIS
-    AI_SERVICE --> FILES
+    GATEWAY --> REDIS
+    CELERY --> REDIS
+    R_ENGINE --> FILES
 ```
 
-## 🎯 Các Thành phần Chính
+## 🔧 Chi tiết các thành phần
 
-### 1. Frontend Layer (Next.js 14)
+### Frontend Layer
 
-#### App Router Structure
-```
-src/app/
-├── (auth)/                 # Authentication routes
-│   ├── login/
-│   ├── register/
-│   └── forgot-password/
-├── (dashboard)/            # Protected dashboard routes
-│   ├── projects/
-│   ├── surveys/
-│   ├── campaigns/
-│   ├── analysis/
-│   └── admin/
-├── blog/                   # Public blog
-├── api/                    # API routes
-└── globals.css
-```
+#### Next.js Application
+- **Framework**: Next.js 16 với App Router
+- **Language**: TypeScript cho type safety
+- **Styling**: Tailwind CSS + Radix UI components
+- **State Management**: Zustand cho global state
+- **Data Fetching**: SWR cho caching và revalidation
 
-#### Component Architecture
-```
-src/components/
-├── ui/                     # Base UI components
-│   ├── button.tsx
-│   ├── input.tsx
-│   ├── card.tsx
-│   └── error-message.tsx
-├── layout/                 # Layout components
-│   ├── header.tsx
-│   ├── sidebar.tsx
-│   └── footer.tsx
-├── projects/               # Project-specific components
-├── surveys/                # Survey-specific components
-├── analysis/               # Analysis components
-└── error-boundary/         # Error handling
-```
-
-#### State Management
 ```typescript
-// Zustand stores
-src/store/
-├── auth.ts                 # Authentication state
-├── projects.ts             # Project state
-├── surveys.ts              # Survey state
-└── ui.ts                   # UI state
+// Cấu trúc thư mục frontend
+src/
+├── app/                    # App Router pages
+│   ├── (dashboard)/       # Dashboard layout group
+│   ├── (auth)/           # Authentication pages
+│   └── globals.css       # Global styles
+├── components/            # Reusable components
+│   ├── ui/               # Base UI components
+│   ├── analytics/        # Analytics components
+│   ├── surveys/          # Survey components
+│   └── admin/            # Admin components
+├── services/             # API services
+├── hooks/                # Custom React hooks
+├── types/                # TypeScript definitions
+└── utils/                # Utility functions
 ```
 
-### 2. Backend Services (Django)
+### Backend Layer
 
-#### Service Architecture
-```
-backend/
-├── apps/
-│   ├── authentication/     # User management
-│   │   ├── models.py
-│   │   ├── views.py
-│   │   ├── serializers.py
-│   │   └── urls.py
-│   ├── projects/          # Project management
-│   ├── surveys/           # Survey management
-│   ├── campaigns/         # Campaign management
-│   └── analysis/          # Data analysis
-├── core/                  # Shared utilities
-├── config/                # Configuration
-└── requirements.txt
-```
+#### Django REST Framework
+- **Framework**: Django 5.0 với DRF
+- **Database**: PostgreSQL với connection pooling
+- **Authentication**: JWT với refresh tokens
+- **API Documentation**: OpenAPI/Swagger
+- **Background Tasks**: Celery với Redis broker
 
-#### API Design Patterns
 ```python
-# RESTful API with DRF
-class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
-    
-    @action(detail=True, methods=['post'])
-    def generate_outline(self, request, pk=None):
-        # AI-powered outline generation
-        pass
+# Cấu trúc thư mục backend
+apps/
+├── authentication/       # User authentication
+├── surveys/             # Survey management
+├── analytics/           # Data analysis
+├── admin_management/    # Admin functionality
+├── projects/            # Project management
+└── question_bank/       # Question templates
+
+ncskit_backend/
+├── settings/            # Environment-specific settings
+├── urls.py             # URL routing
+└── wsgi.py             # WSGI application
 ```
 
-### 3. R Statistical Engine
+### Data Processing Layer
 
-#### R Server Architecture
+#### R Analysis Engine
+- **Statistical Computing**: R 4.3+ với specialized packages
+- **Integration**: rpy2 cho Python-R communication
+- **Packages**: lavaan, psych, semTools, ggplot2
+- **Output**: JSON serialized results
+
 ```r
-# plumber.R - R API Server
-library(plumber)
-library(jsonlite)
-
-#* @apiTitle NCSKit Statistical Analysis API
-#* @apiDescription Advanced statistical analysis endpoints
-
-#* Reliability Analysis
-#* @param data:list Data matrix
-#* @param scales:list Scale definitions
-#* @post /analysis/reliability
-function(data, scales) {
-    # Cronbach's Alpha calculation
-    library(psych)
-    results <- list()
-    
-    for(scale_name in names(scales)) {
-        scale_items <- scales[[scale_name]]
-        scale_data <- data[, scale_items, drop = FALSE]
-        alpha_result <- alpha(scale_data)
-        results[[scale_name]] <- alpha_result
-    }
-    
-    return(results)
-}
+# R packages được sử dụng
+required_packages <- c(
+  "lavaan",      # SEM analysis
+  "psych",       # Psychometric analysis
+  "semTools",    # SEM utilities
+  "ggplot2",     # Visualization
+  "dplyr",       # Data manipulation
+  "tidyr",       # Data tidying
+  "corrplot",    # Correlation plots
+  "VIM"          # Missing data visualization
+)
 ```
 
-#### Statistical Capabilities
-- **Descriptive Statistics**: Mean, SD, Correlation
-- **Reliability Analysis**: Cronbach's Alpha, McDonald's Omega
-- **Factor Analysis**: EFA, CFA with lavaan
-- **SEM**: Structural Equation Modeling
-- **Advanced Tests**: ANOVA, Regression, T-tests
+#### Celery Task Queue
+- **Broker**: Redis cho message passing
+- **Workers**: Multiple workers cho parallel processing
+- **Monitoring**: Flower cho task monitoring
+- **Scheduling**: Celery Beat cho scheduled tasks
 
-### 4. Database Design
+### Data Layer
 
-#### Core Tables
+#### PostgreSQL Database
 ```sql
--- Users and Authentication
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'researcher',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Projects
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    user_id UUID REFERENCES users(id),
-    business_domain_id INTEGER,
-    selected_models INTEGER[],
-    research_outline JSONB,
-    status VARCHAR(50) DEFAULT 'draft',
-    progress INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Surveys
-CREATE TABLE surveys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID REFERENCES projects(id),
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    questions JSONB NOT NULL,
-    settings JSONB DEFAULT '{}',
-    status VARCHAR(50) DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Survey Campaigns
-CREATE TABLE survey_campaigns (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    survey_id UUID REFERENCES surveys(id),
-    title VARCHAR(500) NOT NULL,
-    target_participants INTEGER NOT NULL,
-    token_reward_per_participant INTEGER DEFAULT 0,
-    eligibility_criteria JSONB DEFAULT '{}',
-    status VARCHAR(50) DEFAULT 'draft',
-    launched_at TIMESTAMP,
-    completed_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Question Bank
-CREATE TABLE question_templates (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    text TEXT NOT NULL,
-    text_vi TEXT,
-    type VARCHAR(50) NOT NULL,
-    category VARCHAR(100),
-    construct VARCHAR(100),
-    model_framework VARCHAR(100),
-    options JSONB,
-    scale JSONB,
-    reliability_score DECIMAL(3,2),
-    usage_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+-- Core tables structure
+Users                    -- User management
+Projects                 -- Research projects
+Surveys                  -- Survey definitions
+Campaigns               -- Survey campaigns
+Responses               -- Survey responses
+AnalysisProjects        -- Analysis projects
+AnalysisResults         -- Analysis results
+StatisticalValidations  -- Validation results
 ```
 
-#### Indexing Strategy
-```sql
--- Performance indexes
-CREATE INDEX idx_projects_user_id ON projects(user_id);
-CREATE INDEX idx_projects_status ON projects(status);
-CREATE INDEX idx_surveys_project_id ON surveys(project_id);
-CREATE INDEX idx_campaigns_survey_id ON survey_campaigns(survey_id);
-CREATE INDEX idx_questions_construct ON question_templates(construct);
-CREATE INDEX idx_questions_model ON question_templates(model_framework);
+#### Redis Cache
+- **Session Storage**: User sessions
+- **API Caching**: Response caching
+- **Task Queue**: Celery message broker
+- **Real-time Data**: WebSocket connections
 
--- Full-text search
-CREATE INDEX idx_projects_search ON projects USING gin(to_tsvector('english', title || ' ' || description));
-CREATE INDEX idx_questions_search ON question_templates USING gin(to_tsvector('english', text));
-```
-
-## 🔄 Data Flow
-
-### 1. Project Creation Flow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant A as API Gateway
-    participant P as Project Service
-    participant AI as AI Service
-    participant DB as Database
-    
-    U->>F: Create new project
-    F->>A: POST /api/projects
-    A->>P: Forward request
-    P->>AI: Generate research outline
-    AI-->>P: Return outline
-    P->>DB: Save project
-    DB-->>P: Return project ID
-    P-->>A: Return created project
-    A-->>F: Return response
-    F-->>U: Show success message
-```
-
-### 2. Survey Building Flow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant S as Survey Service
-    participant Q as Question Bank
-    participant V as Validation Service
-    
-    U->>F: Build survey from research design
-    F->>S: POST /api/surveys/generate
-    S->>Q: Get questions for constructs
-    Q-->>S: Return question templates
-    S->>V: Validate survey structure
-    V-->>S: Return validation results
-    S-->>F: Return generated survey
-    F-->>U: Show survey builder
-```
-
-### 3. Data Analysis Flow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant A as Analysis Service
-    participant R as R Engine
-    participant C as Cache
-    
-    U->>F: Request statistical analysis
-    F->>A: POST /api/analysis/reliability
-    A->>C: Check cache
-    alt Cache miss
-        A->>R: Execute R analysis
-        R-->>A: Return results
-        A->>C: Cache results
-    else Cache hit
-        C-->>A: Return cached results
-    end
-    A-->>F: Return analysis results
-    F-->>U: Display results
-```
-
-## 🛡️ Security Architecture
+## 🔐 Security Architecture
 
 ### Authentication & Authorization
-```typescript
-// JWT-based authentication
-interface JWTPayload {
-    userId: string;
-    email: string;
-    role: 'admin' | 'researcher' | 'participant';
-    permissions: string[];
-    exp: number;
-}
-
-// Role-based access control
-const permissions = {
-    admin: ['*'],
-    researcher: [
-        'projects:read',
-        'projects:write',
-        'surveys:read',
-        'surveys:write',
-        'campaigns:read',
-        'campaigns:write',
-        'analysis:read',
-        'analysis:write'
-    ],
-    participant: [
-        'surveys:respond',
-        'profile:read',
-        'profile:write'
-    ]
-};
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Frontend
+    participant API Gateway
+    participant Auth Service
+    participant Database
+    
+    Client->>Frontend: Login Request
+    Frontend->>API Gateway: POST /auth/login
+    API Gateway->>Auth Service: Validate Credentials
+    Auth Service->>Database: Check User
+    Database-->>Auth Service: User Data
+    Auth Service-->>API Gateway: JWT Tokens
+    API Gateway-->>Frontend: Access + Refresh Tokens
+    Frontend-->>Client: Login Success
+    
+    Note over Client,Database: Subsequent API Calls
+    Client->>Frontend: API Request
+    Frontend->>API Gateway: Request + JWT
+    API Gateway->>Auth Service: Validate JWT
+    Auth Service-->>API Gateway: User Context
+    API Gateway->>Database: Execute Request
+    Database-->>API Gateway: Response Data
+    API Gateway-->>Frontend: API Response
+    Frontend-->>Client: UI Update
 ```
 
-### Data Protection
-- **Encryption at Rest**: AES-256 for sensitive data
-- **Encryption in Transit**: TLS 1.3 for all communications
-- **Input Validation**: Comprehensive validation on all inputs
-- **SQL Injection Prevention**: Parameterized queries
-- **XSS Protection**: Content Security Policy headers
-- **CSRF Protection**: CSRF tokens for state-changing operations
+### Data Security
+- **Encryption at Rest**: Database encryption
+- **Encryption in Transit**: TLS 1.3 cho tất cả connections
+- **Data Anonymization**: PII masking trong analytics
+- **Audit Logging**: Comprehensive activity tracking
+- **GDPR Compliance**: Data retention policies
 
-## 📈 Performance & Scalability
+## 📊 Performance Architecture
 
 ### Caching Strategy
-```typescript
-// Multi-layer caching
-interface CacheStrategy {
-    browser: {
-        static: '1 year',
-        api: '5 minutes',
-        user_data: 'no-cache'
-    };
-    cdn: {
-        static_assets: '1 year',
-        api_responses: '1 hour'
-    };
-    redis: {
-        session_data: '24 hours',
-        analysis_results: '1 week',
-        question_bank: '1 day'
-    };
-}
+```mermaid
+graph LR
+    subgraph "Caching Layers"
+        CDN[CDN Cache<br/>Static Assets]
+        REDIS[Redis Cache<br/>API Responses]
+        DB_CACHE[Database Cache<br/>Query Results]
+    end
+    
+    subgraph "Application"
+        CLIENT[Client]
+        API[API Server]
+        DB[(Database)]
+    end
+    
+    CLIENT --> CDN
+    CLIENT --> REDIS
+    API --> REDIS
+    API --> DB_CACHE
+    DB_CACHE --> DB
 ```
 
-### Database Optimization
-- **Connection Pooling**: PgBouncer for connection management
-- **Read Replicas**: Separate read/write operations
-- **Partitioning**: Time-based partitioning for large tables
-- **Materialized Views**: Pre-computed aggregations
+### Load Balancing
+- **Frontend**: Vercel Edge Network
+- **Backend**: Application Load Balancer
+- **Database**: Read replicas cho read-heavy operations
+- **File Storage**: CDN distribution
 
 ### Monitoring & Observability
-```typescript
-// Application metrics
-interface Metrics {
-    performance: {
-        response_time: 'p95 < 200ms',
-        throughput: '1000 req/s',
-        error_rate: '< 0.1%'
-    };
-    business: {
-        active_users: 'daily/monthly',
-        project_creation_rate: 'per day',
-        survey_completion_rate: 'percentage',
-        analysis_success_rate: 'percentage'
-    };
-}
+```mermaid
+graph TB
+    subgraph "Application Metrics"
+        APP_METRICS[Application Metrics]
+        ERROR_TRACKING[Error Tracking]
+        PERFORMANCE[Performance Monitoring]
+    end
+    
+    subgraph "Infrastructure Metrics"
+        SERVER_METRICS[Server Metrics]
+        DB_METRICS[Database Metrics]
+        CACHE_METRICS[Cache Metrics]
+    end
+    
+    subgraph "Monitoring Stack"
+        PROMETHEUS[Prometheus]
+        GRAFANA[Grafana]
+        ALERTMANAGER[Alert Manager]
+    end
+    
+    APP_METRICS --> PROMETHEUS
+    ERROR_TRACKING --> PROMETHEUS
+    PERFORMANCE --> PROMETHEUS
+    SERVER_METRICS --> PROMETHEUS
+    DB_METRICS --> PROMETHEUS
+    CACHE_METRICS --> PROMETHEUS
+    
+    PROMETHEUS --> GRAFANA
+    PROMETHEUS --> ALERTMANAGER
 ```
 
-## 🔧 Development & Deployment
+## 🚀 Deployment Architecture
+
+### Production Environment
+```mermaid
+graph TB
+    subgraph "Production Infrastructure"
+        subgraph "Frontend"
+            VERCEL[Vercel<br/>Next.js App]
+            CDN_PROD[CloudFlare CDN]
+        end
+        
+        subgraph "Backend"
+            LB_PROD[Load Balancer]
+            API_PROD[API Servers<br/>Auto Scaling]
+            WORKER_PROD[Celery Workers]
+        end
+        
+        subgraph "Data"
+            DB_PROD[(PostgreSQL<br/>Primary + Replicas)]
+            REDIS_PROD[(Redis Cluster)]
+            STORAGE_PROD[File Storage<br/>S3/CloudFlare R2]
+        end
+    end
+    
+    CDN_PROD --> VERCEL
+    VERCEL --> LB_PROD
+    LB_PROD --> API_PROD
+    API_PROD --> DB_PROD
+    API_PROD --> REDIS_PROD
+    WORKER_PROD --> REDIS_PROD
+    API_PROD --> STORAGE_PROD
+```
 
 ### CI/CD Pipeline
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy NCSKit
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run tests
-        run: |
-          npm test
-          python -m pytest
-          
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build Docker images
-        run: |
-          docker build -t ncskit/frontend ./frontend
-          docker build -t ncskit/backend ./backend
-          
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to production
-        run: |
-          kubectl apply -f k8s/
+```mermaid
+graph LR
+    subgraph "Development"
+        DEV[Developer]
+        GIT[Git Repository]
+    end
+    
+    subgraph "CI/CD"
+        GITHUB[GitHub Actions]
+        TEST[Automated Tests]
+        BUILD[Build Process]
+        DEPLOY[Deployment]
+    end
+    
+    subgraph "Environments"
+        STAGING[Staging]
+        PROD[Production]
+    end
+    
+    DEV --> GIT
+    GIT --> GITHUB
+    GITHUB --> TEST
+    TEST --> BUILD
+    BUILD --> STAGING
+    STAGING --> PROD
 ```
 
-### Infrastructure as Code
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-      
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/ncskit
-      
-  r-engine:
-    build: ./backend/r_analysis
-    ports:
-      - "8001:8000"
-      
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=ncskit
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+## 🔄 Data Flow Architecture
+
+### Survey Data Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Database
+    participant Analytics
+    participant R Engine
+    
+    User->>Frontend: Create Survey
+    Frontend->>API: POST /surveys/
+    API->>Database: Store Survey
+    
+    User->>Frontend: Launch Campaign
+    Frontend->>API: POST /campaigns/
+    API->>Database: Create Campaign
+    
+    Note over User,R Engine: Data Collection Phase
+    User->>Frontend: Submit Response
+    Frontend->>API: POST /responses/
+    API->>Database: Store Response
+    
+    Note over User,R Engine: Analysis Phase
+    User->>Frontend: Request Analysis
+    Frontend->>API: POST /analytics/
+    API->>Analytics: Process Data
+    Analytics->>R Engine: Statistical Analysis
+    R Engine-->>Analytics: Results
+    Analytics->>Database: Store Results
+    Analytics-->>API: Analysis Complete
+    API-->>Frontend: Results Available
+    Frontend-->>User: Display Results
 ```
 
-## 🎯 Future Architecture Considerations
+### Real-time Updates
+```mermaid
+graph LR
+    subgraph "Real-time Architecture"
+        CLIENT[Client Browser]
+        WEBSOCKET[WebSocket Server]
+        REDIS_PUB[Redis Pub/Sub]
+        CELERY_TASK[Celery Tasks]
+    end
+    
+    CLIENT <--> WEBSOCKET
+    WEBSOCKET <--> REDIS_PUB
+    CELERY_TASK --> REDIS_PUB
+```
 
-### Microservices Evolution
-- **Service Mesh**: Istio for service-to-service communication
-- **Event Sourcing**: CQRS pattern for complex business logic
-- **GraphQL Federation**: Unified API layer
-- **Serverless Functions**: Edge computing for analysis tasks
+## 📈 Scalability Considerations
 
-### AI/ML Integration
-- **Model Serving**: TensorFlow Serving for ML models
-- **Feature Store**: Centralized feature management
-- **MLOps Pipeline**: Automated model training and deployment
-- **Real-time Inference**: Streaming analytics
+### Horizontal Scaling
+- **Frontend**: Edge deployment với Vercel
+- **Backend**: Auto-scaling API servers
+- **Database**: Read replicas và sharding
+- **Cache**: Redis cluster mode
+- **Workers**: Dynamic worker scaling
+
+### Performance Optimization
+- **Database Indexing**: Optimized queries
+- **Connection Pooling**: Efficient database connections
+- **Lazy Loading**: Component-level code splitting
+- **Image Optimization**: Next.js Image component
+- **API Pagination**: Efficient data loading
+
+### Resource Management
+- **Memory**: Efficient data structures
+- **CPU**: Optimized algorithms
+- **Storage**: Compressed data storage
+- **Network**: Minimized payload sizes
+
+## 🛡️ Disaster Recovery
+
+### Backup Strategy
+- **Database**: Daily automated backups
+- **Files**: Replicated storage
+- **Code**: Git repository backups
+- **Configuration**: Infrastructure as Code
+
+### Recovery Procedures
+- **RTO**: Recovery Time Objective < 4 hours
+- **RPO**: Recovery Point Objective < 1 hour
+- **Failover**: Automated failover procedures
+- **Testing**: Regular disaster recovery drills
 
 ---
 
-Kiến trúc này đảm bảo NCSKit có thể mở rộng từ hàng nghìn đến hàng triệu người dùng với hiệu suất cao và độ tin cậy tối đa.
+*Tài liệu này được cập nhật thường xuyên để phản ánh các thay đổi trong kiến trúc hệ thống.*

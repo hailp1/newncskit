@@ -230,7 +230,9 @@ export default function NewProjectPage() {
 
       {/* Step Content */}
       <Tabs value={currentStep} onValueChange={(value) => handleStepClick(value as any)}>
-        <TabsList className="hidden" />
+        <TabsList className="hidden">
+          <div></div>
+        </TabsList>
         
         <TabsContent value="basic" className="space-y-6">
           <Card>

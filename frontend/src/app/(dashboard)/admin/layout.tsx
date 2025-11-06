@@ -22,7 +22,10 @@ export default function AdminLayout({
       }
       
       // Check if user has admin role
-      if (!user.role || !['super_admin', 'admin', 'moderator'].includes(user.role)) {
+      const hasAdminAccess = user.role && ['super_admin', 'admin', 'moderator'].includes(user.role) ||
+                            user.is_staff || user.is_superuser;
+      
+      if (!hasAdminAccess) {
         router.push('/dashboard');
         return;
       }

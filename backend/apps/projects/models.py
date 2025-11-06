@@ -40,6 +40,15 @@ class Project(models.Model):
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
     
+    # Research Design
+    research_design = models.JSONField(default=dict, blank=True, help_text='Research design configuration including theoretical models, variables, and hypotheses')
+    
+    # Data Collection
+    data_collection = models.JSONField(default=dict, blank=True, help_text='Data collection configuration including survey settings and participant criteria')
+    
+    # Progress Tracking
+    progress_tracking = models.JSONField(default=dict, blank=True, help_text='Detailed progress tracking with milestones and publication status')
+    
     # Metadata
     tags = models.JSONField(default=list, blank=True)
     metadata = models.JSONField(default=dict, blank=True)

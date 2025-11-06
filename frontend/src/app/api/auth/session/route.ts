@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
 import jwt from 'jsonwebtoken'
 
+// Use DATABASE_URL if available, otherwise construct from individual env vars
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ncskit'
+  connectionString: process.env.DATABASE_URL || 
+    `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${process.env.POSTGRES_DB || 'ncskit'}`
 })
 
 export async function GET(request: NextRequest) {

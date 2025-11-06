@@ -16,5 +16,5 @@ router.register(r'fee-config', AdminFeeConfigurationViewSet, basename='adminfeec
 router.register(r'stats', SurveyCampaignStatsViewSet, basename='campaignstats')
 
 urlpatterns = [
-    path('api/surveys/', include(router.urls)),
+    path('', include(router.urls)),
 ]

@@ -54,6 +54,11 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
+staticfiles/
+static/
+migrations/__pycache__/
+celerybeat-schedule
+celerybeat.pid
 
 # R
 .Rhistory
@@ -166,6 +171,30 @@ temp/
 **/quick-*.js
 **/diagnose-*.js
 **/simple-*.js
+
+# Cloudflare Tunnel
+cloudflared.log
+*.cfargotunnel.com
+
+# Deployment artifacts
+deployment/logs/
+deployment/backups/
+deployment/*.pid
+
+# Security sensitive files
+config/*.key
+config/*.pem
+config/*.crt
+scripts/secrets/
+tools/private/
+
+# Professional project structure
+/logs/
+/backups/
+/tmp/
+/temp/
+*.pid
+*.lock
 
 # Exclude parent directory files
 ../*

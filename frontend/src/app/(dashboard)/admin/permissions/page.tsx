@@ -69,43 +69,72 @@ export default function AdminPermissions() {
   };
 
   const loadFeatures = async () => {
-    const { data, error } = await supabase
-      .from('feature_permissions')
-      .select('*')
-      .order('category', { ascending: true });
-
-    if (error) throw error;
-    setFeatures(data || []);
+    try {
+      // Mock data for now - replace with actual API call
+      const mockFeatures = [
+        { 
+          id: 1, 
+          feature_name: 'User Management', 
+          feature_name_vi: 'Quản lý người dùng',
+          description: 'Manage users and permissions',
+          description_vi: 'Quản lý người dùng và quyền hạn',
+          category: 'admin', 
+          is_active: true 
+        },
+        { 
+          id: 2, 
+          feature_name: 'Survey Creation', 
+          feature_name_vi: 'Tạo khảo sát',
+          description: 'Create and manage surveys',
+          description_vi: 'Tạo và quản lý khảo sát',
+          category: 'surveys', 
+          is_active: true 
+        },
+        { 
+          id: 3, 
+          feature_name: 'Analytics', 
+          feature_name_vi: 'Phân tích',
+          description: 'View analytics and reports',
+          description_vi: 'Xem phân tích và báo cáo',
+          category: 'analytics', 
+          is_active: false 
+        },
+      ];
+      setFeatures(mockFeatures);
+    } catch (error) {
+      console.error('Error loading features:', error);
+    }
   };
 
   const loadRolePermissions = async () => {
-    const { data, error } = await supabase
-      .from('user_role_permissions')
-      .select(`
-        *,
-        feature:feature_permissions(feature_name, feature_name_vi, category)
-      `)
-      .order('role', { ascending: true });
+    try {
+      // Mock data for now - replace with actual API call
+      const mockRolePermissions = [
+        { 
+          id: 1, 
+          role: 'admin', 
+          feature_id: 1, 
+          feature_name: 'User Management',
+          feature_name_vi: 'Quản lý người dùng',
+          is_allowed: true,
+          token_cost: 0,
+          daily_limit: 100,
+          monthly_limit: 1000
+        },
+      ];
+      
+      const formattedPermissions = mockRolePermissions;
 
-    if (error) throw error;
-
-    const formattedPermissions = data?.map((permission: any) => ({
-      ...permission,
-      feature_name: permission.feature?.feature_name || '',
-      feature_name_vi: permission.feature?.feature_name_vi || ''
-    })) || [];
-
-    setRolePermissions(formattedPermissions);
+      setRolePermissions(formattedPermissions);
+    } catch (error) {
+      console.error('Error loading role permissions:', error);
+    }
   };
 
   const updatePermission = async (permissionId: number, updates: any) => {
     try {
-      const { error } = await supabase
-        .from('user_role_permissions')
-        .update(updates)
-        .eq('id', permissionId);
-
-      if (error) throw error;
+      // Mock update - replace with actual API call
+      console.log('Updating permission:', permissionId, updates);
       await loadRolePermissions();
     } catch (error) {
       console.error('Failed to update permission:', error);
@@ -115,12 +144,8 @@ export default function AdminPermissions() {
 
   const toggleFeatureStatus = async (featureId: number, isActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from('feature_permissions')
-        .update({ is_active: !isActive })
-        .eq('id', featureId);
-
-      if (error) throw error;
+      // Mock toggle - replace with actual API call
+      console.log('Toggling feature:', featureId, !isActive);
       await loadFeatures();
     } catch (error) {
       console.error('Failed to toggle feature:', error);

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ErrorMessageComponent } from '@/components/ui/error-message'
-import { surveyCampaignService, type SurveyCampaign, CampaignStatus } from '@/services/survey-campaigns'
+import { surveyCampaignService } from '@/services/survey-campaigns'
+import type { SurveyCampaign, CampaignStatus } from '@/types'
 import { tokenRewardService } from '@/services/tokens'
 import { useCampaignManagerErrorHandling } from '@/hooks/use-error-handling'
 import {
@@ -49,62 +50,56 @@ export default function CampaignManager({ projectId, onCampaignSelect }: Campaig
   })
 
   // Load campaigns
-  const loadCampaigns = withErrorHandling(async () => {
-    setIsLoading(true)
-    try {
-      const filter = projectId ? { projectId } : undefined
-      const result = await surveyCampaignService.getCampaigns(filter)
-      setCampaigns(result.campaigns)
-    } catch (error: any) {
-      await handleError(error, 'loadCampaigns', { projectId })
-    } finally {
-      setIsLoading(false)
-    }
-  }, 'loadCampaigns', { retries: 2 })
+  const loadCampaigns = async () => {
+    await withErrorHandling(async () => {
+      setIsLoading(true)
+      try {
+        const filter = projectId ? { projectId } : undefined
+        const result = await surveyCampaignService.getCampaigns(filter)
+        setCampaigns(result.campaigns)
+      } finally {
+        setIsLoading(false)
+      }
+    }, 'loadCampaigns', { retries: 2 })
+  }
 
   useEffect(() => {
     loadCampaigns()
   }, [projectId])
 
   // Campaign actions
-  const handleLaunchCampaign = withErrorHandling(async (campaignId: string) => {
-    try {
+  const handleLaunchCampaign = async (campaignId: string) => {
+    await withErrorHandling(async () => {
       const updatedCampaign = await surveyCampaignService.launchCampaign(campaignId)
       setCampaigns(prev => prev.map(c => c.id === campaignId ? updatedCampaign : c))
       
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(updatedCampaign)
       }
-    } catch (error: any) {
-      await handleError(error, 'launchCampaign', { campaignId })
-    }
-  }, 'launchCampaign')
+    }, 'launchCampaign')
+  }
 
-  const handlePauseCampaign = withErrorHandling(async (campaignId: string) => {
-    try {
+  const handlePauseCampaign = async (campaignId: string) => {
+    await withErrorHandling(async () => {
       const updatedCampaign = await surveyCampaignService.pauseCampaign(campaignId)
       setCampaigns(prev => prev.map(c => c.id === campaignId ? updatedCampaign : c))
       
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(updatedCampaign)
       }
-    } catch (error: any) {
-      await handleError(error, 'pauseCampaign', { campaignId })
-    }
-  }, 'pauseCampaign')
+    }, 'pauseCampaign')
+  }
 
-  const handleCompleteCampaign = withErrorHandling(async (campaignId: string) => {
-    try {
+  const handleCompleteCampaign = async (campaignId: string) => {
+    await withErrorHandling(async () => {
       const updatedCampaign = await surveyCampaignService.completeCampaign(campaignId)
       setCampaigns(prev => prev.map(c => c.id === campaignId ? updatedCampaign : c))
       
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(updatedCampaign)
       }
-    } catch (error: any) {
-      await handleError(error, 'completeCampaign', { campaignId })
-    }
-  }, 'completeCampaign')
+    }, 'completeCampaign')
+  }
 
   // Filter campaigns
   const filteredCampaigns = campaigns.filter(campaign => {
@@ -206,11 +201,11 @@ export default function CampaignManager({ projectId, onCampaignSelect }: Campaig
               className="px-3 py-2 border border-gray-300 rounded-md"
             >
               <option value="all">All Status</option>
-              <option value={CampaignStatus.DRAFT}>Draft</option>
-              <option value={CampaignStatus.ACTIVE}>Active</option>
-              <option value={CampaignStatus.PAUSED}>Paused</option>
-              <option value={CampaignStatus.COMPLETED}>Completed</option>
-              <option value={CampaignStatus.CANCELLED}>Cancelled</option>
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </CardContent>
@@ -303,7 +298,7 @@ export default function CampaignManager({ projectId, onCampaignSelect }: Campaig
                   {/* Actions */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      {campaign.status === CampaignStatus.DRAFT && (
+                      {campaign.status === 'draft' && (
                         <Button
                           size="sm"
                           onClick={(e) => {
@@ -317,7 +312,7 @@ export default function CampaignManager({ projectId, onCampaignSelect }: Campaig
                         </Button>
                       )}
                       
-                      {campaign.status === CampaignStatus.ACTIVE && (
+                      {campaign.status === 'active' && (
                         <>
                           <Button
                             size="sm"
@@ -346,7 +341,7 @@ export default function CampaignManager({ projectId, onCampaignSelect }: Campaig
                         </>
                       )}
                       
-                      {campaign.status === CampaignStatus.PAUSED && (
+                      {campaign.status === 'paused' && (
                         <Button
                           size="sm"
                           onClick={(e) => {

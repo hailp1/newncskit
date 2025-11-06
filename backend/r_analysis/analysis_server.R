@@ -19,6 +19,11 @@ library(mice)
 library(Hmisc)
 library(GPArotation)
 library(nFactors)
+library(mediation)
+library(interactions)
+library(boot)
+library(pwr)
+library(MASS)
 
 # Enable CORS
 options(plumber.cors = TRUE)
@@ -191,7 +196,7 @@ function(req) {
   })
 }
 
-#* Exploratory Factor Analysis (EFA)
+#* Enhanced Exploratory Factor Analysis (EFA)
 #* @post /analysis/efa
 function(req) {
   tryCatch({
@@ -199,40 +204,104 @@ function(req) {
     df <- as.data.frame(data$data)
     variables <- data$variables
     n_factors <- data$n_factors %||% NULL
+    rotation <- data$rotation %||% "varimax"
+    extraction <- data$extraction %||% "ml"
     
     efa_data <- df[, variables, drop = FALSE]
     efa_data <- na.omit(efa_data)
     
-    # Determine optimal number of factors if not specified
+    # Determine optimal number of factors using multiple criteria
     if (is.null(n_factors)) {
+      # Kaiser criterion (eigenvalues > 1)
       ev <- eigen(cor(efa_data))
-      n_factors <- sum(ev$values > 1)  # Kaiser criterion
+      kaiser_factors <- sum(ev$values > 1)
+      
+      # Scree test
+      scree_result <- nScree(efa_data)
+      scree_factors <- scree_result$Components[1, "noc"]
+      
+      # Parallel analysis
+      parallel_result <- fa.parallel(efa_data, plot = FALSE)
+      parallel_factors <- parallel_result$nfact
+      
+      # Use parallel analysis as primary criterion
+      n_factors <- parallel_factors
+      
+      factor_selection <- list(
+        kaiser_criterion = kaiser_factors,
+        scree_test = scree_factors,
+        parallel_analysis = parallel_factors,
+        selected = n_factors
+      )
+    } else {
+      factor_selection <- list(selected = n_factors)
     }
     
     # KMO and Bartlett's test
     kmo_result <- KMO(efa_data)
     bartlett_result <- cortest.bartlett(cor(efa_data), n = nrow(efa_data))
     
-    # EFA with varimax rotation
-    efa_result <- fa(efa_data, nfactors = n_factors, rotate = "varimax", fm = "ml")
+    # EFA with specified rotation and extraction
+    efa_result <- fa(efa_data, nfactors = n_factors, rotate = rotation, fm = extraction)
     
     # Factor loadings matrix
     loadings_matrix <- as.matrix(efa_result$loadings)
     
+    # Pattern matrix (for oblique rotations)
+    pattern_matrix <- if (rotation %in% c("oblimin", "promax")) {
+      as.matrix(efa_result$loadings)
+    } else {
+      NULL
+    }
+    
+    # Structure matrix (for oblique rotations)
+    structure_matrix <- if (rotation %in% c("oblimin", "promax")) {
+      as.matrix(efa_result$Structure)
+    } else {
+      NULL
+    }
+    
+    # Factor correlations (for oblique rotations)
+    factor_correlations <- if (rotation %in% c("oblimin", "promax")) {
+      efa_result$Phi
+    } else {
+      NULL
+    }
+    
+    # Item-factor correlations
+    item_factor_cors <- cor(efa_data, efa_result$scores)
+    
+    # Factor score adequacy
+    factor_adequacy <- efa_result$weights
+    
     results <- list(
+      factor_selection = factor_selection,
       kmo = kmo_result$MSA,
+      kmo_individual = kmo_result$MSAi,
       bartlett_chi2 = bartlett_result$chisq,
       bartlett_p = bartlett_result$p.value,
       n_factors = n_factors,
       eigenvalues = efa_result$values,
       variance_explained = efa_result$Vaccounted,
       factor_loadings = loadings_matrix,
+      pattern_matrix = pattern_matrix,
+      structure_matrix = structure_matrix,
+      factor_correlations = factor_correlations,
       communalities = efa_result$communality,
+      uniquenesses = efa_result$uniquenesses,
+      item_factor_correlations = item_factor_cors,
+      factor_scores = efa_result$scores,
       fit_indices = list(
         rms = efa_result$rms,
         tli = efa_result$TLI,
-        rmsea = efa_result$RMSEA
-      )
+        rmsea = efa_result$RMSEA,
+        bic = efa_result$BIC,
+        chi_square = efa_result$STATISTIC,
+        df = efa_result$dof,
+        p_value = efa_result$PVAL
+      ),
+      rotation_method = rotation,
+      extraction_method = extraction
     )
     
     list(status = "success", results = results)
@@ -242,34 +311,108 @@ function(req) {
   })
 }
 
-#* Confirmatory Factor Analysis (CFA)
+#* Enhanced Confirmatory Factor Analysis (CFA)
 #* @post /analysis/cfa
 function(req) {
   tryCatch({
     data <- fromJSON(req$postBody)
     df <- as.data.frame(data$data)
     model_syntax <- data$model_syntax
+    estimator <- data$estimator %||% "ML"
+    bootstrap <- data$bootstrap %||% FALSE
+    bootstrap_samples <- data$bootstrap_samples %||% 1000
     
-    # Fit CFA model
-    cfa_model <- cfa(model_syntax, data = df, missing = "ml")
+    # Fit CFA model with advanced options
+    if (bootstrap) {
+      cfa_model <- cfa(model_syntax, data = df, 
+                      estimator = estimator,
+                      se = "bootstrap",
+                      bootstrap = bootstrap_samples,
+                      missing = "ml")
+    } else {
+      cfa_model <- cfa(model_syntax, data = df, 
+                      estimator = estimator,
+                      missing = "ml")
+    }
     
-    # Model fit indices
+    # Comprehensive model fit indices
     fit_measures <- fitMeasures(cfa_model, c(
-      "chisq", "df", "pvalue", "cfi", "tli", "rmsea", 
-      "rmsea.ci.lower", "rmsea.ci.upper", "srmr", "aic", "bic"
+      "chisq", "df", "pvalue", "chisq.scaled", "df.scaled", "pvalue.scaled",
+      "cfi", "tli", "cfi.scaled", "tli.scaled", "cfi.robust", "tli.robust",
+      "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "rmsea.pvalue",
+      "rmsea.scaled", "rmsea.ci.lower.scaled", "rmsea.ci.upper.scaled",
+      "srmr", "srmr_bentler", "gfi", "agfi", "pgfi", "mfi",
+      "aic", "bic", "sabic", "hqc", "bic2"
     ))
     
-    # Parameter estimates
-    param_estimates <- parameterEstimates(cfa_model, standardized = TRUE)
+    # Parameter estimates with standardized solutions
+    param_estimates <- parameterEstimates(cfa_model, standardized = TRUE, 
+                                         ci = TRUE, level = 0.95)
     
-    # Reliability measures
-    reliability <- reliability(cfa_model)
+    # Reliability and validity measures
+    reliability_measures <- tryCatch({
+      list(
+        composite_reliability = reliability(cfa_model),
+        cronbach_alpha = reliability(cfa_model, return.total = TRUE),
+        ave = AVE(cfa_model),  # Average Variance Extracted
+        htmt = htmt(cfa_model)  # Heterotrait-Monotrait ratio
+      )
+    }, error = function(e) NULL)
+    
+    # Modification indices with expected parameter changes
+    mod_indices <- modificationIndices(cfa_model, sort = TRUE, maximum.number = 20)
+    
+    # Residual correlations
+    residuals_cor <- residuals(cfa_model, type = "cor")
+    residuals_std <- residuals(cfa_model, type = "standardized")
+    
+    # Factor scores and factor score determinacy
+    factor_scores <- tryCatch({
+      predict(cfa_model)
+    }, error = function(e) NULL)
+    
+    # Model-implied correlation matrix
+    implied_cor <- fitted(cfa_model)$cov
+    
+    # Discriminant validity assessment (Fornell-Larcker criterion)
+    discriminant_validity <- tryCatch({
+      ave_values <- AVE(cfa_model)
+      factor_cors <- inspect(cfa_model, "cor.lv")
+      
+      # Check if square root of AVE > factor correlations
+      sqrt_ave <- sqrt(ave_values)
+      discriminant_check <- outer(sqrt_ave, sqrt_ave, function(x, y) pmin(x, y)) > abs(factor_cors)
+      
+      list(
+        ave_values = ave_values,
+        sqrt_ave = sqrt_ave,
+        factor_correlations = factor_cors,
+        discriminant_validity_met = discriminant_check
+      )
+    }, error = function(e) NULL)
+    
+    # Local fit assessment
+    local_fit <- tryCatch({
+      list(
+        standardized_residuals = residuals_std,
+        largest_residuals = head(sort(abs(residuals_std), decreasing = TRUE), 10)
+      )
+    }, error = function(e) NULL)
     
     results <- list(
       fit_indices = fit_measures,
       parameter_estimates = param_estimates,
-      reliability = reliability,
-      modification_indices = modificationIndices(cfa_model, sort = TRUE)[1:10, ]
+      reliability_validity = reliability_measures,
+      discriminant_validity = discriminant_validity,
+      modification_indices = mod_indices,
+      residual_correlations = residuals_cor,
+      local_fit = local_fit,
+      factor_scores = factor_scores,
+      implied_correlations = implied_cor,
+      model_syntax = model_syntax,
+      sample_size = nrow(df),
+      estimator = estimator,
+      bootstrap_used = bootstrap
     )
     
     list(status = "success", results = results)

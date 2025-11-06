@@ -27,7 +27,7 @@ const navigation = [
   { name: 'Journals', href: '/journals', icon: BookOpenIcon },
   { name: 'Topics', href: '/topics', icon: AcademicCapIcon },
   { name: 'Analysis', href: '/analysis', icon: SparklesIcon },
-  { name: 'Blog', href: '/blog', icon: BookOpenIcon },
+  { name: 'Blog Admin', href: '/blog-admin', icon: BookOpenIcon },
 ]
 
 const publicNavigation = [
@@ -169,10 +169,10 @@ export function Header() {
               // Auth Buttons
               <div className="flex items-center space-x-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/demo-login">Sign In</Link>
+                  <Link href="/login">Sign In</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/demo-login">Get Started</Link>
+                  <Link href="/register">Get Started</Link>
                 </Button>
               </div>
             )}
@@ -278,14 +278,14 @@ export function Header() {
                   })}
                   <div className="border-t border-gray-200 pt-4">
                     <Link
-                      href="/demo-login"
+                      href="/login"
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Sign In
                     </Link>
                     <Link
-                      href="/demo-login"
+                      href="/register"
                       className="block rounded-md px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700"
                       onClick={() => setMobileMenuOpen(false)}
                     >

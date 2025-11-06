@@ -24,7 +24,8 @@ import {
   DataCollectionMethod, 
   DataCollectionStatus,
   ResearchDesign,
-  QuestionTemplate
+  QuestionTemplate,
+  QuestionType
 } from '@/types/workflow';
 
 interface DataCollectionStepProps {
@@ -107,7 +108,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               id: `q_${variable.id}_1`,
               text: `I find ${projectData?.title || 'this system'} useful in my work`,
               textVi: `Tôi thấy ${projectData?.title || 'hệ thống này'} hữu ích trong công việc`,
-              type: 'likert',
+              type: QuestionType.LIKERT,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,
@@ -128,7 +129,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               id: `q_${variable.id}_2`,
               text: `I find ${projectData?.title || 'this system'} easy to use`,
               textVi: `Tôi thấy ${projectData?.title || 'hệ thống này'} dễ sử dụng`,
-              type: 'likert',
+              type: QuestionType.LIKERT,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,
@@ -149,7 +150,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               id: `q_${variable.id}_3`,
               text: `I intend to use ${projectData?.title || 'this system'} in the future`,
               textVi: `Tôi có ý định sử dụng ${projectData?.title || 'hệ thống này'} trong tương lai`,
-              type: 'likert',
+              type: QuestionType.LIKERT,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,

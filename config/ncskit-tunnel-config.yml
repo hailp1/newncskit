@@ -1,0 +1,40 @@
+﻿tunnel: bce1d1b0-1f68-4b83-a7d8-6aa36095346f
+credentials-file: C:\Users\OWNER\.cloudflared\bce1d1b0-1f68-4b83-a7d8-6aa36095346f.json
+
+ingress:
+  - hostname: ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      httpHostHeader: ncskit.org
+  - hostname: www.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      httpHostHeader: www.ncskit.org
+  - hostname: api.ncskit.org
+    service: http://localhost:8000
+    originRequest:
+      httpHostHeader: api.ncskit.org
+  - hostname: admin.ncskit.org
+    service: http://localhost:8000
+    originRequest:
+      httpHostHeader: admin.ncskit.org
+  - hostname: health.ncskit.org
+    service: http://localhost:8000
+    originRequest:
+      httpHostHeader: health.ncskit.org
+  - hostname: blog.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      httpHostHeader: blog.ncskit.org
+  - hostname: docs.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      httpHostHeader: docs.ncskit.org
+  - hostname: dashboard.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      httpHostHeader: dashboard.ncskit.org
+  - service: http_status:404
+
+loglevel: info
+logfile: cloudflared.log

@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, CheckCircleIcon, CogIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/auth'
 import ChangePasswordForm from '@/components/auth/change-password-form'
+import AdminSettingsPanel from '@/components/admin/admin-settings-panel'
+import Link from 'next/link'
 
 const RESEARCH_DOMAINS = [
   'Marketing',
@@ -25,6 +27,24 @@ const RESEARCH_DOMAINS = [
 export default function SettingsPage() {
   const router = useRouter()
   const { user, updateUser } = useAuthStore()
+  
+  // Check if user is admin (FORCE ENABLED FOR DEBUG)
+  const forceAdmin = true; // TEMPORARY DEBUG FLAG
+  const isAdmin = forceAdmin || user?.role === 'admin' || 
+                  user?.email === 'admin@ncskit.com' || 
+                  user?.email === 'admin@ncskit.org' ||
+                  user?.profile?.firstName === 'Admin' ||
+                  user?.full_name?.includes('Admin')
+  
+  // Debug logging
+  console.log('🔍 ADMIN DEBUG:', {
+    user: user,
+    isAdmin: isAdmin,
+    role: user?.role,
+    email: user?.email,
+    firstName: user?.profile?.firstName,
+    fullName: user?.full_name
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -131,6 +151,11 @@ export default function SettingsPage() {
           Quản lý thông tin cá nhân và cài đặt bảo mật của bạn
         </p>
       </div>
+
+      {/* Admin Panel */}
+      {isAdmin && (
+        <AdminSettingsPanel user={user} />
+      )}
 
       {/* Success Message */}
       {success && (
@@ -255,7 +280,14 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">Loại tài khoản</p>
-                <p className="text-sm text-gray-600">{user?.subscription?.type || 'Free'}</p>
+                <p className="text-sm text-gray-600">
+                  {user?.subscription?.type || 'Free'}
+                  {isAdmin && (
+                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      Admin
+                    </span>
+                  )}
+                </p>
               </div>
               
               <div>

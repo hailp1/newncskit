@@ -21,9 +21,9 @@ export default function DashboardPage() {
   const { user, isAuthenticated, logout } = useAuthStore()
 
   useEffect(() => {
-    // Redirect to demo login if not authenticated
+    // Redirect to login if not authenticated
     if (!isAuthenticated) {
-      router.push('/demo-login')
+      router.push('/login')
     }
   }, [isAuthenticated, router])
 
@@ -32,7 +32,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Please login to access dashboard</p>
-          <Button onClick={() => router.push('/demo-login')}>
+          <Button onClick={() => router.push('/login')}>
             Go to Login
           </Button>
         </div>
@@ -167,11 +167,11 @@ export default function DashboardPage() {
       <Card className="bg-yellow-50 border-yellow-200">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <SparklesIcon className="h-5 w-5 text-yellow-600" />
+            <SparklesIcon className="h-5 w-5 text-blue-600" />
             <div>
-              <p className="text-sm font-medium text-yellow-800">Demo Mode</p>
-              <p className="text-xs text-yellow-700">
-                You are using NCSKIT in demo mode. Some features may have limited functionality.
+              <p className="text-sm font-medium text-blue-800">Welcome to NCSKIT</p>
+              <p className="text-xs text-blue-700">
+                Your research management platform is ready to use.
               </p>
             </div>
           </div>

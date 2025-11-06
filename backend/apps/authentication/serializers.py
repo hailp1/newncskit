@@ -4,6 +4,22 @@ from django.contrib.auth.password_validation import validate_password
 from .models import User, UserProfile, UserActivity
 
 
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Basic user serializer for OAuth and general use
+    """
+    full_name = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'full_name',
+            'oauth_provider', 'oauth_id', 'profile_image', 'orcid_id',
+            'email_verified', 'is_active', 'last_login', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration
@@ -70,6 +86,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.ReadOnlyField()
     subscription_features = serializers.ReadOnlyField(source='get_subscription_features')
+    role_assignments = serializers.SerializerMethodField()
     
     class Meta:
         model = User
@@ -77,9 +94,30 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'institution', 'orcid_id', 'avatar', 'research_domains',
             'subscription_type', 'subscription_features', 'preferences',
+            'is_staff', 'is_superuser', 'role_assignments',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'email', 'created_at', 'updated_at']
+    
+    def get_role_assignments(self, obj):
+        """Get user role assignments from admin_management app"""
+        try:
+            from apps.admin_management.models import UserRoleAssignment
+            assignments = UserRoleAssignment.objects.filter(
+                user=obj, 
+                is_active=True
+            ).select_related('role')
+            return [
+                {
+                    'role': {
+                        'name': assignment.role.name,
+                        'permissions': assignment.role.permissions
+                    }
+                }
+                for assignment in assignments
+            ]
+        except ImportError:
+            return []
 
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):

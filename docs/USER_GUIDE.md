@@ -1,505 +1,414 @@
-# Hướng dẫn Sử dụng NCSKit
+# NCSKIT User Guide
 
 ## 🎯 Giới thiệu
 
-NCSKit là nền tảng hỗ trợ nghiên cứu khoa học toàn diện, giúp các nhà nghiên cứu thực hiện dự án từ ý tưởng đến xuất bản. Hướng dẫn này sẽ đưa bạn qua từng bước sử dụng hệ thống một cách hiệu quả.
+NCSKIT là nền tảng nghiên cứu thị trường toàn diện được thiết kế đặc biệt cho thị trường Việt Nam. Hướng dẫn này sẽ giúp bạn sử dụng hiệu quả tất cả các tính năng của hệ thống.
 
 ## 🚀 Bắt đầu
 
-### Đăng ký Tài khoản
+### Đăng ký và đăng nhập
 
-1. **Truy cập trang chủ**: Vào https://ncskit.com
-2. **Nhấn "Đăng ký"**: Ở góc phải trên cùng
-3. **Điền thông tin**:
-   - Email (sẽ dùng để đăng nhập)
-   - Mật khẩu (tối thiểu 8 ký tự)
-   - Họ tên đầy đủ
-   - Chọn vai trò: Nghiên cứu viên/Sinh viên/Giảng viên
-4. **Xác nhận email**: Kiểm tra hộp thư và nhấn link xác nhận
+1. **Truy cập**: Mở trình duyệt và truy cập [https://ncskit.com](https://ncskit.com)
+2. **Đăng ký**: Nhấp "Đăng ký" và điền thông tin cần thiết
+3. **Xác thực email**: Kiểm tra email và nhấp link xác thực
+4. **Đăng nhập**: Sử dụng email và mật khẩu để đăng nhập
 
-### Đăng nhập Lần đầu
+### Dashboard tổng quan
 
-1. **Đăng nhập** với email và mật khẩu
-2. **Hoàn thiện hồ sơ**:
-   - Thêm ảnh đại diện
-   - Cập nhật thông tin cá nhân
-   - Chọn lĩnh vực nghiên cứu quan tâm
-3. **Khám phá giao diện**: Làm quen với các menu chính
+Sau khi đăng nhập, bạn sẽ thấy dashboard chính với các khu vực:
 
-## 📊 Quản lý Dự án Nghiên cứu
+- **📊 Thống kê tổng quan**: Số liệu về dự án, khảo sát, phân tích
+- **📋 Dự án gần đây**: Danh sách dự án đã làm việc gần đây
+- **🎯 Khảo sát đang chạy**: Các campaign đang thu thập dữ liệu
+- **📈 Phân tích mới nhất**: Kết quả phân tích vừa hoàn thành
 
-### Tạo Dự án Mới
+## 📋 Quản lý dự án
 
-#### Bước 1: Khởi tạo Dự án
-1. **Vào Dashboard** → **"Tạo dự án mới"**
-2. **Nhập thông tin cơ bản**:
-   ```
-   Tiêu đề: "Nghiên cứu hành vi mua sắm online"
-   Mô tả: "Khảo sát các yếu tố ảnh hưởng đến quyết định mua hàng trực tuyến"
-   ```
+### Tạo dự án mới
 
-#### Bước 2: Chọn Lĩnh vực Nghiên cứu
-- **Marketing**: Nghiên cứu thị trường, hành vi tiêu dùng
-- **Du lịch**: Nghiên cứu ngành du lịch, khách sạn
-- **Nhân sự**: Quản lý nhân lực, tổ chức
-- **Hệ thống thông tin**: Công nghệ, chấp nhận công nghệ
-- **Tài chính**: Quản lý tài chính, đầu tư
+1. **Nhấp "Tạo dự án mới"** trên dashboard
+2. **Điền thông tin dự án**:
+   - Tên dự án
+   - Mô tả chi tiết
+   - Mục tiêu nghiên cứu
+   - Timeline dự kiến
+3. **Chọn template** (tùy chọn):
+   - Customer Satisfaction Study
+   - Brand Awareness Research
+   - Product Development Research
+   - Market Segmentation Study
+4. **Mời cộng tác viên** (tùy chọn)
+5. **Nhấp "Tạo dự án"**
 
-#### Bước 3: Chọn Mô hình Lý thuyết
-Hệ thống cung cấp 50+ mô hình phổ biến:
+### Quản lý dự án
 
-**Mô hình Hành vi:**
-- Theory of Planned Behavior (TPB)
-- Technology Acceptance Model (TAM)
-- Unified Theory of Acceptance (UTAUT)
+#### Thông tin dự án
+- **Chỉnh sửa**: Cập nhật thông tin, mục tiêu
+- **Timeline**: Theo dõi tiến độ và milestone
+- **Tài liệu**: Upload và quản lý tài liệu liên quan
+- **Ghi chú**: Lưu trữ ghi chú và ý tưởng
 
-**Mô hình Chất lượng:**
-- SERVQUAL Model
-- Customer Satisfaction Index
+#### Cộng tác viên
+- **Mời thành viên**: Gửi lời mời qua email
+- **Phân quyền**: Owner, Editor, Viewer
+- **Quản lý**: Thêm, xóa, thay đổi quyền
 
-**Mô hình Chiến lược:**
-- Porter's Five Forces
-- SWOT Analysis
-
-#### Bước 4: AI Tạo Đề cương
-1. **Nhấn "Tạo đề cương"**
-2. **AI sẽ tự động tạo**:
-   - Tổng quan nghiên cứu
-   - Khung lý thuyết
-   - Giả thuyết nghiên cứu
-   - Phương pháp nghiên cứu
-   - Kế hoạch thực hiện
-
-### Quản lý Tiến độ Dự án
-
-#### Milestone Tracking
-```
-📋 Giai đoạn 1: Lập kế hoạch (0-20%)
-├── ✅ Xác định vấn đề nghiên cứu
-├── ✅ Xây dựng khung lý thuyết  
-├── 🔄 Thiết kế phương pháp nghiên cứu
-└── ⏳ Xin phép nghiên cứu
-
-📊 Giai đoạn 2: Thu thập dữ liệu (20-60%)
-├── ⏳ Thiết kế công cụ thu thập
-├── ⏳ Pilot test
-├── ⏳ Thu thập dữ liệu chính thức
-└── ⏳ Làm sạch dữ liệu
-
-📈 Giai đoạn 3: Phân tích (60-80%)
-├── ⏳ Phân tích mô tả
-├── ⏳ Kiểm định độ tin cậy
-├── ⏳ Phân tích nhân tố
-└── ⏳ Kiểm định giả thuyết
-
-📝 Giai đoạn 4: Báo cáo (80-100%)
-├── ⏳ Viết báo cáo
-├── ⏳ Review và chỉnh sửa
-├── ⏳ Chuẩn bị thuyết trình
-└── ⏳ Nộp báo cáo cuối
-```
-
-## 🔬 Thiết kế Nghiên cứu
-
-### Xây dựng Khung Lý thuyết
-
-#### Định nghĩa Biến Nghiên cứu
-1. **Biến Độc lập (Independent Variables)**:
-   ```
-   - Perceived Usefulness (PU)
-   - Perceived Ease of Use (PEOU)  
-   - Social Influence (SI)
-   - Trust (TR)
-   ```
-
-2. **Biến Phụ thuộc (Dependent Variables)**:
-   ```
-   - Behavioral Intention (BI)
-   - Actual Usage Behavior (AUB)
-   ```
-
-3. **Biến Kiểm soát (Control Variables)**:
-   ```
-   - Age (Tuổi)
-   - Gender (Giới tính)
-   - Education (Trình độ học vấn)
-   - Experience (Kinh nghiệm sử dụng)
-   ```
-
-#### Xây dựng Giả thuyết
-```
-H1: Perceived Usefulness có tác động tích cực đến Behavioral Intention
-H2: Perceived Ease of Use có tác động tích cực đến Perceived Usefulness  
-H3: Social Influence có tác động tích cực đến Behavioral Intention
-H4: Trust có tác động tích cực đến Behavioral Intention
-H5: Behavioral Intention có tác động tích cực đến Actual Usage Behavior
-```
-
-### Thiết kế Phương pháp
-
-#### Chọn Phương pháp Nghiên cứu
-- **Định lượng**: Khảo sát, thí nghiệm
-- **Định tính**: Phỏng vấn, quan sát
-- **Hỗn hợp**: Kết hợp cả hai
-
-#### Xác định Mẫu Nghiên cứu
-```
-Đối tượng: Người tiêu dùng từ 18-65 tuổi có kinh nghiệm mua sắm online
-Kích thước mẫu: 300-500 người (theo công thức Hair et al.)
-Phương pháp chọn mẫu: Thuận tiện có kiểm soát
-Tiêu chí:
-- Đã từng mua hàng online ít nhất 3 lần
-- Sử dụng smartphone/máy tính thường xuyên
-- Đồng ý tham gia nghiên cứu
-```
-
-## 📋 Xây dựng Survey
+## 🎯 Thiết kế khảo sát
 
 ### Survey Builder
 
-#### Bước 1: Tạo Survey từ Thiết kế
-1. **Vào "Survey Builder"**
-2. **Chọn "Tạo từ thiết kế nghiên cứu"**
-3. **Hệ thống tự động**:
-   - Lấy câu hỏi từ Question Bank
-   - Tạo thang đo cho từng construct
-   - Sắp xếp câu hỏi logic
+#### Tạo khảo sát mới
+1. **Vào dự án** → **Nhấp "Tạo khảo sát"**
+2. **Chọn phương pháp**:
+   - **Tạo từ đầu**: Thiết kế hoàn toàn mới
+   - **Sử dụng template**: Chọn từ thư viện có sẵn
+   - **Import**: Từ file Excel/Word
+   - **AI Assistant**: Để AI tạo dựa trên mô tả
 
-#### Bước 2: Tùy chỉnh Câu hỏi
+#### Thiết kế câu hỏi
 
-**Thang đo Likert 7 điểm:**
-```
-Perceived Usefulness (PU):
-PU1: Sử dụng mua sắm online giúp tôi hoàn thành công việc nhanh hơn
-PU2: Sử dụng mua sắm online cải thiện hiệu quả công việc của tôi  
-PU3: Sử dụng mua sắm online tăng năng suất của tôi
-PU4: Tôi thấy mua sắm online hữu ích
+##### Loại câu hỏi hỗ trợ
+- **Single Choice**: Chọn một đáp án
+- **Multiple Choice**: Chọn nhiều đáp án
+- **Likert Scale**: Thang đo 1-5, 1-7, 1-10
+- **Rating Scale**: Đánh giá bằng sao, số điểm
+- **Text Input**: Câu trả lời mở
+- **Number Input**: Nhập số
+- **Date/Time**: Chọn ngày tháng
+- **File Upload**: Upload hình ảnh, tài liệu
+- **Matrix**: Bảng câu hỏi
 
-Thang đo: 1 = Hoàn toàn không đồng ý → 7 = Hoàn toàn đồng ý
-```
+##### Tính năng nâng cao
+- **Logic nhảy**: Điều hướng dựa trên câu trả lời
+- **Randomization**: Xáo trộn thứ tự câu hỏi/đáp án
+- **Validation**: Kiểm tra tính hợp lệ của câu trả lời
+- **Piping**: Sử dụng câu trả lời trước trong câu hỏi sau
+- **Quota**: Giới hạn số lượng response theo tiêu chí
 
-**Câu hỏi Nhân khẩu học:**
-```
-1. Giới tính: Nam/Nữ/Khác
-2. Tuổi: _____ (số)
-3. Trình độ học vấn: THPT/Cao đẳng/Đại học/Sau đại học
-4. Thu nhập: <5tr/5-10tr/10-20tr/20-30tr/>30tr
-5. Kinh nghiệm mua online: <1 năm/1-3 năm/3-5 năm/>5 năm
-```
-
-#### Bước 3: Kiểm tra và Xem trước
-1. **Validation Check**:
-   - Kiểm tra logic câu hỏi
-   - Đảm bảo thang đo nhất quán
-   - Xác nhận câu hỏi bắt buộc
-
-2. **Preview Survey**:
-   - Xem giao diện người dùng
-   - Test trên mobile/desktop
-   - Kiểm tra thời gian hoàn thành
+#### Preview và test
+- **Preview**: Xem trước khảo sát như người tham gia
+- **Test mode**: Chạy thử với dữ liệu giả
+- **Mobile preview**: Kiểm tra trên thiết bị di động
+- **Accessibility check**: Đảm bảo khả năng tiếp cận
 
 ### Question Bank
 
-#### Tìm kiếm Câu hỏi Chuẩn
-```
-Bộ lọc:
-- Construct: "Perceived Usefulness"
-- Model: "Technology Acceptance Model"  
-- Language: "Vietnamese"
-- Reliability: "> 0.8"
+#### Sử dụng thư viện câu hỏi
+1. **Truy cập Question Bank** từ menu chính
+2. **Tìm kiếm** theo:
+   - Từ khóa
+   - Chủ đề (Brand, Product, Service, etc.)
+   - Loại câu hỏi
+   - Độ tin cậy (Cronbach's Alpha)
+3. **Preview câu hỏi** trước khi thêm
+4. **Thêm vào khảo sát** bằng drag & drop
 
-Kết quả: 12 câu hỏi được validate
-```
+#### Đóng góp câu hỏi
+- **Tạo câu hỏi mới**: Thiết kế và chia sẻ
+- **Đánh giá**: Rate câu hỏi của người khác
+- **Báo cáo**: Báo lỗi hoặc vấn đề với câu hỏi
 
-#### Thêm Câu hỏi Mới
-1. **Nhập câu hỏi**:
-   - Tiếng Anh (bắt buộc)
-   - Tiếng Việt (tùy chọn)
-   - Loại thang đo
-   - Construct liên quan
+## 📊 Thu thập dữ liệu
 
-2. **Metadata**:
-   - Tác giả gốc
-   - Năm phát triển
-   - Độ tin cậy đã kiểm định
-   - Ngành áp dụng
+### Tạo Campaign
 
-## 🎯 Quản lý Chiến dịch Thu thập Dữ liệu
+#### Cấu hình campaign
+1. **Từ khảo sát** → **Nhấp "Tạo Campaign"**
+2. **Thiết lập cơ bản**:
+   - Tên campaign
+   - Mô tả
+   - Thời gian bắt đầu/kết thúc
+   - Mục tiêu số lượng response
+3. **Đối tượng mục tiêu**:
+   - Độ tuổi
+   - Giới tính
+   - Khu vực địa lý
+   - Thu nhập
+   - Nghề nghiệp
+4. **Phương thức thu thập**:
+   - Link trực tiếp
+   - QR Code
+   - Embed vào website
+   - Email invitation
+   - Social media
 
-### Tạo Chiến dịch Mới
+#### Quản lý campaign
+- **Theo dõi real-time**: Số response, completion rate
+- **Chỉnh sửa**: Cập nhật thông tin, gia hạn thời gian
+- **Tạm dừng/Tiếp tục**: Kiểm soát việc thu thập
+- **Đóng campaign**: Kết thúc thu thập dữ liệu
 
-#### Bước 1: Cấu hình Cơ bản
-```
-Tên chiến dịch: "Khảo sát Hành vi Mua sắm Online Q4/2024"
-Mục tiêu: 500 phản hồi hoàn chỉnh
-Thời gian: 30 ngày
-Token thưởng: 50 token/phản hồi
-```
+### Monitoring và Quality Control
 
-#### Bước 2: Thiết lập Tiêu chí Đối tượng
-```json
-{
-  "age": {"min": 18, "max": 65},
-  "location": ["Hà Nội", "TP.HCM", "Đà Nẵng"],
-  "experience": ["có kinh nghiệm mua online"],
-  "device": ["smartphone", "computer"],
-  "exclude": ["đã tham gia khảo sát tương tự trong 6 tháng"]
-}
-```
+#### Dashboard campaign
+- **Response rate**: Tỷ lệ hoàn thành
+- **Geographic distribution**: Phân bố địa lý
+- **Device breakdown**: Thiết bị sử dụng
+- **Time analysis**: Thời gian hoàn thành
+- **Drop-off points**: Điểm bỏ cuộc
 
-#### Bước 3: Cấu hình Hệ thống Thưởng
-```
-Token Pool: 25,000 tokens
-Phí admin: 5% (1,250 tokens)
-Thưởng hoàn thành: 50 tokens
-Thưởng chất lượng cao: +10 tokens
-Thưởng giới thiệu: 5 tokens/người
-```
+#### Data quality checks
+- **Duplicate detection**: Phát hiện response trùng lặp
+- **Speeding detection**: Phát hiện làm quá nhanh
+- **Straight-lining**: Phát hiện chọn cùng đáp án
+- **Attention checks**: Kiểm tra sự chú ý
+- **Open-end quality**: Chất lượng câu trả lời mở
 
-### Theo dõi Chiến dịch
+## 📈 Phân tích dữ liệu
 
-#### Dashboard Real-time
-```
-📊 Tổng quan:
-├── Lượt xem: 2,847
-├── Bắt đầu: 1,234 (43.4%)
-├── Hoàn thành: 456 (37.0%)
-└── Tỷ lệ hoàn thành: 16.0%
+### Analytics Dashboard
 
-🎯 Tiến độ:
-├── Mục tiêu: 500 phản hồi
-├── Đã thu thập: 456 (91.2%)
-├── Còn lại: 44 phản hồi
-└── Thời gian còn lại: 5 ngày
+#### Tổng quan dữ liệu
+- **Sample overview**: Thông tin mẫu nghiên cứu
+- **Response quality**: Chất lượng dữ liệu
+- **Missing data**: Dữ liệu thiếu
+- **Outliers**: Giá trị ngoại lai
 
-💰 Token:
-├── Đã chi: 22,800 tokens
-├── Còn lại: 2,200 tokens
-├── Dự kiến cần: 2,200 tokens
-└── Trạng thái: ✅ Đủ ngân sách
-```
+#### Phân tích mô tả
+- **Descriptive statistics**: Mean, median, mode, SD
+- **Frequency tables**: Bảng tần số
+- **Cross-tabulation**: Bảng chéo
+- **Charts**: Bar, pie, histogram, box plot
 
-#### Quản lý Chất lượng
-```
-🔍 Kiểm tra Chất lượng:
-├── Straight-lining: 23 phản hồi (5.0%)
-├── Thời gian quá nhanh: 12 phản hồi (2.6%)
-├── Phản hồi không nhất quán: 8 phản hồi (1.8%)
-└── Chất lượng tốt: 413 phản hồi (90.6%)
+### Advanced Analytics
 
-⚡ Hành động:
-├── Loại bỏ phản hồi kém chất lượng
-├── Không trả thưởng cho phản hồi không hợp lệ
-└── Gửi thông báo nhắc nhở chất lượng
-```
+#### Reliability Analysis
+1. **Chọn scales** cần kiểm tra
+2. **Cronbach's Alpha**: Độ tin cậy nội tại
+3. **Item-total correlation**: Tương quan item-tổng
+4. **Alpha if deleted**: Alpha nếu loại bỏ item
+5. **Composite Reliability**: Độ tin cậy tổng hợp
+6. **Average Variance Extracted**: Phương sai trích xuất trung bình
 
-## 📈 Phân tích Dữ liệu
-
-### Chuẩn bị Dữ liệu
-
-#### Upload Dữ liệu
-1. **Định dạng hỗ trợ**: CSV, Excel (.xlsx, .xls)
-2. **Cấu trúc dữ liệu**:
-   ```csv
-   ID,PU1,PU2,PU3,PU4,PEOU1,PEOU2,PEOU3,BI1,BI2,Age,Gender
-   1,5,6,5,6,4,5,4,6,5,25,Male
-   2,4,4,5,4,6,6,5,5,4,32,Female
-   ```
-
-3. **Kiểm tra Dữ liệu**:
-   - Phát hiện missing values
-   - Kiểm tra outliers
-   - Xác định loại biến
-
-#### Data Screening
-```
-📊 Tổng quan Dữ liệu:
-├── Số quan sát: 456
-├── Số biến: 28
-├── Missing values: 12 (0.9%)
-└── Outliers: 8 (1.8%)
-
-🔍 Kiểm tra Giả định:
-├── Normality: Shapiro-Wilk test
-├── Linearity: Scatterplot matrix  
-├── Homoscedasticity: Levene's test
-└── Multicollinearity: VIF < 5
-```
-
-### Phân tích Thống kê
-
-#### Thống kê Mô tả
-```
-📈 Thống kê Mô tả:
-
-Perceived Usefulness (PU):
-├── Mean: 5.23 (SD: 1.12)
-├── Median: 5.25
-├── Range: 1.75 - 7.00
-└── Distribution: Slightly negatively skewed
-
-Behavioral Intention (BI):
-├── Mean: 4.89 (SD: 1.34)
-├── Median: 5.00  
-├── Range: 1.00 - 7.00
-└── Distribution: Normal
-```
-
-#### Phân tích Độ tin cậy
-```r
-# Cronbach's Alpha Results
-Construct               Items    α      ω      AVE    CR
-Perceived Usefulness    4      .89    .90    .68    .89
-Perceived Ease of Use   4      .92    .93    .74    .92
-Social Influence        3      .85    .86    .66    .85
-Trust                   4      .88    .89    .65    .88
-Behavioral Intention    3      .91    .92    .77    .91
-```
-
-#### Exploratory Factor Analysis (EFA)
-```
-🔍 EFA Results:
-
-KMO Measure: .923 (Excellent)
-Bartlett's Test: χ² = 4,567.23, p < .001
-
-Factor Structure:
-├── Factor 1: Perceived Usefulness (Eigenvalue: 6.78, 28.2% variance)
-├── Factor 2: Perceived Ease of Use (Eigenvalue: 3.45, 14.4% variance)
-├── Factor 3: Social Influence (Eigenvalue: 2.89, 12.0% variance)
-├── Factor 4: Trust (Eigenvalue: 2.34, 9.8% variance)
-└── Factor 5: Behavioral Intention (Eigenvalue: 1.98, 8.3% variance)
-
-Total Variance Explained: 72.7%
-```
-
-#### Confirmatory Factor Analysis (CFA)
-```
-📊 CFA Model Fit:
-
-Fit Indices:
-├── χ²/df: 2.34 (Good: < 3.0)
-├── CFI: .95 (Excellent: > .95)
-├── TLI: .94 (Good: > .90)
-├── RMSEA: .061 (Acceptable: < .08)
-├── SRMR: .048 (Good: < .05)
-└── Overall: Good model fit
-
-Factor Loadings: All > .70 and significant (p < .001)
-```
+#### Factor Analysis
+1. **Exploratory Factor Analysis (EFA)**:
+   - KMO và Bartlett's test
+   - Scree plot
+   - Factor loadings
+   - Rotation methods (Varimax, Promax)
+2. **Confirmatory Factor Analysis (CFA)**:
+   - Model specification
+   - Fit indices (CFI, TLI, RMSEA, SRMR)
+   - Modification indices
+   - Path diagram
 
 #### Structural Equation Modeling (SEM)
-```
-🏗️ SEM Results:
+1. **Model specification**: Thiết kế mô hình lý thuyết
+2. **Path analysis**: Phân tích đường dẫn
+3. **Mediation analysis**: Phân tích trung gian
+4. **Moderation analysis**: Phân tích điều tiết
+5. **Multi-group analysis**: So sánh nhóm
+6. **Bootstrap**: Ước lượng khoảng tin cậy
 
-Path Coefficients:
-├── PU → BI: β = .34, p < .001 (H1: Supported)
-├── PEOU → PU: β = .52, p < .001 (H2: Supported)  
-├── SI → BI: β = .28, p < .001 (H3: Supported)
-├── TR → BI: β = .19, p < .01 (H4: Supported)
-└── BI → AUB: β = .67, p < .001 (H5: Supported)
+### Statistical Validation
 
-Model Fit:
-├── χ²/df: 2.12 (Good)
-├── CFI: .96 (Excellent)
-├── RMSEA: .055 (Good)
-└── R² for BI: .68 (68% variance explained)
-```
+#### Assumption Testing
+- **Normality**: Shapiro-Wilk, Kolmogorov-Smirnov
+- **Homoscedasticity**: Levene's test
+- **Independence**: Durbin-Watson
+- **Linearity**: Scatterplot analysis
+- **Multicollinearity**: VIF, Tolerance
 
-### Xuất Kết quả
+#### Effect Size Reporting
+- **Cohen's d**: Cho t-test
+- **Eta squared**: Cho ANOVA
+- **R-squared**: Cho regression
+- **Standardized coefficients**: Cho SEM
 
-#### Báo cáo Tự động
-1. **Executive Summary**: Tóm tắt kết quả chính
-2. **Detailed Results**: Kết quả chi tiết từng phân tích
-3. **Tables & Figures**: Bảng biểu và biểu đồ
-4. **Statistical Code**: Code R để tái tạo kết quả
+## 📊 Visualization
 
-#### Định dạng Xuất
-- **PDF Report**: Báo cáo hoàn chỉnh
-- **Word Document**: Có thể chỉnh sửa
-- **Excel Workbook**: Dữ liệu và kết quả
-- **R Script**: Code để tái tạo phân tích
+### Chart Gallery
 
-## 🤝 Collaboration & Sharing
+#### Biểu đồ cơ bản
+- **Bar Chart**: So sánh giá trị
+- **Line Chart**: Xu hướng theo thời gian
+- **Pie Chart**: Tỷ lệ phần trăm
+- **Scatter Plot**: Mối quan hệ giữa biến
+- **Histogram**: Phân phối dữ liệu
+- **Box Plot**: Phân tích outliers
 
-### Chia sẻ Dự án
-```
-👥 Team Members:
-├── Dr. Nguyen Van A (Principal Investigator)
-├── MSc. Tran Thi B (Co-Investigator)  
-├── Mr. Le Van C (Research Assistant)
-└── Ms. Pham Thi D (Data Analyst)
+#### Biểu đồ nâng cao
+- **Heatmap**: Ma trận tương quan
+- **Radar Chart**: So sánh đa chiều
+- **Treemap**: Phân cấp dữ liệu
+- **Sankey Diagram**: Luồng dữ liệu
+- **Network Graph**: Mối quan hệ mạng
 
-🔐 Permissions:
-├── View: Xem dự án và kết quả
-├── Edit: Chỉnh sửa thiết kế và phân tích
-├── Admin: Quản lý thành viên và cài đặt
-└── Owner: Toàn quyền kiểm soát
-```
+#### Statistical Charts
+- **Scree Plot**: Factor analysis
+- **Path Diagram**: SEM model
+- **Forest Plot**: Meta-analysis
+- **Q-Q Plot**: Kiểm tra phân phối
+- **Residual Plot**: Chẩn đoán mô hình
 
-### Version Control
-```
-📝 Project History:
-├── v1.0: Initial project setup (01/10/2024)
-├── v1.1: Added theoretical framework (05/10/2024)
-├── v1.2: Completed survey design (12/10/2024)
-├── v2.0: Data collection completed (30/10/2024)
-├── v2.1: Preliminary analysis (15/11/2024)
-└── v3.0: Final results (30/11/2024)
-```
+### Customization
 
-## 📞 Hỗ trợ & Troubleshooting
+#### Styling options
+- **Colors**: Palette tùy chỉnh
+- **Fonts**: Typography settings
+- **Layout**: Kích thước, spacing
+- **Themes**: Professional, Academic, Brand
 
-### Các Vấn đề Thường gặp
+#### Export options
+- **Formats**: PNG, SVG, PDF, EPS
+- **Resolution**: 72, 150, 300, 600 DPI
+- **Size**: Custom dimensions
+- **Quality**: Lossless compression
 
-#### Lỗi Đăng nhập
-```
-❌ Vấn đề: Không thể đăng nhập
-✅ Giải pháp:
-1. Kiểm tra email và mật khẩu
-2. Reset mật khẩu nếu cần
-3. Xóa cache trình duyệt
-4. Thử trình duyệt khác
-```
+## 📝 Báo cáo
 
-#### Lỗi Upload Dữ liệu
-```
-❌ Vấn đề: File không upload được
-✅ Giải pháp:
-1. Kiểm tra định dạng file (CSV/Excel)
-2. Đảm bảo file < 50MB
-3. Kiểm tra tên cột không có ký tự đặc biệt
-4. Đảm bảo có ít nhất 1 hàng dữ liệu
-```
+### Report Builder
 
-#### Lỗi Phân tích R
-```
-❌ Vấn đề: Phân tích không chạy được
-✅ Giải pháp:
-1. Kiểm tra dữ liệu có missing values
-2. Đảm bảo có đủ quan sát (n > 100)
-3. Kiểm tra biến có phân phối chuẩn
-4. Liên hệ support nếu vẫn lỗi
-```
+#### Tự động tạo báo cáo
+1. **Chọn template**:
+   - Executive Summary
+   - Technical Report
+   - Academic Paper
+   - Presentation Slides
+2. **Cấu hình nội dung**:
+   - Methodology
+   - Results
+   - Discussion
+   - Recommendations
+3. **Chọn định dạng**:
+   - PDF
+   - Word Document
+   - PowerPoint
+   - HTML
 
-### Liên hệ Hỗ trợ
+#### Tùy chỉnh báo cáo
+- **Sections**: Thêm/xóa/sắp xếp phần
+- **Charts**: Chọn biểu đồ hiển thị
+- **Tables**: Định dạng bảng số liệu
+- **Text**: Chỉnh sửa nội dung
+- **Branding**: Logo, màu sắc công ty
 
-#### Kênh Hỗ trợ
+### Academic Reporting
+
+#### Citation styles
+- **APA Style**: American Psychological Association
+- **MLA Style**: Modern Language Association
+- **Chicago Style**: Chicago Manual of Style
+- **IEEE Style**: Institute of Electrical and Electronics Engineers
+
+#### Statistical reporting
+- **Effect sizes**: Báo cáo độ lớn hiệu ứng
+- **Confidence intervals**: Khoảng tin cậy
+- **P-values**: Mức ý nghĩa thống kê
+- **Sample sizes**: Kích thước mẫu
+- **Missing data**: Xử lý dữ liệu thiếu
+
+### Export và chia sẻ
+
+#### Export options
+- **PDF**: Báo cáo hoàn chỉnh
+- **Word**: Để chỉnh sửa thêm
+- **PowerPoint**: Presentation slides
+- **Excel**: Raw data và results
+- **SPSS**: Syntax và data files
+- **R Script**: Reproducible analysis
+
+#### Sharing options
+- **Public link**: Chia sẻ qua link
+- **Email**: Gửi trực tiếp qua email
+- **Embed**: Nhúng vào website
+- **API**: Truy cập qua API
+
+## 👥 Collaboration
+
+### Team Management
+
+#### Roles và permissions
+- **Owner**: Toàn quyền quản lý
+- **Admin**: Quản lý dự án và thành viên
+- **Editor**: Chỉnh sửa nội dung
+- **Analyst**: Phân tích dữ liệu
+- **Viewer**: Chỉ xem kết quả
+
+#### Workflow collaboration
+- **Comments**: Bình luận trên từng phần
+- **Notifications**: Thông báo real-time
+- **Version control**: Theo dõi thay đổi
+- **Activity log**: Lịch sử hoạt động
+
+### Project Templates
+
+#### Industry templates
+- **FMCG**: Fast-moving consumer goods
+- **Banking**: Dịch vụ ngân hàng
+- **Retail**: Bán lẻ
+- **Healthcare**: Y tế
+- **Education**: Giáo dục
+- **Technology**: Công nghệ
+
+#### Research types
+- **Brand tracking**: Theo dõi thương hiệu
+- **Customer satisfaction**: Hài lòng khách hàng
+- **Market segmentation**: Phân khúc thị trường
+- **Product testing**: Test sản phẩm
+- **Ad testing**: Test quảng cáo
+
+## 🔧 Cài đặt
+
+### Account Settings
+
+#### Profile management
+- **Personal info**: Tên, email, phone
+- **Avatar**: Upload ảnh đại diện
+- **Timezone**: Múi giờ
+- **Language**: Ngôn ngữ giao diện
+- **Notifications**: Cài đặt thông báo
+
+#### Security settings
+- **Password**: Đổi mật khẩu
+- **Two-factor authentication**: Xác thực 2 lớp
+- **Login history**: Lịch sử đăng nhập
+- **API keys**: Quản lý API keys
+
+### Organization Settings
+
+#### Company profile
+- **Company info**: Tên, địa chỉ, website
+- **Logo**: Upload logo công ty
+- **Branding**: Màu sắc, fonts
+- **Contact**: Thông tin liên hệ
+
+#### Billing và subscription
+- **Current plan**: Gói hiện tại
+- **Usage**: Sử dụng tài nguyên
+- **Billing history**: Lịch sử thanh toán
+- **Payment methods**: Phương thức thanh toán
+
+## 🆘 Hỗ trợ
+
+### Help Center
+
+#### Documentation
+- **User Guide**: Hướng dẫn sử dụng
+- **Video Tutorials**: Video hướng dẫn
+- **FAQ**: Câu hỏi thường gặp
+- **Best Practices**: Thực hành tốt nhất
+
+#### Contact Support
+- **Live Chat**: Chat trực tiếp
 - **Email**: support@ncskit.com
-- **Live Chat**: Trong ứng dụng (9h-17h, T2-T6)
-- **Help Center**: https://help.ncskit.com
-- **Community Forum**: https://community.ncskit.com
+- **Phone**: 1900-xxxx
+- **Ticket System**: Tạo ticket hỗ trợ
 
-#### Thông tin Cần cung cấp
-```
-📋 Khi báo lỗi, vui lòng cung cấp:
-├── Mô tả chi tiết vấn đề
-├── Các bước tái tạo lỗi
-├── Screenshot/video nếu có
-├── Thông tin trình duyệt/thiết bị
-└── Project ID (nếu liên quan đến dự án cụ thể)
-```
+### Community
+
+#### Forums
+- **General Discussion**: Thảo luận chung
+- **Feature Requests**: Đề xuất tính năng
+- **Bug Reports**: Báo lỗi
+- **Tips & Tricks**: Mẹo và thủ thuật
+
+#### Resources
+- **Blog**: Bài viết chuyên môn
+- **Webinars**: Hội thảo trực tuyến
+- **Case Studies**: Nghiên cứu điển hình
+- **Templates**: Mẫu có sẵn
 
 ---
 
-**Chúc bạn thành công với nghiên cứu khoa học cùng NCSKit! 🎓✨**
+*Hướng dẫn này được cập nhật thường xuyên. Để có phiên bản mới nhất, vui lòng truy cập [docs.ncskit.com](https://docs.ncskit.com)*

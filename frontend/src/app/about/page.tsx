@@ -1,333 +1,331 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  AcademicCapIcon,
-  LightBulbIcon,
-  UsersIcon,
-  GlobeAltIcon,
-} from '@heroicons/react/24/outline'
-import { GraduationCap } from 'lucide-react'
+'use client';
 
-const values = [
-  {
-    name: 'Innovation',
-    description: 'Pushing the boundaries of research technology with AI-powered solutions',
-    icon: LightBulbIcon,
-  },
-  {
-    name: 'Excellence',
-    description: 'Committed to delivering the highest quality tools for academic success',
-    icon: AcademicCapIcon,
-  },
-  {
-    name: 'Collaboration',
-    description: 'Fostering global research collaboration and knowledge sharing',
-    icon: UsersIcon,
-  },
-  {
-    name: 'Accessibility',
-    description: 'Making advanced research tools accessible to researchers worldwide',
-    icon: GlobeAltIcon,
-  },
-]
-
-const stats = [
-  { label: 'Active Researchers', value: '10,000+' },
-  { label: 'Papers Published', value: '50,000+' },
-  { label: 'Countries Served', value: '120+' },
-  { label: 'Success Rate', value: '95%' },
-]
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  Users, 
+  Target, 
+  Award, 
+  Globe, 
+  Heart,
+  Lightbulb,
+  TrendingUp,
+  Shield,
+  BarChart3,
+  FileText,
+  Code,
+  Settings,
+  BookOpen,
+  Zap,
+  Database,
+  Brain
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function AboutPage() {
   return (
-    <div className="bg-white">
-
-      {/* Hero Section */}
-      <div className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              About <span className="text-blue-600">NCSKIT</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              We're on a mission to revolutionize academic research by providing 
-              AI-powered tools that streamline the entire publication process.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Mission Section */}
-      <div className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
-              <p className="text-lg text-gray-600 mb-6">
-                NCSKIT was born from the recognition that academic research publication 
-                is often fragmented, stressful, and inefficient. Researchers spend 
-                countless hours on administrative tasks instead of focusing on what 
-                they do best - conducting groundbreaking research.
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* Hero Section */}
+        <div className="bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-900 mb-6">
+                Về NCSKIT
+              </h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+                Nền tảng nghiên cứu khoa học AI-powered hàng đầu Việt Nam, cung cấp công cụ khảo sát chuyên nghiệp và phân tích dữ liệu nâng cao cho cộng đồng nghiên cứu học thuật và thị trường.
               </p>
-              <p className="text-lg text-gray-600 mb-6">
-                Our platform addresses this challenge by providing a unified, 
-                AI-powered solution that guides researchers through every phase 
-                of the publication process, from initial planning to final submission.
-              </p>
-              <p className="text-lg text-gray-600">
-                We believe that by removing barriers and streamlining workflows, 
-                we can help researchers focus on making discoveries that change the world.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              {stats.map((stat) => (
-                <Card key={stat.label}>
-                  <CardContent className="pt-6 text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="text-gray-600">{stat.label}</div>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="flex justify-center gap-4">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Nền tảng nghiên cứu
+                </Badge>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Cộng đồng toàn cầu
+                </Badge>
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  AI-Powered
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Values Section */}
-      <div className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do at NCSKIT
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value) => (
-              <Card key={value.name} className="text-center hover:shadow-lg transition-shadow">
-                <CardContent className="pt-8">
-                  <value.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-3">{value.name}</h3>
-                  <p className="text-gray-600">{value.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Team Section */}
-      <div className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Team</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Meet the researchers and developers behind NCSKIT
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-            {/* Lead Developer & Research Scientist */}
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-8">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="h-12 w-12 text-blue-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Lê Phúc Hải</h3>
-                <p className="text-blue-600 font-semibold mb-2">Lead Developer & Research Scientist</p>
-                <p className="text-gray-500 text-sm mb-4">PhD Candidate in Business Management</p>
-                
-                <div className="text-left mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Key Responsibilities:</h4>
-                  <ul className="text-gray-600 text-sm space-y-2">
-                    <li>• System architecture and programming development</li>
-                    <li>• Statistical analysis methodology implementation</li>
-                    <li>• Research methodology design and validation</li>
-                    <li>• AI-powered analytics engine development</li>
-                    <li>• Scientific accuracy and quality assurance</li>
-                  </ul>
-                </div>
-
-                <div className="text-left mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Expertise:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Statistical Analysis</span>
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">SEM & Factor Analysis</span>
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Research Methods</span>
-                    <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Full-Stack Development</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-center space-x-2">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">PhD Candidate</span>
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">Business Management</span>
-                </div>
+        {/* Mission & Vision */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid md:grid-cols-2 gap-12">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-6 w-6 text-blue-600" />
+                  Sứ mệnh của chúng tôi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">
+                  Dân chủ hóa việc tiếp cận các công cụ nghiên cứu chuyên nghiệp và trao quyền cho các nhà nghiên cứu, học giả và tổ chức để thực hiện các cuộc khảo sát chất lượng cao và tạo ra những hiểu biết có ý nghĩa thúc đẩy sự thay đổi tích cực trong xã hội.
+                </p>
               </CardContent>
             </Card>
 
-            {/* Research Assistant & Data Specialist */}
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-8">
-                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <UsersIcon className="h-12 w-12 text-green-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Tín Nguyễn</h3>
-                <p className="text-green-600 font-semibold mb-2">Research Assistant & Data Specialist</p>
-                <p className="text-gray-500 text-sm mb-4">Master of Tourism Management</p>
-                
-                <div className="text-left mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Key Responsibilities:</h4>
-                  <ul className="text-gray-600 text-sm space-y-2">
-                    <li>• Research literature collection and curation</li>
-                    <li>• Data entry and database management</li>
-                    <li>• Content quality control and validation</li>
-                    <li>• Research documentation and archiving</li>
-                    <li>• User support and data assistance</li>
-                  </ul>
-                </div>
-
-                <div className="text-left mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Expertise:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Data Management</span>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Literature Review</span>
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Content Curation</span>
-                    <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Quality Assurance</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-center space-x-2">
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">Master's Degree</span>
-                  <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm rounded-full">Tourism Management</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Team Collaboration */}
-          <div className="mt-16 max-w-4xl mx-auto">
-            <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-0">
-              <CardContent className="pt-8">
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Our Collaborative Approach</h3>
-                  <p className="text-gray-600 mb-6 max-w-3xl mx-auto">
-                    NCSKIT is built on the synergy between technical expertise and research experience. 
-                    Our team combines deep statistical knowledge with practical software development skills, 
-                    ensuring that every feature is both scientifically sound and user-friendly.
-                  </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AcademicCapIcon className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Research Excellence</h4>
-                      <p className="text-sm text-gray-600">
-                        Grounded in academic rigor and statistical best practices
-                      </p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <LightBulbIcon className="h-8 w-8 text-green-600" />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Technical Innovation</h4>
-                      <p className="text-sm text-gray-600">
-                        Cutting-edge technology meets practical research needs
-                      </p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <UsersIcon className="h-8 w-8 text-purple-600" />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 mb-2">User-Centric Design</h4>
-                      <p className="text-sm text-gray-600">
-                        Built by researchers, for researchers worldwide
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-6 w-6 text-purple-600" />
+                  Tầm nhìn của chúng tôi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">
+                  Trở thành nền tảng hàng đầu thế giới về nghiên cứu khảo sát và phân tích dữ liệu, thúc đẩy một cộng đồng toàn cầu các nhà nghiên cứu hợp tác để giải quyết những thách thức phức tạp thông qua những hiểu biết dựa trên bằng chứng.
+                </p>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
 
-      {/* Story Section */}
-      <div className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Story</h2>
-            
-            <div className="prose prose-lg mx-auto text-gray-600">
-              <p className="text-lg leading-relaxed mb-6">
-                NCSKIT was born from the collaboration between Lê Phúc Hải, a PhD candidate in Business Management 
-                with deep expertise in statistical analysis and research methodology, and Tín Nguyễn, a Master's 
-                graduate in Tourism Management specializing in data management and research documentation. 
-                Together, they experienced firsthand the challenges of modern academic research and publication.
+        {/* Core Values */}
+        <div className="bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Giá trị cốt lõi</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Những nguyên tắc định hướng mọi hoạt động của chúng tôi tại NCSKIT
               </p>
-              
-              <p className="text-lg leading-relaxed mb-6">
-                After years of struggling with fragmented tools, inefficient workflows, and the overwhelming 
-                complexity of statistical analysis software, they decided to build the comprehensive solution 
-                they wished they had. Combining Hải's technical programming skills and statistical expertise 
-                with Tín's meticulous approach to data curation and research support, they created NCSKIT.
-              </p>
-              
-              <p className="text-lg leading-relaxed mb-6">
-                Our journey began in 2023 when we started developing AI-powered tools to assist with literature 
-                review, statistical analysis, and research methodology. As we shared our early prototypes with 
-                the research community, we discovered that the need for comprehensive, user-friendly research 
-                management tools was universal across disciplines and countries.
-              </p>
-              
-              <p className="text-lg leading-relaxed mb-6">
-                Today, NCSKIT serves researchers across multiple countries, helping them conduct rigorous 
-                statistical analysis and publish high-quality research more efficiently than ever before. 
-                Our platform continues to evolve based on the needs of our growing research community, 
-                with new features and analytical capabilities added regularly.
-              </p>
-              
-              <p className="text-lg leading-relaxed">
-                We're just getting started. Our vision is to become the indispensable platform that every 
-                researcher relies on to conduct sophisticated statistical analysis, manage their research 
-                workflow, and make meaningful contributions to their fields. By combining academic rigor 
-                with technological innovation, we're democratizing access to advanced research tools worldwide.
-              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tính chính trực</h3>
+                <p className="text-gray-600 text-sm">
+                  Chúng tôi duy trì các tiêu chuẩn đạo đức cao nhất trong nghiên cứu và xử lý dữ liệu
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Hợp tác</h3>
+                <p className="text-gray-600 text-sm">
+                  Chúng tôi tin vào sức mạnh của cộng đồng và nghiên cứu hợp tác
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Đổi mới</h3>
+                <p className="text-gray-600 text-sm">
+                  Chúng tôi liên tục đẩy lùi ranh giới của công nghệ nghiên cứu
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tác động</h3>
+                <p className="text-gray-600 text-sm">
+                  Chúng tôi nỗ lực tạo ra sự thay đổi có ý nghĩa thông qua những hiểu biết nghiên cứu
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* CTA Section */}
-      <div className="py-24 bg-blue-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">
-            Join Our Research Community
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Be part of the research revolution. Start using NCSKIT today and 
-            experience the future of academic research management.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/dashboard">
-                Try NCSKIT Free
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-blue-600">
-              <Link href="/contact">
-                Contact Us
-              </Link>
-            </Button>
+        {/* Core Features */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Tính năng chính</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              NCSKIT cung cấp giải pháp nghiên cứu toàn diện cho các thách thức hiện đại
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Survey Builder AI
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  Công cụ tạo khảo sát thông minh với AI-powered builder và question bank phong phú.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Drag-and-drop survey designer</li>
+                  <li>• Logic branching thông minh</li>
+                  <li>• Question bank với 1000+ mẫu</li>
+                  <li>• Multi-language support</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <BarChart3 className="h-5 w-5 text-green-600" />
+                  Advanced Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  Phân tích thống kê nâng cao với R integration và machine learning insights.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• SEM & Factor Analysis</li>
+                  <li>• Reliability Analysis</li>
+                  <li>• Interactive visualizations</li>
+                  <li>• Automated report generation</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  Team Collaboration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  Làm việc nhóm hiệu quả với project management và role-based permissions.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Real-time collaboration</li>
+                  <li>• Project management tools</li>
+                  <li>• Version control system</li>
+                  <li>• Team workspace</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Database className="h-5 w-5 text-red-600" />
+                  Data Collection
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  Thu thập dữ liệu hiệu quả với campaign management và quality control.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Multi-channel distribution</li>
+                  <li>• Real-time monitoring</li>
+                  <li>• Quality control algorithms</li>
+                  <li>• Response validation</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Brain className="h-5 w-5 text-orange-600" />
+                  AI-Powered Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  Trí tuệ nhân tạo hỗ trợ phân tích và tạo insights tự động.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Automated pattern detection</li>
+                  <li>• Predictive analytics</li>
+                  <li>• Natural language processing</li>
+                  <li>• Smart recommendations</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Code className="h-5 w-5 text-indigo-600" />
+                  Developer API
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">
+                  RESTful API đầy đủ cho developers tích hợp và mở rộng tính năng.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• RESTful endpoints</li>
+                  <li>• JWT authentication</li>
+                  <li>• Comprehensive documentation</li>
+                  <li>• SDK support</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
+
+        {/* Stats */}
+        <div className="bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Tác động của chúng tôi</h2>
+              <p className="text-gray-600">
+                Những con số phản ánh cam kết của chúng tôi đối với sự xuất sắc trong nghiên cứu
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">5K+</div>
+                <div className="text-gray-600">Nhà nghiên cứu hoạt động</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-green-600 mb-2">25K+</div>
+                <div className="text-gray-600">Khảo sát đã thực hiện</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-purple-600 mb-2">500K+</div>
+                <div className="text-gray-600">Phản hồi thu thập</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-red-600 mb-2">50+</div>
+                <div className="text-gray-600">Quốc gia phục vụ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <CardContent className="text-center py-12">
+              <h2 className="text-3xl font-bold mb-4">Tham gia cộng đồng NCSKIT</h2>
+              <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
+                Bắt đầu hành trình nghiên cứu của bạn ngay hôm nay và kết nối với hàng nghìn nhà nghiên cứu trên toàn thế giới. 
+                Trải nghiệm sức mạnh của các công cụ nghiên cứu khảo sát chuyên nghiệp.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link href="/register">
+                  <Button size="lg" variant="secondary">
+                    Bắt đầu miễn phí
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600">
+                    Liên hệ chúng tôi
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  )
+  );
 }

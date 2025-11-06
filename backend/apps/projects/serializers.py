@@ -17,6 +17,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'phase', 'status', 'progress',
             'owner', 'owner_name', 'start_date', 'end_date', 'tags',
+            'research_design', 'data_collection', 'progress_tracking',
             'collaborator_count', 'document_count', 'milestone_count',
             'completed_milestones_count', 'created_at', 'updated_at'
         ]

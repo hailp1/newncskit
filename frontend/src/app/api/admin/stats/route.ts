@@ -1,7 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/postgres-server';
+import { verifyAdminAuth, createUnauthorizedResponse } from '@/lib/admin-auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Verify admin authentication
+  const adminUser = await verifyAdminAuth(request);
+  if (!adminUser) {
+    return createUnauthorizedResponse();
+  }
   try {
     // Get total users
     const usersResult = await query('SELECT COUNT(*) FROM users');

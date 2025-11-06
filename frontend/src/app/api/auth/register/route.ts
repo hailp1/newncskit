@@ -3,8 +3,13 @@ import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
+// Validate required environment variables
+if (!process.env.DATABASE_URL && (!process.env.POSTGRES_HOST || !process.env.POSTGRES_DB || !process.env.POSTGRES_USER || !process.env.POSTGRES_PASSWORD)) {
+  throw new Error('DATABASE_URL or individual PostgreSQL environment variables are required');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ncskit'
+  connectionString: process.env.DATABASE_URL || `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT || '5432'}/${process.env.POSTGRES_DB}`
 })
 
 export async function POST(request: NextRequest) {
@@ -28,9 +33,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate password strength
-    if (password.length < 6) {
+    if (password.length < 12) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: 'Password must be at least 12 characters long' },
+        { status: 400 }
+      )
+    }
+    
+    // Check password complexity
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      return NextResponse.json(
+        { error: 'Password must contain uppercase, lowercase, numbers, and special characters' },
         { status: 400 }
       )
     }
@@ -65,9 +83,14 @@ export async function POST(request: NextRequest) {
       const user = userResult.rows[0]
 
       // Generate JWT token
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET environment variable is required');
+      }
+      
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key',
+        jwtSecret,
         { expiresIn: '7d' }
       )
 

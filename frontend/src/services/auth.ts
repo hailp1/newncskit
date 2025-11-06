@@ -6,9 +6,9 @@ function apiUserToAppUser(apiUser: any): User {
     id: apiUser.id,
     email: apiUser.email,
     profile: {
-      firstName: apiUser.full_name?.split(' ')[0] || '',
-      lastName: apiUser.full_name?.split(' ').slice(1).join(' ') || '',
-      institution: undefined,
+      firstName: apiUser.first_name || apiUser.full_name?.split(' ')[0] || '',
+      lastName: apiUser.last_name || apiUser.full_name?.split(' ').slice(1).join(' ') || '',
+      institution: apiUser.institution || undefined,
       researchDomain: [],
       orcidId: undefined,
       avatar: undefined,
@@ -27,9 +27,23 @@ function apiUserToAppUser(apiUser: any): User {
         collaboration: true,
       },
     },
-    role: apiUser.role || 'user',
+    role: (() => {
+      // Determine role based on backend role assignment or staff status
+      if (apiUser.role_assignments && apiUser.role_assignments.length > 0) {
+        // Use the highest priority role from backend
+        const roleNames = apiUser.role_assignments.map((ra: any) => ra.role.name.toLowerCase().replace(' ', '_'));
+        if (roleNames.includes('super_admin')) return 'super_admin';
+        if (roleNames.includes('admin')) return 'admin';
+        if (roleNames.includes('moderator')) return 'moderator';
+      }
+      if (apiUser.is_superuser) return 'super_admin';
+      if (apiUser.is_staff) return 'admin';
+      return apiUser.role || 'user';
+    })(),
     status: 'active',
-    full_name: apiUser.full_name || apiUser.email,
+    full_name: apiUser.full_name || `${apiUser.first_name || ''} ${apiUser.last_name || ''}`.trim() || apiUser.email,
+    is_staff: apiUser.is_staff,
+    is_superuser: apiUser.is_superuser,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
@@ -39,17 +53,40 @@ export const authService = {
   // Sign up with email and password
   async signUp(userData: UserRegistration) {
     try {
-      // Simple demo registration - create user immediately
-      const demoUser = {
-        id: `user-${Date.now()}`,
-        email: userData.email,
-        full_name: `${userData.firstName} ${userData.lastName}`.trim(),
-        role: 'user' // Always user role for demo
-      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      
+      const response = await fetch(`${apiUrl}/api/auth/register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          password: userData.password,
+          password_confirm: userData.password,
+        }),
+      })
 
-      return {
-        user: apiUserToAppUser(demoUser),
-        session: { access_token: 'demo-token' },
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Store tokens in localStorage
+        if (data.tokens?.access) {
+          localStorage.setItem('access_token', data.tokens.access)
+        }
+        if (data.tokens?.refresh) {
+          localStorage.setItem('refresh_token', data.tokens.refresh)
+        }
+
+        return {
+          user: apiUserToAppUser(data.user),
+          session: { access_token: data.tokens.access },
+        }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || errorData.message || 'Registration failed')
       }
     } catch (error: any) {
       console.error('Sign up error:', error)
@@ -60,52 +97,51 @@ export const authService = {
   // Sign in with email and password
   async signIn(credentials: LoginCredentials) {
     try {
-      // Admin authentication
-      if (credentials.email === 'admin@ncskit.org' && credentials.password === 'admin123') {
-        const adminUser = {
-          id: 'admin-user-1',
-          email: 'admin@ncskit.org',
-          full_name: 'NCSKIT Administrator',
-          role: 'admin' // Full admin privileges
-        }
-
-        return {
-          user: apiUserToAppUser(adminUser),
-          session: { access_token: 'admin-token' },
-        }
-      }
-
-      // Demo user authentication
-      if (credentials.email === 'demo@ncskit.org' && credentials.password === 'demo123') {
-        const demoUser = {
-          id: 'demo-user-1',
-          email: 'demo@ncskit.org',
-          full_name: 'Demo Researcher',
-          role: 'user'
-        }
-
-        return {
-          user: apiUserToAppUser(demoUser),
-          session: { access_token: 'demo-token' },
-        }
-      }
-
-      // For any other credentials, allow them to "register" as new user
-      if (credentials.email && credentials.password) {
-        const newUser = {
-          id: `user-${Date.now()}`,
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      
+      const response = await fetch(`${apiUrl}/api/auth/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: credentials.email,
-          full_name: credentials.email.split('@')[0], // Use email prefix as name
-          role: 'user'
+          password: credentials.password,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Store tokens in localStorage
+        if (data.tokens?.access) {
+          localStorage.setItem('access_token', data.tokens.access)
+        }
+        if (data.tokens?.refresh) {
+          localStorage.setItem('refresh_token', data.tokens.refresh)
+        }
+
+        // Convert Django user to app user format
+        const user = {
+          id: data.user.id,
+          email: data.user.email,
+          full_name: `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() || data.user.email,
+          role: data.user.is_staff || data.user.is_superuser ? 'admin' : 'user',
+          is_staff: data.user.is_staff,
+          is_superuser: data.user.is_superuser,
+          first_name: data.user.first_name,
+          last_name: data.user.last_name,
+          institution: data.user.institution,
         }
 
         return {
-          user: apiUserToAppUser(newUser),
-          session: { access_token: 'demo-token' },
+          user: apiUserToAppUser(user),
+          session: { access_token: data.tokens.access },
         }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || errorData.message || 'Invalid email or password')
       }
-
-      throw new Error('Please enter valid email and password')
     } catch (error: any) {
       console.error('Sign in error:', error)
       throw new Error(error?.message || 'Login failed. Please check your credentials.')
@@ -120,33 +156,93 @@ export const authService = {
   // Sign out
   async signOut() {
     try {
-      await fetch('/api/auth/session', {
-        method: 'DELETE',
-      })
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      const refreshToken = localStorage.getItem('refresh_token')
+      
+      if (refreshToken) {
+        await fetch(`${apiUrl}/api/auth/logout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: JSON.stringify({
+            refresh_token: refreshToken
+          })
+        })
+      }
+      
+      // Clear tokens
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
     } catch (error) {
       console.error('Sign out error:', error)
-      // Don't throw error, allow logout to proceed
+      // Clear tokens even if API call fails
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
     }
   },
 
   // Get current session
   async getSession() {
     try {
-      const response = await fetch('/api/auth/session')
+      const accessToken = localStorage.getItem('access_token')
+      if (!accessToken) {
+        return null
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      const response = await fetch(`${apiUrl}/api/auth/profile/`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
       
       if (!response.ok) {
+        // Token might be expired, try to refresh
+        const refreshToken = localStorage.getItem('refresh_token')
+        if (refreshToken) {
+          const refreshResponse = await fetch(`${apiUrl}/api/auth/token/refresh/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              refresh: refreshToken
+            })
+          })
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json()
+            localStorage.setItem('access_token', refreshData.access)
+            
+            // Retry with new token
+            const retryResponse = await fetch(`${apiUrl}/api/auth/profile/`, {
+              headers: {
+                'Authorization': `Bearer ${refreshData.access}`
+              }
+            })
+            
+            if (retryResponse.ok) {
+              const userData = await retryResponse.json()
+              return {
+                user: apiUserToAppUser(userData),
+                session: { access_token: refreshData.access },
+              }
+            }
+          }
+        }
+        
+        // Clear invalid tokens
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
         return null
       }
 
-      const data = await response.json()
-      
-      if (!data.user) {
-        return null
-      }
-
+      const userData = await response.json()
       return {
-        user: apiUserToAppUser(data.user),
-        session: { access_token: 'session-token' },
+        user: apiUserToAppUser(userData),
+        session: { access_token: accessToken },
       }
     } catch (error) {
       console.error('Get session error:', error)
@@ -157,22 +253,34 @@ export const authService = {
   // Update user profile
   async updateProfile(userId: string, updates: Partial<User['profile']>) {
     try {
-      // For now, return the current user with updates applied
-      // In a real implementation, this would make an API call
-      const currentSession = await this.getSession()
-      if (!currentSession?.user) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      const accessToken = localStorage.getItem('access_token')
+      
+      if (!accessToken) {
         throw new Error('No user logged in')
       }
 
-      const updatedUser = {
-        ...currentSession.user,
-        profile: {
-          ...currentSession.user.profile,
-          ...updates,
+      const response = await fetch(`${apiUrl}/api/auth/profile/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
-      }
+        body: JSON.stringify({
+          first_name: updates.firstName,
+          last_name: updates.lastName,
+          institution: updates.institution,
+          orcid_id: updates.orcidId,
+        })
+      })
 
-      return updatedUser
+      if (response.ok) {
+        const userData = await response.json()
+        return apiUserToAppUser(userData)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to update profile')
+      }
     } catch (error) {
       console.error('Update profile error:', error)
       throw error
@@ -199,9 +307,22 @@ export const authService = {
   // Reset password - send reset email
   async resetPassword(email: string) {
     try {
-      // For now, just return success
-      // In a real implementation, this would send a reset email
-      return { success: true }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      
+      const response = await fetch(`${apiUrl}/api/auth/password/reset/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      })
+
+      if (response.ok) {
+        return { success: true }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to send reset email')
+      }
     } catch (error: any) {
       console.error('Reset password error:', error)
       throw new Error('Không thể gửi email đặt lại mật khẩu')
@@ -209,11 +330,27 @@ export const authService = {
   },
 
   // Update password with reset token
-  async updatePassword(newPassword: string) {
+  async updatePassword(token: string, newPassword: string) {
     try {
-      // For now, just return success
-      // In a real implementation, this would update the password
-      return { success: true }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      
+      const response = await fetch(`${apiUrl}/api/auth/password/reset/confirm/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          new_password: newPassword
+        })
+      })
+
+      if (response.ok) {
+        return { success: true }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to update password')
+      }
     } catch (error: any) {
       console.error('Update password error:', error)
       throw new Error('Không thể cập nhật mật khẩu')
@@ -223,9 +360,31 @@ export const authService = {
   // Change password for logged in user
   async changePassword(currentPassword: string, newPassword: string) {
     try {
-      // For now, just return success
-      // In a real implementation, this would verify current password and update
-      return { success: true }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      const accessToken = localStorage.getItem('access_token')
+      
+      if (!accessToken) {
+        throw new Error('No user logged in')
+      }
+
+      const response = await fetch(`${apiUrl}/api/auth/password/change/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          old_password: currentPassword,
+          new_password: newPassword
+        })
+      })
+
+      if (response.ok) {
+        return { success: true }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to change password')
+      }
     } catch (error: any) {
       console.error('Change password error:', error)
       throw new Error('Không thể thay đổi mật khẩu')

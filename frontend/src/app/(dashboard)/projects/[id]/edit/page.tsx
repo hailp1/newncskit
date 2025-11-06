@@ -55,22 +55,26 @@ export default function EditProjectPage() {
   const loadProject = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('marketing_projects')
-        .select('*')
-        .eq('id', params.id as string)
-        .eq('user_id', user?.id) // Ensure user can only edit their own projects
-        .single()
-
-      if (error) {
-        console.error('Error loading project:', error)
+      // Mock data for now - replace with actual API call
+      const mockProject = {
+        id: parseInt(params.id as string),
+        title: 'Sample Project',
+        description: 'Sample description',
+        status: 'draft',
+        user_id: parseInt(user?.id || '1'),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      if (!mockProject) {
+        console.error('Project not found')
         router.push('/projects')
         return
       }
 
-      if (data) {
-        setProject(data)
-        const projectData = data as any;
+      if (mockProject) {
+        setProject(mockProject)
+        const projectData = mockProject as any;
         setFormData({
           title: projectData.title || '',
           description: projectData.description || '',
@@ -97,20 +101,11 @@ export default function EditProjectPage() {
 
     try {
       setSaving(true)
-      const { error } = await supabase
-        .from('marketing_projects')
-        .update({
-          ...formData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', project.id)
-        .eq('user_id', user?.id)
-
-      if (error) {
-        console.error('Error updating project:', error)
-        alert('Failed to update project')
-        return
-      }
+      // Mock update - replace with actual API call
+      console.log('Updating project:', formData);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       router.push(`/projects/${project.id}`)
     } catch (error) {

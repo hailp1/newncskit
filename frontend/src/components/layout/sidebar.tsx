@@ -45,6 +45,12 @@ const navigation = [
   { name: 'Journal Matcher', href: '/journals', icon: ClipboardDocumentListIcon },
   { name: 'Review Manager', href: '/reviews', icon: ChatBubbleLeftRightIcon },
   { name: 'Blog', href: '/blog', icon: BookOpenIcon },
+  { 
+    name: 'Documentation', 
+    href: '/docs', 
+    icon: BookOpenIcon,
+    description: 'User guides, API docs, and system architecture'
+  },
 ]
 
 const adminNavigation = [
