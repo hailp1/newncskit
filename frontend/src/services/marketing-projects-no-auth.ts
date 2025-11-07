@@ -1,22 +1,9 @@
-// Use PostgreSQL database instead of Supabase
-import { createClient } from '@supabase/supabase-js';
+// Marketing Projects Service using Supabase
+import { createClient } from '@/lib/supabase/client';
 import { ErrorHandler } from './error-handler';
 
-// Initialize Supabase client with error handling
-let supabase: any = null;
-
-try {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-  } else {
-    console.warn('Supabase credentials not found, using fallback mode');
-  }
-} catch (error) {
-  console.error('Failed to initialize Supabase client:', error);
-}
+// Initialize Supabase client
+const supabase = createClient();
 
 export interface MarketingProject {
   id: string
@@ -51,12 +38,6 @@ export const marketingProjectsService = {
   // Get business domains with graceful fallback
   async getBusinessDomains() {
     try {
-      // Check if Supabase is available
-      if (!supabase) {
-        console.warn('Supabase not available, using fallback domains');
-        return this.getFallbackDomains();
-      }
-
       const { data, error } = await supabase
         .from('business_domains')
         .select('*')
@@ -86,12 +67,6 @@ export const marketingProjectsService = {
   // Get marketing models with graceful fallback
   async getMarketingModels() {
     try {
-      // Check if Supabase is available
-      if (!supabase) {
-        console.warn('Supabase not available, using fallback models');
-        return this.getFallbackModels();
-      }
-
       const { data, error } = await supabase
         .from('marketing_models')
         .select('*')
@@ -126,12 +101,7 @@ export const marketingProjectsService = {
   // Create new marketing project WITHOUT authentication check (for testing with RLS disabled)
   async createProject(userId: string, projectData: MarketingProjectCreation): Promise<MarketingProject> {
     try {
-      // Check if Supabase is available
-      if (!supabase) {
-        throw new Error('Database connection not available. Please check your configuration.');
-      }
-
-      console.log('🚀 Creating project without auth check (RLS disabled mode)')
+      console.log('🚀 Creating project')
       
       // Use a default test user ID if none provided
       const testUserId = userId || '9adc5570-5708-4cea-b150-4d37958509bb' // From our test users
@@ -253,12 +223,6 @@ export const marketingProjectsService = {
   // Get all marketing projects for a user
   async getUserProjects(userId: string): Promise<MarketingProject[]> {
     try {
-      // Check if Supabase is available
-      if (!supabase) {
-        console.warn('Supabase not available, returning empty projects list');
-        return [];
-      }
-
       const { data, error } = await supabase
         .from('projects')
         .select('*')

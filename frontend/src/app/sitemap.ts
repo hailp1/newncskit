@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { blogService } from '@/services/blog';
+import { env } from '@/config/env';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ncskit.com';
+  const baseUrl = env.app.url;
   
   // Static pages
   const staticPages = [

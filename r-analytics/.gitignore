@@ -1,0 +1,21 @@
+# Logs
+logs/
+*.log
+
+# R specific
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

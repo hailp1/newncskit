@@ -17,28 +17,10 @@ import {
 import Link from 'next/link'
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, logout } = useAuthStore()
 
-  useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!isAuthenticated) {
-      router.push('/login')
-    }
-  }, [isAuthenticated, router])
-
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please login to access dashboard</p>
-          <Button onClick={() => router.push('/login')}>
-            Go to Login
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  // No need for auth checking here since the layout handles it
+  // The layout ensures user is authenticated before rendering this component
 
   const quickActions = [
     {
@@ -92,7 +74,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">
-              Welcome back, {user.full_name}! 👋
+              Welcome back, {user?.full_name || user?.email || 'Guest'}! 👋
             </h1>
             <p className="text-blue-100">
               Ready to advance your research today?
@@ -101,7 +83,7 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-4">
             <div className="text-right">
               <p className="text-sm text-blue-100">Role</p>
-              <p className="font-semibold">{user.role === 'user' ? 'Researcher' : user.role}</p>
+              <p className="font-semibold">{user?.role === 'user' ? 'Researcher' : user?.role || 'Guest'}</p>
             </div>
             <UserIcon className="h-12 w-12 text-blue-200" />
           </div>
@@ -109,35 +91,56 @@ export default function DashboardPage() {
       </div>
 
       {/* User Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <UserIcon className="h-5 w-5 mr-2" />
-            Account Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Email</p>
-              <p className="font-medium">{user.email}</p>
+      {user && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <UserIcon className="h-5 w-5 mr-2" />
+              Account Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium">{user.email || 'Not logged in'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Full Name</p>
+                <p className="font-medium">{user.full_name || 'Guest User'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Account Type</p>
+                <p className="font-medium">{user.role || 'Guest'}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Full Name</p>
-              <p className="font-medium">{user.full_name}</p>
+            <div className="mt-4 pt-4 border-t">
+              <Button onClick={logout} variant="outline" size="sm">
+                Logout
+              </Button>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Account Type</p>
-              <p className="font-medium">Demo User</p>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <Button onClick={logout} variant="outline" size="sm">
-              Logout
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+      
+      {!user && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <UserIcon className="h-5 w-5 mr-2" />
+              Guest Mode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              You're browsing as a guest. Login to access personalized features.
+            </p>
+            <Link href="/auth">
+              <Button>Login / Sign Up</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <div>

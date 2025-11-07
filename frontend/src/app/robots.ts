@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { env } from '@/config/env';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ncskit.com';
+  const baseUrl = env.app.url;
   
   return {
     rules: [

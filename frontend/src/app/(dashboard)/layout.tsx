@@ -1,54 +1,32 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/navbar'
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuthStore } from '@/store/auth'
-import { authConfig } from '@/config/auth'
+import { useNetworkStatus } from '@/hooks/use-network-status'
+import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading, initialized, initialize } = useAuthStore()
-  const router = useRouter()
+  const { isAuthenticated, isLoading, initialize } = useAuthStore()
+  const { isOnline, isConnected } = useNetworkStatus()
 
-  // Initialize auth on mount
   useEffect(() => {
+    // Initialize auth store to get user session
     initialize()
   }, [initialize])
 
-  useEffect(() => {
-    // Wait for auth to be initialized before checking
-    if (initialized && !isLoading) {
-      if (authConfig.requireAuth && !isAuthenticated) {
-        console.log('Redirecting to login - not authenticated')
-        router.push(authConfig.redirects.requireAuth)
-      }
-    }
-  }, [isAuthenticated, isLoading, initialized, router])
-
-  // Show loading while initializing
-  if (!initialized || isLoading) {
+  // Show loading state while checking authentication
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // If auth is required but user is not authenticated, show nothing (will redirect)
-  if (authConfig.requireAuth && !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600 mb-4">Redirecting to login...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-2 text-gray-600">Đang tải...</p>
         </div>
       </div>
     )
@@ -56,6 +34,21 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Network status indicator */}
+      {!isOnline && (
+        <div className="bg-red-600 text-white text-center py-2 text-sm">
+          <WifiOff className="inline h-4 w-4 mr-1" />
+          Không có kết nối internet - Một số tính năng có thể không hoạt động
+        </div>
+      )}
+      
+      {!isConnected && isOnline && (
+        <div className="bg-yellow-600 text-white text-center py-2 text-sm">
+          <Wifi className="inline h-4 w-4 mr-1" />
+          Vấn đề kết nối - Đang thử lại...
+        </div>
+      )}
+
       <Navbar />
       <div className="flex">
         <Sidebar />

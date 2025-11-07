@@ -1,107 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-
 /**
- * Secure logout endpoint
- * Clears all authentication cookies and invalidates tokens
+ * Logout API Route
+ * Handles user logout and session cleanup
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Get tokens from cookies
-    const authToken = request.cookies.get('auth_token')?.value;
-    const refreshToken = request.cookies.get('refresh_token')?.value;
 
-    // Call backend to invalidate tokens if available
-    if (authToken || refreshToken) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
-          },
-          body: JSON.stringify({
-            refresh_token: refreshToken,
-          }),
-        });
-      } catch (error) {
-        // Continue with logout even if backend call fails
-        console.error('Backend logout error:', error);
-      }
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST() {
+  try {
+    const supabase = await createClient()
+    
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      )
     }
 
-    // Create response
-    const response = NextResponse.json({
-      message: 'Logged out successfully',
-      timestamp: new Date().toISOString(),
-    });
-
-    // Clear all authentication cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
-      path: '/',
-      maxAge: 0, // Expire immediately
-    };
-
-    // Clear auth cookies
-    response.cookies.set('auth_token', '', cookieOptions);
-    response.cookies.set('refresh_token', '', cookieOptions);
-    response.cookies.set('session_token', '', cookieOptions);
-    
-    // Clear user info cookie (not httpOnly)
-    response.cookies.set('user_info', '', {
-      ...cookieOptions,
-      httpOnly: false,
-    });
-
-    // Clear NextAuth cookies if they exist
-    response.cookies.set('next-auth.session-token', '', cookieOptions);
-    response.cookies.set('__Secure-next-auth.session-token', '', {
-      ...cookieOptions,
-      secure: true,
-    });
-
-    return response;
-
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Logout error:', error);
-    
-    // Still clear cookies even if there's an error
-    const response = NextResponse.json(
-      { error: 'Logout completed with errors' },
-      { status: 200 } // Still return success since cookies will be cleared
-    );
-
-    // Clear cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
-      path: '/',
-      maxAge: 0,
-    };
-
-    response.cookies.set('auth_token', '', cookieOptions);
-    response.cookies.set('refresh_token', '', cookieOptions);
-    response.cookies.set('session_token', '', cookieOptions);
-    response.cookies.set('user_info', '', { ...cookieOptions, httpOnly: false });
-
-    return response;
+    console.error('Logout error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Logout failed' },
+      { status: 500 }
+    )
   }
-}
-
-/**
- * Handle preflight requests
- */
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-    },
-  });
 }

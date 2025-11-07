@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# R specific
+.Rhistory
+.RData
+.Rproj.user
+
+# Documentation
+README.md
+*.md
+
+# Test files
+test-*.ps1
+test-*.sh
+test-*.R
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

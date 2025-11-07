@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { PageLayout } from '@/components/layout/page-layout';
+import PageLayout from '@/components/layout/page-layout';
 import { Shield, Lock, Eye, Database, UserCheck, FileText, AlertTriangle, Mail } from 'lucide-react';
 
 export const metadata: Metadata = {

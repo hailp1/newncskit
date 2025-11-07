@@ -1,3 +1,7 @@
+/**
+ * Authentication Configuration for Supabase Auth
+ */
+
 export const authConfig = {
   // Require authentication for dashboard routes
   requireAuth: true,
@@ -5,13 +9,19 @@ export const authConfig = {
   // Public routes that don't require authentication
   publicRoutes: [
     '/',
-    '/login',
-    '/register',
+    '/auth/login',
+    '/auth/register',
+    '/auth/callback',
+    '/auth/forgot-password',
+    '/auth/reset-password',
     '/about',
     '/features',
     '/blog',
-    '/blog/*',
-    '/auth/callback',
+    '/contact',
+    '/privacy',
+    '/terms',
+    '/setup-guide',
+    '/tutorials',
   ],
   
   // Protected routes that require authentication
@@ -24,12 +34,18 @@ export const authConfig = {
     '/journals',
     '/topics',
     '/reviews',
+    '/analysis',
+    '/blog-admin',
+    '/admin',
+    '/profile',
+    '/settings',
+    '/docs',
   ],
   
   // Redirect paths
   redirects: {
     // Where to redirect when auth is required but user is not authenticated
-    requireAuth: '/login',
+    requireAuth: '/auth/login',
     
     // Where to redirect after successful login
     afterLogin: '/dashboard',
@@ -41,16 +57,15 @@ export const authConfig = {
     afterLogout: '/',
   },
   
-  // Session configuration
+  // Session configuration (managed by Supabase)
   session: {
-    // How long to persist session in localStorage (in days)
-    persistDays: 30,
-    
-    // Auto refresh session before expiry
+    // Supabase handles session persistence automatically
+    // JWT expiry: 1 hour (configurable in Supabase dashboard)
+    // Refresh token expiry: 30 days (configurable in Supabase dashboard)
     autoRefresh: true,
   },
   
-  // OAuth providers configuration
+  // OAuth providers configuration (configured in Supabase dashboard)
   oauth: {
     google: {
       enabled: true,

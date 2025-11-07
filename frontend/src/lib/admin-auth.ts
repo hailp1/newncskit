@@ -1,6 +1,7 @@
 // Admin authentication middleware
+// NOTE: This file is deprecated - use Supabase Auth instead
 import { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { createClient } from '@/lib/supabase/server';
 
 export interface AdminUser {
   userId: string;
@@ -10,32 +11,25 @@ export interface AdminUser {
 
 export async function verifyAdminAuth(request: NextRequest): Promise<AdminUser | null> {
   try {
-    // Get token from cookie or Authorization header
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
+    // Use Supabase Auth instead of JWT
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!token) {
+    if (error || !user) {
       return null;
     }
 
-    // Verify JWT token
-    const jwtSecret = process.env.JWT_SECRET;
+    // Check if user has admin role from user metadata
+    const role = user.user_metadata?.role || user.app_metadata?.role;
     
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET environment variable is required');
-    }
-
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    
-    // Check if user has admin role
-    if (decoded.role !== 'admin') {
+    if (role !== 'admin') {
       return null;
     }
 
     return {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role
+      userId: user.id,
+      email: user.email || '',
+      role: role
     };
   } catch (error) {
     console.error('Admin auth verification failed:', error);

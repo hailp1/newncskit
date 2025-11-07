@@ -1,17 +1,20 @@
 'use client'
 
+/**
+ * Auth Provider Component
+ * Initializes authentication on app load
+ */
+
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/auth'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { initialize, initialized } = useAuthStore()
+  const initialize = useAuthStore((state) => state.initialize)
 
   useEffect(() => {
-    // Initialize auth when app starts
-    if (!initialized) {
-      initialize()
-    }
-  }, [initialize, initialized])
+    // Initialize auth store on mount
+    initialize()
+  }, [initialize])
 
   return <>{children}</>
 }

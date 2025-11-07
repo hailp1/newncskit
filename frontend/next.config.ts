@@ -9,13 +9,23 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: false,
   
+  // Skip type checking during build for faster deployment
+  typescript: {
+    ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
+  },
+  
+  // Skip ESLint during build for faster deployment
+  eslint: {
+    ignoreDuringBuilds: process.env.SKIP_TYPE_CHECK === 'true',
+  },
+  
   // Turbopack configuration - empty for now
   turbopack: {},
   
   // Webpack configuration to exclude server-only modules from client bundle
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Exclude PostgreSQL and other server-only modules from client bundle
+      // Exclude server-only modules from client bundle
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -32,14 +42,6 @@ const nextConfig: NextConfig = {
         os: false,
         path: false,
       };
-      
-      config.externals = config.externals || [];
-      config.externals.push({
-        'pg': 'commonjs pg',
-        'pg-native': 'commonjs pg-native',
-        'pg-pool': 'commonjs pg-pool',
-        'pg-cursor': 'commonjs pg-cursor',
-      });
     }
     
     return config;
@@ -68,9 +70,12 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_GEMINI_API_KEY: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_ANALYTICS_URL: process.env.NEXT_PUBLIC_ANALYTICS_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_ENABLE_ANALYTICS: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS,
+    NEXT_PUBLIC_ENABLE_REALTIME: process.env.NEXT_PUBLIC_ENABLE_REALTIME,
+    NEXT_PUBLIC_ENABLE_FILE_UPLOAD: process.env.NEXT_PUBLIC_ENABLE_FILE_UPLOAD,
+    NEXT_PUBLIC_MAINTENANCE_MODE: process.env.NEXT_PUBLIC_MAINTENANCE_MODE,
   },
   
   // API routes
@@ -83,7 +88,7 @@ const nextConfig: NextConfig = {
     ]
   },
   
-  // Headers for security
+  // Headers for security and CORS
   async headers() {
     return [
       {
@@ -100,6 +105,27 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.NEXT_PUBLIC_APP_URL || '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,POST,PUT,DELETE,OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-API-Key',
+          },
+          {
+            key: 'Access-Control-Max-Age',
+            value: '86400',
           },
         ],
       },

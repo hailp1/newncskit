@@ -88,7 +88,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 {/* Admin Panel Button - Show for admin users */}
-                {(user?.is_staff || user?.is_superuser || user?.role === 'admin' || 
+                {(user?.user_metadata?.role === 'admin' || 
                   user?.email === 'admin@ncskit.com' || user?.email === 'admin@ncskit.org') && (
                   <Link href="/admin">
                     <Button 
@@ -108,7 +108,7 @@ export function Navbar() {
                 >
                   <UserCircleIcon className="w-8 h-8 text-gray-400" />
                   <span>
-                    {user?.profile.firstName || 'Demo'} {user?.profile.lastName || 'User'}
+                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
                   </span>
                   <ChevronDownIcon className={cn(
                     "w-4 h-4 transition-transform",
@@ -123,12 +123,9 @@ export function Navbar() {
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
-                          {user?.profile.firstName} {user?.profile.lastName}
+                          {user?.user_metadata?.full_name || 'User'}
                         </p>
                         <p className="text-sm text-gray-500">{user?.email}</p>
-                        {user?.profile.institution && (
-                          <p className="text-xs text-gray-400">{user.profile.institution}</p>
-                        )}
                       </div>
 
                       {/* Menu Items */}
@@ -179,10 +176,10 @@ export function Navbar() {
                   About
                 </Link>
                 <Button asChild variant="outline">
-                  <Link href="/login">Sign In</Link>
+                  <Link href="/auth/login">Đăng nhập</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/auth-info">Get Started</Link>
+                  <Link href="/auth/register">Đăng ký</Link>
                 </Button>
               </>
             )}

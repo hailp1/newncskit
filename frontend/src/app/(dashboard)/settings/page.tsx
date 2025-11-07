@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeftIcon, CheckCircleIcon, CogIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/auth'
-import ChangePasswordForm from '@/components/auth/change-password-form'
+import { ChangePasswordForm } from '@/components/auth/change-password-form'
 import AdminSettingsPanel from '@/components/admin/admin-settings-panel'
 import Link from 'next/link'
 

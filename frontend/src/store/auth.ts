@@ -1,187 +1,177 @@
+/**
+ * Authentication Store using Zustand
+ * Manages authentication state with Supabase
+ */
+
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { authService } from '@/services/auth'
-import type { User, LoginCredentials, UserRegistration } from '@/types'
+import type { User, Session } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import { signIn, signUp, signOut, signInWithGoogle, signInWithLinkedIn } from '@/lib/supabase/auth'
+import type { SignInData, SignUpData } from '@/lib/supabase/auth'
 
 interface AuthState {
   user: User | null
-  isAuthenticated: boolean
+  session: Session | null
   isLoading: boolean
+  isAuthenticated: boolean
   error: string | null
-  initialized: boolean
-}
-
-interface AuthActions {
-  login: (credentials: LoginCredentials) => Promise<void>
-  loginWithOAuth: (provider: 'google' | 'linkedin') => Promise<void>
-  register: (userData: UserRegistration) => Promise<void>
+  
+  // Actions
+  initialize: () => Promise<void>
+  login: (data: SignInData) => Promise<void>
+  register: (data: SignUpData) => Promise<void>
+  loginWithGoogle: () => Promise<void>
+  loginWithLinkedIn: () => Promise<void>
   logout: () => Promise<void>
   clearError: () => void
-  setUser: (user: User | null) => void
-  updateUser: (userData: Partial<User>) => Promise<void>
-  initialize: () => Promise<void>
+  refreshSession: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState & AuthActions>()(
+export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      // State
       user: null,
+      session: null,
+      isLoading: true,
       isAuthenticated: false,
-      isLoading: false,
       error: null,
-      initialized: false,
 
-      // Actions
       initialize: async () => {
-        if (get().initialized) return
-        
-        set({ isLoading: true })
-        
         try {
-          const sessionData = await authService.getSession()
+          set({ isLoading: true, error: null })
+          const supabase = createClient()
           
-          if (sessionData) {
+          // Get current session
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+          
+          if (sessionError) throw sessionError
+
+          if (session) {
             set({
-              user: sessionData.user,
+              user: session.user,
+              session,
               isAuthenticated: true,
               isLoading: false,
-              initialized: true,
             })
           } else {
             set({
               user: null,
+              session: null,
               isAuthenticated: false,
               isLoading: false,
-              initialized: true,
             })
           }
 
-          // Listen for auth state changes
-          authService.onAuthStateChange((user) => {
+          // Listen for auth changes
+          supabase.auth.onAuthStateChange((_event, session) => {
             set({
-              user,
-              isAuthenticated: !!user,
+              user: session?.user ?? null,
+              session,
+              isAuthenticated: !!session,
             })
           })
         } catch (error) {
-          console.error('Initialize auth error:', error)
+          console.error('Auth initialization error:', error)
           set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            initialized: true,
             error: error instanceof Error ? error.message : 'Failed to initialize auth',
+            isLoading: false,
+            isAuthenticated: false,
           })
         }
       },
 
-      login: async (credentials: LoginCredentials) => {
-        set({ isLoading: true, error: null })
-        
+      login: async (data: SignInData) => {
         try {
-          const { user } = await authService.signIn(credentials)
+          set({ isLoading: true, error: null })
+          const result = await signIn(data)
           
           set({
-            user,
+            user: result.user,
+            session: result.session,
             isAuthenticated: true,
             isLoading: false,
-            error: null,
           })
-
-          console.log('Login successful, session persisted')
-
-          // Redirect to dashboard after successful login
-          if (typeof window !== 'undefined') {
-            window.location.href = '/dashboard'
-          }
         } catch (error) {
           console.error('Login error:', error)
-          
           set({
-            error: error instanceof Error ? error.message : 'Đăng nhập thất bại',
+            error: error instanceof Error ? error.message : 'Login failed',
             isLoading: false,
           })
-          
-          // Re-throw error so login form can handle it with ErrorHandler
           throw error
         }
       },
 
-      loginWithOAuth: async (provider: 'google' | 'linkedin') => {
-        set({ isLoading: true, error: null })
-        
+      register: async (data: SignUpData) => {
         try {
-          await authService.signInWithOAuth(provider)
-          // OAuth redirect will handle the rest
-        } catch (error) {
+          set({ isLoading: true, error: null })
+          const result = await signUp(data)
+          
+          // Note: User might need to confirm email before session is created
           set({
-            error: error instanceof Error ? error.message : 'OAuth login failed',
+            user: result.user,
+            session: result.session,
+            isAuthenticated: !!result.session,
             isLoading: false,
           })
+        } catch (error) {
+          console.error('Registration error:', error)
+          set({
+            error: error instanceof Error ? error.message : 'Registration failed',
+            isLoading: false,
+          })
+          throw error
         }
       },
 
-      register: async (userData: UserRegistration) => {
-        set({ isLoading: true, error: null })
-        
+      loginWithGoogle: async () => {
         try {
-          const { user } = await authService.signUp(userData)
-          
-          set({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          })
-
-          // Redirect to dashboard after successful registration
-          if (typeof window !== 'undefined') {
-            window.location.href = '/dashboard'
-          }
+          set({ isLoading: true, error: null })
+          await signInWithGoogle()
+          // OAuth redirect will happen, state will be updated on callback
         } catch (error) {
+          console.error('Google login error:', error)
           set({
-            error: error instanceof Error ? error.message : 'Đăng ký thất bại',
+            error: error instanceof Error ? error.message : 'Google login failed',
             isLoading: false,
           })
-          
-          // Re-throw error so register form can handle it with ErrorHandler
+          throw error
+        }
+      },
+
+      loginWithLinkedIn: async () => {
+        try {
+          set({ isLoading: true, error: null })
+          await signInWithLinkedIn()
+          // OAuth redirect will happen, state will be updated on callback
+        } catch (error) {
+          console.error('LinkedIn login error:', error)
+          set({
+            error: error instanceof Error ? error.message : 'LinkedIn login failed',
+            isLoading: false,
+          })
           throw error
         }
       },
 
       logout: async () => {
         try {
-          await authService.signOut()
+          set({ isLoading: true, error: null })
+          await signOut()
           
           set({
             user: null,
+            session: null,
             isAuthenticated: false,
-            error: null,
+            isLoading: false,
           })
-
-          // Clear any stored auth data
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth-storage')
-          }
-
-          // Redirect to home after logout
-          if (typeof window !== 'undefined') {
-            window.location.href = '/'
-          }
         } catch (error) {
           console.error('Logout error:', error)
-          // Force logout even if API call fails
           set({
-            user: null,
-            isAuthenticated: false,
-            error: null,
+            error: error instanceof Error ? error.message : 'Logout failed',
+            isLoading: false,
           })
-          
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth-storage')
-            window.location.href = '/'
-          }
+          throw error
         }
       },
 
@@ -189,42 +179,33 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ error: null })
       },
 
-      setUser: (user: User | null) => {
-        set({ 
-          user,
-          isAuthenticated: !!user,
-        })
-      },
-
-      updateUser: async (userData: Partial<User>) => {
-        set({ isLoading: true, error: null })
-        
+      refreshSession: async () => {
         try {
-          const currentUser = get().user;
-          if (!currentUser) throw new Error('No user logged in');
-          const updatedUser = await authService.updateProfile(currentUser.id, userData.profile || {})
+          const supabase = createClient()
+          const { data: { session }, error } = await supabase.auth.refreshSession()
           
+          if (error) throw error
+
           set({
-            user: updatedUser,
-            isLoading: false,
-            error: null,
+            user: session?.user ?? null,
+            session,
+            isAuthenticated: !!session,
           })
         } catch (error) {
+          console.error('Session refresh error:', error)
           set({
-            error: error instanceof Error ? error.message : 'Failed to update profile',
-            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to refresh session',
           })
-          throw error
         }
       },
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        // Persist user session and auth state
+        // Only persist user and session
         user: state.user,
+        session: state.session,
         isAuthenticated: state.isAuthenticated,
-        initialized: state.initialized,
       }),
     }
   )
