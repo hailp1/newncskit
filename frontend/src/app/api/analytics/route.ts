@@ -5,10 +5,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { analyticsCircuitBreaker, CircuitState } from '@/lib/circuit-breaker'
 import { analyticsCache } from '@/lib/analytics-cache'
 import { logAnalyticsError, logApiError } from '@/lib/monitoring/error-logger'
-import { env } from '@/config/env'
 
-const ANALYTICS_SERVICE_URL = env.analytics.url
-const ANALYTICS_API_KEY = env.analytics.apiKey
+const ANALYTICS_SERVICE_URL = process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:8000'
+const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY || ''
 const REQUEST_TIMEOUT = 30000 // 30 seconds
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000 // 1 second

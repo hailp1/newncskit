@@ -5,7 +5,8 @@
  * It can be extended to integrate with Sentry, Vercel Analytics, or other monitoring services.
  */
 
-import { env, isDevelopment, isProduction } from '@/config/env'
+const isDevelopment = process.env.NODE_ENV === 'development'
+const isProduction = process.env.NODE_ENV === 'production'
 
 export enum ErrorSeverity {
   LOW = 'low',

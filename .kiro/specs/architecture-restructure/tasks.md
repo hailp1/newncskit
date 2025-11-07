@@ -276,6 +276,8 @@ Kế hoạch này chia việc tái cấu trúc thành các tasks có thể thự
 - [x] 10.2 Deploy lên Vercel
 
 
+
+
   - Push code lên Git repository
   - Trigger Vercel deployment
   - Verify deployment thành công

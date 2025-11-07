@@ -6,11 +6,13 @@
 
 import { NextResponse } from 'next/server'
 import type { ErrorLog } from '@/lib/monitoring/error-logger'
-import { isDevelopment, isProduction, getMonitoringConfig } from '@/config/env'
 
 export async function POST(request: Request) {
   try {
     const errorLog: ErrorLog = await request.json()
+    
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    const isProduction = process.env.NODE_ENV === 'production'
 
     // Log to console in development
     if (isDevelopment) {
@@ -19,7 +21,6 @@ export async function POST(request: Request) {
 
     // In production, you can forward to external services like Sentry
     if (isProduction) {
-      const monitoring = getMonitoringConfig()
       
       // Example: Forward to Sentry
       // if (monitoring?.sentryDsn) {

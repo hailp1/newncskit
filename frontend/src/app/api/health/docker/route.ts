@@ -1,9 +1,8 @@
 // Docker R Analytics Health Check Endpoint
 import { NextResponse } from 'next/server'
 import { logHealthCheckFailure } from '@/lib/monitoring/error-logger'
-import { env } from '@/config/env'
 
-const ANALYTICS_SERVICE_URL = env.analytics.url
+const ANALYTICS_SERVICE_URL = process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:8000'
 const HEALTH_TIMEOUT = 5000 // 5 seconds
 
 export async function GET() {
