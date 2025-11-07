@@ -1,7 +1,9 @@
 /**
  * Auth Layout
- * Simple layout for authentication pages
+ * Layout for authentication pages with header and footer
  */
+
+import { MainLayout } from '@/components/layout/main-layout'
 
 export default function AuthLayout({
   children,
@@ -9,8 +11,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <MainLayout className="bg-gray-50">
       {children}
-    </div>
+    </MainLayout>
   )
 }

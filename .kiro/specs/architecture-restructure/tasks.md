@@ -284,7 +284,8 @@ Kế hoạch này chia việc tái cấu trúc thành các tasks có thể thự
   - _Requirements: 1.1, 1.4_
 
 
-- [x] 10.3 Test production deployment
+- [-] 10.3 Test production deployment
+
 
 
   - Test frontend pages load correctly

@@ -169,10 +169,10 @@ export function Header() {
               // Auth Buttons
               <div className="flex items-center space-x-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/login">Sign In</Link>
+                  <Link href="/auth/login">Sign In</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/register">Get Started</Link>
+                  <Link href="/auth/register">Get Started</Link>
                 </Button>
               </div>
             )}
@@ -278,14 +278,14 @@ export function Header() {
                   })}
                   <div className="border-t border-gray-200 pt-4">
                     <Link
-                      href="/login"
+                      href="/auth/login"
                       className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Sign In
                     </Link>
                     <Link
-                      href="/register"
+                      href="/auth/register"
                       className="block rounded-md px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700"
                       onClick={() => setMobileMenuOpen(false)}
                     >
