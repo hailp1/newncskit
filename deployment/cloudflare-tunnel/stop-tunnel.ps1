@@ -1,26 +1,40 @@
-# Stop Cloudflare Tunnel service
+# Stop Cloudflare Tunnel
+# Stops the cloudflared process
 
-#Requires -RunAsAdministrator
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Stop Cloudflare Tunnel" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
 
-Write-Host "Stopping Cloudflare Tunnel service..." -ForegroundColor Yellow
+# Check if running as service
+$service = Get-Service CloudflaredTunnel -ErrorAction SilentlyContinue
 
-$SERVICE_NAME = "CloudflaredTunnel"
-
-try {
-    $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+if ($service) {
+    Write-Host "Stopping Cloudflare Tunnel service..." -ForegroundColor Yellow
     
-    if ($service) {
-        if ($service.Status -eq "Running") {
-            Stop-Service -Name $SERVICE_NAME -Force
-            Write-Host "✓ Tunnel service stopped" -ForegroundColor Green
-        } else {
-            Write-Host "Service is not running (Status: $($service.Status))" -ForegroundColor Yellow
-        }
+    if ($service.Status -eq "Running") {
+        Stop-Service CloudflaredTunnel
+        Write-Host "✓ Service stopped" -ForegroundColor Green
     } else {
-        Write-Host "✗ Service not found!" -ForegroundColor Red
-        Write-Host "The tunnel may not be installed as a service" -ForegroundColor Yellow
+        Write-Host "⊘ Service is not running" -ForegroundColor Gray
     }
-} catch {
-    Write-Host "✗ Failed to stop service!" -ForegroundColor Red
-    Write-Host "Error: $_" -ForegroundColor Red
+} else {
+    # Stop process
+    Write-Host "Stopping Cloudflare Tunnel process..." -ForegroundColor Yellow
+    
+    $processes = Get-Process cloudflared -ErrorAction SilentlyContinue
+    
+    if ($processes) {
+        foreach ($process in $processes) {
+            Write-Host "  Stopping PID: $($process.Id)" -ForegroundColor White
+            Stop-Process -Id $process.Id -Force
+        }
+        Write-Host "✓ Process(es) stopped" -ForegroundColor Green
+    } else {
+        Write-Host "⊘ No cloudflared process found" -ForegroundColor Gray
+    }
 }
+
+Write-Host ""
+Write-Host "Tunnel stopped successfully" -ForegroundColor Green
+Write-Host ""

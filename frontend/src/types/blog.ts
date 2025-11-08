@@ -164,3 +164,38 @@ export interface AuthorStats {
   total_likes: number;
   average_views_per_post: number;
 }
+
+/**
+ * Project summary for dashboard
+ */
+export interface ProjectSummary {
+  id: string;
+  title: string;
+  name?: string;
+  description?: string | null;
+  status?: 'active' | 'completed' | 'archived';
+  phase?: string;
+  progress?: number;
+  lastActivity?: Date;
+  collaboratorCount?: number;
+  created_at?: string;
+  updated_at?: string;
+  row_count?: number;
+  column_count?: number;
+}
+
+/**
+ * Reference for research
+ */
+export interface Reference {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number;
+  journal?: string;
+  doi?: string;
+  url?: string;
+  notes?: string;
+  tags?: string[];
+  created_at?: string;
+}

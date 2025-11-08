@@ -74,7 +74,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">
-              Welcome back, {user?.full_name || user?.email || 'Guest'}! 👋
+              Welcome back, {user?.email || 'Guest'}! 👋
             </h1>
             <p className="text-blue-100">
               Ready to advance your research today?
@@ -106,8 +106,8 @@ export default function DashboardPage() {
                 <p className="font-medium">{user.email || 'Not logged in'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Full Name</p>
-                <p className="font-medium">{user.full_name || 'Guest User'}</p>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium">{user.email || 'Guest User'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Account Type</p>

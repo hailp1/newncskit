@@ -16,42 +16,22 @@ RUN apt-get update && apt-get install -y \
     libmpfr-dev \
     libglpk-dev \
     libgfortran5 \
+    libsodium-dev \
+    libnlopt-dev \
+    libpng-dev \
+    cmake \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages for statistical analysis
-RUN R -e "install.packages(c( \
-    # API Framework
-    'plumber', \
-    'jsonlite', \
-    # Data Manipulation
-    'dplyr', \
-    'tidyr', \
-    'reshape2', \
-    # Descriptive Statistics
-    'psych', \
-    'moments', \
-    'Hmisc', \
-    # Hypothesis Testing
-    'car', \
-    'effsize', \
-    'multcomp', \
-    # Factor Analysis
-    'GPArotation', \
-    'lavaan', \
-    'semTools', \
-    'semPlot', \
-    # Regression
-    'lme4', \
-    'lmerTest', \
-    'broom', \
-    'MASS', \
-    # Advanced Analysis
-    'mediation', \
-    'interactions', \
-    'boot', \
-    'pwr' \
-  ), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+# Split into smaller groups to avoid timeout and better error tracking
+RUN R -e "install.packages(c('plumber', 'jsonlite'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('dplyr', 'tidyr', 'reshape2'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('psych', 'moments', 'Hmisc'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('car', 'effsize', 'multcomp'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('GPArotation', 'lavaan', 'semTools', 'semPlot'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('lme4', 'lmerTest', 'broom', 'MASS'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+RUN R -e "install.packages(c('mediation', 'interactions', 'boot', 'pwr'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
 
 # Create app directory
 WORKDIR /app

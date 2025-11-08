@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    const projectId = params.projectId;
+    const { projectId } = await params;
 
     // Get project details
     const { data: project, error: projectError } = await supabase

@@ -1,0 +1,29 @@
+FROM rocker/tidyverse:4.3.2
+
+# Install additional system dependencies
+RUN apt-get update && apt-get install -y \
+    libsodium-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install only missing R packages (tidyverse already has dplyr, tidyr, etc.)
+RUN R -e "install.packages(c('plumber', 'psych', 'lavaan', 'lme4', 'lmerTest', 'semTools', 'mediation', 'car', 'effsize', 'multcomp', 'GPArotation', 'semPlot', 'broom', 'MASS', 'interactions', 'boot', 'pwr'), repos='https://cran.rstudio.com/', dependencies=TRUE)"
+
+# Verify essential packages
+RUN R -e "library(plumber); library(dplyr); library(psych); library(lavaan); print('All essential packages loaded successfully!')"
+
+WORKDIR /app
+COPY api.R /app/
+COPY endpoints/ /app/endpoints/
+RUN mkdir -p /app/logs
+
+EXPOSE 8000
+
+ENV R_MAX_MEMORY=8G
+ENV R_MAX_CORES=4
+ENV TZ=UTC
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["R", "-e", "options(warn=-1); pr <- plumber::plumb('api.R'); pr$run(host='0.0.0.0', port=8000, swagger=TRUE)"]

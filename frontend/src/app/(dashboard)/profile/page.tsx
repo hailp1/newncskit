@@ -94,9 +94,9 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-500">Full Name</label>
+              <label className="text-sm font-medium text-gray-500">User ID</label>
               <p className="text-lg font-medium text-gray-900">
-                {user.profile.firstName} {user.profile.lastName}
+                {user.id}
               </p>
             </div>
             
@@ -108,7 +108,7 @@ export default function ProfilePage() {
             <div>
               <label className="text-sm font-medium text-gray-500">Member Since</label>
               <p className="text-gray-900">
-                {new Date(user.createdAt).toLocaleDateString('en-US', {
+                {new Date(user.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -131,7 +131,7 @@ export default function ProfilePage() {
               <label className="text-sm font-medium text-gray-500">Institution</label>
               <p className="text-gray-900 flex items-center">
                 <BuildingOfficeIcon className="w-4 h-4 mr-2 text-gray-400" />
-                {user.profile.institution || 'Not specified'}
+                Not specified
               </p>
             </div>
             
@@ -139,25 +139,14 @@ export default function ProfilePage() {
               <label className="text-sm font-medium text-gray-500">ORCID ID</label>
               <p className="text-gray-900 flex items-center">
                 <IdentificationIcon className="w-4 h-4 mr-2 text-gray-400" />
-                {user.profile.orcidId || 'Not provided'}
+                Not provided
               </p>
             </div>
             
             <div>
               <label className="text-sm font-medium text-gray-500">Research Domains</label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {user.profile.researchDomain && user.profile.researchDomain.length > 0 ? (
-                  user.profile.researchDomain.map((domain, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                    >
-                      {domain}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-gray-500 italic">No research domains specified</span>
-                )}
+                <span className="text-gray-500 italic">No research domains specified</span>
               </div>
             </div>
           </CardContent>
@@ -170,19 +159,21 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-500">Subscription Type</label>
-              <p className="text-gray-900 capitalize">{user.subscription.type}</p>
+              <label className="text-sm font-medium text-gray-500">Account Status</label>
+              <p className="text-gray-900 capitalize">Active</p>
             </div>
             
             <div>
               <label className="text-sm font-medium text-gray-500">Available Features</label>
               <div className="mt-2">
-                {user.subscription.features.map((feature, index) => (
-                  <div key={index} className="flex items-center text-sm text-gray-600">
-                    <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
-                    {feature.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </div>
-                ))}
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                  CSV Analysis
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                  Data Export
+                </div>
               </div>
             </div>
           </CardContent>

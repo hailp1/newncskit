@@ -11,7 +11,7 @@ export default function AdminLayout({
   const { user } = useAuthStore();
 
   return (
-    <ProtectedRoute requiredRole="admin" fallbackPath="/auth">
+    <ProtectedRoute requireAdmin={true}>
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +19,7 @@ export default function AdminLayout({
               <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600">
-                  Welcome, {user?.full_name} ({user?.role})
+                  Welcome, {user?.email}
                 </span>
               </div>
             </div>

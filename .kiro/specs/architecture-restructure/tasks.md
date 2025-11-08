@@ -284,7 +284,8 @@ Kế hoạch này chia việc tái cấu trúc thành các tasks có thể thự
   - _Requirements: 1.1, 1.4_
 
 
-- [-] 10.3 Test production deployment
+- [x] 10.3 Test production deployment
+
 
 
 

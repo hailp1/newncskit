@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:prod": "SKIP_TYPE_CHECK=true next build",
+    "build:prod": "cross-env SKIP_TYPE_CHECK=true next build",
+    "build:vercel": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",

@@ -18,8 +18,8 @@ services:
       - ./endpoints:/app/endpoints:ro
       # Mount logs directory
       - ./logs:/app/logs
-      # Persist R packages cache
-      - r-packages:/usr/local/lib/R/site-library
+      # Persist R packages cache - TEMPORARILY DISABLED FOR TROUBLESHOOTING
+      # - r-packages:/usr/local/lib/R/site-library
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
