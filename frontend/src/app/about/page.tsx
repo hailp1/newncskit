@@ -7,7 +7,7 @@ import {
   UsersIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline'
-import { GraduationCap } from 'lucide-react'
+import { GraduationCap, Briefcase } from 'lucide-react'
 
 const values = [
   {
@@ -130,7 +130,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Lead Developer & Research Scientist */}
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardContent className="pt-8">
@@ -175,7 +175,7 @@ export default function AboutPage() {
                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <UsersIcon className="h-12 w-12 text-green-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Tín Nguyễn</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Nguyễn Đức Tín</h3>
                 <p className="text-green-600 font-semibold mb-2">Research Assistant & Data Specialist</p>
                 <p className="text-gray-500 text-sm mb-4">Master of Tourism Management</p>
                 
@@ -203,6 +203,44 @@ export default function AboutPage() {
                 <div className="flex justify-center space-x-2">
                   <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">Master's Degree</span>
                   <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm rounded-full">Tourism Management</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Scientific Research & Partnership Lead */}
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="pt-8">
+                <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Briefcase className="h-12 w-12 text-purple-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Châu Carmen Nguyễn</h3>
+                <p className="text-purple-600 font-semibold mb-2">Scientific Research & Partnership Lead</p>
+                <p className="text-gray-500 text-sm mb-4">PhD Candidate in Business Administration</p>
+                
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Key Responsibilities:</h4>
+                  <ul className="text-gray-600 text-sm space-y-2">
+                    <li>• Supporting scientific research for management models</li>
+                    <li>• Developing and managing academic partnerships</li>
+                    <li>• Strategic planning for research outreach</li>
+                    <li>• Identifying collaboration opportunities</li>
+                    <li>• Community engagement and networking</li>
+                  </ul>
+                </div>
+
+                <div className="text-left mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Expertise:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Business Strategy</span>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Partnership Management</span>
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Research Management</span>
+                    <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">Academic Collaboration</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-2">
+                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">PhD Candidate</span>
+                  <span className="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">Business Administration</span>
                 </div>
               </CardContent>
             </Card>
@@ -267,7 +305,7 @@ export default function AboutPage() {
             <div className="prose prose-lg mx-auto text-gray-600">
               <p className="text-lg leading-relaxed mb-6">
                 NCSKIT was born from the collaboration between Lê Phúc Hải, a PhD candidate in Business Management 
-                with deep expertise in statistical analysis and research methodology, and Tín Nguyễn, a Master's 
+                with deep expertise in statistical analysis and research methodology, and Nguyễn Đức Tín, a Master's 
                 graduate in Tourism Management specializing in data management and research documentation. 
                 Together, they experienced firsthand the challenges of modern academic research and publication.
               </p>

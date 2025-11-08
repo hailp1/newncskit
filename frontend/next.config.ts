@@ -14,11 +14,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
   },
   
-  // Skip ESLint during build for faster deployment
-  eslint: {
-    ignoreDuringBuilds: process.env.SKIP_TYPE_CHECK === 'true',
-  },
-  
   // Turbopack configuration - empty for now
   turbopack: {},
   

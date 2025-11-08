@@ -145,8 +145,20 @@ export default function DataAnalysisPage() {
 
   // Load recent projects on component mount
   useEffect(() => {
-    // TODO: Load recent projects from API
-    setRecentProjects([]);
+    const loadRecentProjects = async () => {
+      try {
+        const response = await fetch('/api/analysis/recent');
+        if (response.ok) {
+          const data = await response.json();
+          setRecentProjects(data.projects || []);
+        }
+      } catch (error) {
+        console.error('Failed to load recent projects:', error);
+        setRecentProjects([]);
+      }
+    };
+
+    loadRecentProjects();
   }, []);
 
   const handleDataUploaded = (data: any[][], columns: DataColumn[], metadata?: any) => {

@@ -28,23 +28,12 @@ export default function SettingsPage() {
   const router = useRouter()
   const { user, updateUser } = useAuthStore()
   
-  // Check if user is admin (FORCE ENABLED FOR DEBUG)
-  const forceAdmin = true; // TEMPORARY DEBUG FLAG
-  const isAdmin = forceAdmin || user?.role === 'admin' || 
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || 
                   user?.email === 'admin@ncskit.com' || 
                   user?.email === 'admin@ncskit.org' ||
-                  user?.profile?.firstName === 'Admin' ||
-                  user?.full_name?.includes('Admin')
+                  user?.profile?.firstName === 'Admin'
   
-  // Debug logging
-  console.log('🔍 ADMIN DEBUG:', {
-    user: user,
-    isAdmin: isAdmin,
-    role: user?.role,
-    email: user?.email,
-    firstName: user?.profile?.firstName,
-    fullName: user?.full_name
-  })
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)

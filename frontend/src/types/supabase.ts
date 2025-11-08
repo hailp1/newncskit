@@ -20,6 +20,8 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
+          role: string
+          status: string
           created_at: string
           updated_at: string
         }
@@ -28,6 +30,8 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
+          role?: string
+          status?: string
           created_at?: string
           updated_at?: string
         }
@@ -36,6 +40,8 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
+          role?: string
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -43,6 +49,150 @@ export interface Database {
             foreignKeyName: 'profiles_id_fkey'
             columns: ['id']
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      permissions: {
+        Row: {
+          id: number
+          user_id: string
+          permission: string
+          granted_by: string
+          granted_at: string
+          expires_at: string | null
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          permission: string
+          granted_by: string
+          granted_at?: string
+          expires_at?: string | null
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          permission?: string
+          granted_by?: string
+          expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'permissions_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'permissions_granted_by_fkey'
+            columns: ['granted_by']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      admin_logs: {
+        Row: {
+          id: number
+          admin_id: string
+          action: string
+          target_type: string
+          target_id: number
+          details: Json
+          ip_address: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          admin_id: string
+          action: string
+          target_type: string
+          target_id: number
+          details: Json
+          ip_address?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          admin_id?: string
+          action?: string
+          target_type?: string
+          target_id?: number
+          details?: Json
+          ip_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'admin_logs_admin_id_fkey'
+            columns: ['admin_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      posts: {
+        Row: {
+          id: number
+          title: string
+          slug: string
+          excerpt: string | null
+          content: string
+          author_id: string
+          status: string
+          category: string | null
+          tags: Json | null
+          featured_image: string | null
+          meta_description: string | null
+          view_count: number
+          like_count: number
+          published_at: string | null
+          scheduled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          title: string
+          slug: string
+          excerpt?: string | null
+          content: string
+          author_id: string
+          status?: string
+          category?: string | null
+          tags?: Json | null
+          featured_image?: string | null
+          meta_description?: string | null
+          view_count?: number
+          like_count?: number
+          published_at?: string | null
+          scheduled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          title?: string
+          slug?: string
+          excerpt?: string | null
+          content?: string
+          author_id?: string
+          status?: string
+          category?: string | null
+          tags?: Json | null
+          featured_image?: string | null
+          meta_description?: string | null
+          view_count?: number
+          like_count?: number
+          published_at?: string | null
+          scheduled_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'posts_author_id_fkey'
+            columns: ['author_id']
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           }
         ]
