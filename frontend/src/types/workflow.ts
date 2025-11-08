@@ -1,327 +1,178 @@
-// Enhanced types for workflow restructure
-import { Database } from './database'
+// Workflow State Types
 
-// Project Stage Enum
-export enum ProjectStage {
-  IDEA_COMPLETE = 'idea_complete',
-  THEORETICAL_FRAMEWORK_COMPLETE = 'theoretical_framework_complete',
-  SURVEY_COMPLETE = 'survey_complete',
-  DATA_COLLECTION_COMPLETE = 'data_collection_complete',
-  ANALYSIS_COMPLETE = 'analysis_complete',
-  DRAFT_COMPLETE = 'draft_complete',
-  CITATION_COMPLETE = 'citation_complete',
-  FORMAT_COMPLETE = 'format_complete',
-  PLAGIARISM_CHECK_COMPLETE = 'plagiarism_check_complete',
-  SUBMITTED = 'submitted',
-  PUBLISHED = 'published'
+export type WorkflowStep =
+  | 'upload'
+  | 'health-check'
+  | 'grouping'
+  | 'demographic'
+  | 'analysis-selection'
+  | 'execution'
+  | 'results';
+
+export interface WorkflowState {
+  currentStep: WorkflowStep;
+  completedSteps: WorkflowStep[];
+  projectId: string | null;
+  lastSaved: Date | null;
+  isDirty: boolean;
+  progress: number; // 0-100
 }
 
-// Data Collection Method Enum
-export enum DataCollectionMethod {
-  INTERNAL_SURVEY = 'internal_survey',
-  EXTERNAL_DATA = 'external_data'
+export interface StepConfig {
+  id: WorkflowStep;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isComplete: boolean;
+  isAccessible: boolean;
 }
 
-// Data Collection Status Enum
-export enum DataCollectionStatus {
-  NOT_STARTED = 'not_started',
-  ACTIVE = 'active',
-  COMPLETED = 'completed'
+// Loading State Types
+
+export type LoadingType =
+  | 'upload'
+  | 'parsing'
+  | 'health-check'
+  | 'grouping'
+  | 'analysis'
+  | 'export';
+
+export interface LoadingState {
+  isLoading: boolean;
+  loadingType: LoadingType;
+  progress?: number;
+  message?: string;
+  estimatedTime?: number;
+  canCancel?: boolean;
 }
 
-// Campaign Status Enum
-export enum CampaignStatus {
-  DRAFT = 'draft',
-  ACTIVE = 'active',
-  PAUSED = 'paused',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled'
+export interface OperationProgress {
+  current: number;
+  total: number;
+  currentItem?: string;
+  startTime: Date;
 }
 
-// Question Type Enum
-export enum QuestionType {
-  LIKERT = 'likert',
-  MULTIPLE_CHOICE = 'multiple_choice',
-  TEXT = 'text',
-  NUMERIC = 'numeric',
-  BOOLEAN = 'boolean',
-  RATING = 'rating',
-  RANKING = 'ranking'
+// Error State Types
+
+export type ErrorType = 'warning' | 'error' | 'critical';
+
+export interface ErrorState {
+  type: ErrorType;
+  message: string;
+  details?: string;
+  field?: string;
+  suggestions: string[];
+  canRetry: boolean;
+  canReport: boolean;
 }
 
-// Milestone Type Enum
-export enum MilestoneType {
-  RESEARCH_PLANNING = 'research_planning',
-  THEORETICAL_FRAMEWORK = 'theoretical_framework',
-  SURVEY_DESIGN = 'survey_design',
-  DATA_COLLECTION = 'data_collection',
-  DATA_ANALYSIS = 'data_analysis',
-  WRITING = 'writing',
-  REVIEW = 'review',
-  SUBMISSION = 'submission',
-  PUBLICATION = 'publication'
+export interface ValidationError extends ErrorState {
+  field: string;
+  value: any;
+  constraint: string;
 }
 
-// Milestone Status Enum
-export enum MilestoneStatus {
-  NOT_STARTED = 'not_started',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  BLOCKED = 'blocked',
-  SKIPPED = 'skipped'
+// Backup State Types
+
+export interface BackupState {
+  projectId: string;
+  step: WorkflowStep;
+  timestamp: Date;
+  formData: Record<string, any>;
 }
 
-// Theoretical Framework Interface
-export interface TheoreticalFramework {
-  id: string
-  name: string
-  description: string
-  variables: ResearchVariable[]
-  relationships: FrameworkRelationship[]
-}
+// Project and Research Types (from original workflow.ts)
 
-// Research Variable Interface
-export interface ResearchVariable {
-  id: string
-  name: string
-  type: 'independent' | 'dependent' | 'mediator' | 'moderator'
-  description: string
-  construct: string
-  measurementItems: string[]
-}
+export type ProjectStage =
+  | 'planning'
+  | 'data-collection'
+  | 'analysis'
+  | 'reporting'
+  | 'completed';
 
-// Framework Relationship Interface
-export interface FrameworkRelationship {
-  id: string
-  from: string // variable id
-  to: string // variable id
-  type: 'direct' | 'indirect' | 'moderating' | 'mediating'
-  hypothesis: string
-}
+export type MilestoneStatus = 'pending' | 'in-progress' | 'completed' | 'blocked';
 
-// Hypothesis Interface
-export interface Hypothesis {
-  id: string
-  statement: string
-  type: 'main' | 'alternative' | 'null'
-  variables: string[] // variable ids
-  expectedDirection: 'positive' | 'negative' | 'neutral'
-}
+export type MilestoneType = 'research' | 'data' | 'analysis' | 'report' | 'review';
 
-// Research Design Interface
-export interface ResearchDesign {
-  theoreticalFrameworks: TheoreticalFramework[]
-  researchVariables: ResearchVariable[]
-  hypotheses: Hypothesis[]
-  methodology: string
-}
-
-// Data Collection Configuration Interface
-export interface DataCollectionConfig {
-  surveyId?: string
-  campaignId?: string
-  targetSampleSize: number
-  collectionMethod: DataCollectionMethod
-  status: DataCollectionStatus
-}
-
-// Progress Tracking Interface
-export interface ProgressTracking {
-  currentStage: ProjectStage
-  completedMilestones: Milestone[]
-  timeline: TimelineEvent[]
-}
-
-// Publication Info Interface
-export interface PublicationInfo {
-  submissionStatus?: 'draft' | 'submitted' | 'under_review' | 'accepted' | 'published'
-  submissionDate?: Date
-  publicationLink?: string
-  journal?: string
-}
-
-// Enhanced Project Interface
-export interface EnhancedProject {
-  id: string
-  title: string
-  description: string
-  user_id: string
-  business_domain_id: number
-  selected_models: number[]
-  
-  // Enhanced fields
-  researchDesign: ResearchDesign
-  dataCollection: DataCollectionConfig
-  progress: ProgressTracking
-  publication?: PublicationInfo
-  
-  // Existing fields
-  research_outline?: any
-  status: 'draft' | 'outline_generated' | 'active' | 'paused' | 'completed' | 'archived'
-  progress_percentage: number
-  phase: 'planning' | 'execution' | 'writing' | 'submission' | 'management'
-  tags?: string[]
-  word_count?: number
-  reference_count?: number
-  created_at: string
-  updated_at: string
-}
-
-// Survey Campaign Interface
-export interface SurveyCampaign {
-  id: string
-  projectId: string
-  surveyId?: string
-  title: string
-  description?: string
-  
-  // Campaign Configuration
-  config: {
-    targetParticipants: number
-    tokenRewardPerParticipant: number
-    duration: number // days
-    eligibilityCriteria: EligibilityCriteria
-  }
-  
-  // Campaign Status
-  status: CampaignStatus
-  
-  // Participation Tracking
-  participation: {
-    totalParticipants: number
-    completedResponses: number
-    totalTokensAwarded: number
-    adminFeeCollected: number
-  }
-  
-  // Timeline
-  createdAt: Date
-  launchedAt?: Date
-  completedAt?: Date
-}
-
-// Eligibility Criteria Interface
-export interface EligibilityCriteria {
-  minAge?: number
-  maxAge?: number
-  demographics?: string[]
-  experience?: string[]
-  location?: string[]
-  customCriteria?: { [key: string]: any }
-}
-
-// Question Template Interface
-export interface QuestionTemplate {
-  id: string
-  text: string
-  textVi?: string
-  type: QuestionType
-  
-  // Model Association
-  theoreticalModel: string
-  researchVariable: string
-  construct: string
-  
-  // Question Configuration
-  options?: string[] // for multiple choice
-  scale?: { min: number, max: number, labels: string[] } // for likert
-  validation?: ValidationRule[]
-  
-  // Metadata
-  source: string // academic source/reference
-  reliability?: number // Cronbach's alpha if available
-  tags: string[]
-  category?: string
-  subcategory?: string
-  isActive: boolean
-  version: number
-  parentQuestionId?: string
-}
-
-// Validation Rule Interface
-export interface ValidationRule {
-  type: 'required' | 'minLength' | 'maxLength' | 'pattern' | 'range'
-  value?: any
-  message: string
-}
-
-// Milestone Interface
 export interface Milestone {
-  id: string
-  projectId: string
-  name: string
-  description?: string
-  type: MilestoneType
-  status: MilestoneStatus
-  progressPercentage: number
-  estimatedHours?: number
-  actualHours?: number
-  plannedStartDate?: Date
-  actualStartDate?: Date
-  plannedCompletionDate?: Date
-  actualCompletionDate?: Date
-  orderIndex: number
-  dependsOn: string[] // milestone IDs
-  notes?: string
-  attachments: FileAttachment[]
-  data: { [key: string]: any }
-  createdBy?: string
-  completedBy?: string
+  id: string;
+  title: string;
+  description: string;
+  status: MilestoneStatus;
+  type: MilestoneType;
+  dueDate: Date;
+  completedDate?: Date;
+  dependencies?: string[];
 }
 
-// Timeline Event Interface
 export interface TimelineEvent {
-  id: string
-  projectId: string
-  milestoneId?: string
-  eventType: string
-  description: string
-  data: { [key: string]: any }
-  timestamp: Date
-  userId?: string
-  metadata: { [key: string]: any }
+  id: string;
+  title: string;
+  description: string;
+  date: Date;
+  type: 'milestone' | 'update' | 'issue';
 }
 
-// File Attachment Interface
-export interface FileAttachment {
-  id: string
-  name: string
-  url: string
-  type: string
-  size: number
-  uploadedAt: Date
-}
-
-// Progress Report Interface
 export interface ProgressReport {
-  projectId: string
-  overallProgress: number
-  currentStage: ProjectStage
-  completedMilestones: number
-  totalMilestones: number
-  estimatedCompletion?: Date
-  recentActivity: TimelineEvent[]
-  upcomingMilestones: Milestone[]
-  blockedMilestones: Milestone[]
+  projectId: string;
+  stage: ProjectStage;
+  completedMilestones: number;
+  totalMilestones: number;
+  percentComplete: number;
+  lastUpdated: Date;
 }
 
-// Database type aliases for convenience
-export type ProjectRow = Database['public']['Tables']['projects']['Row']
-export type ProjectInsert = Database['public']['Tables']['projects']['Insert']
-export type ProjectUpdate = Database['public']['Tables']['projects']['Update']
+// Data Collection Types
 
-export type SurveyCampaignRow = Database['public']['Tables']['survey_campaigns']['Row']
-export type SurveyCampaignInsert = Database['public']['Tables']['survey_campaigns']['Insert']
-export type SurveyCampaignUpdate = Database['public']['Tables']['survey_campaigns']['Update']
+export type DataCollectionMethod =
+  | 'survey'
+  | 'interview'
+  | 'focus-group'
+  | 'observation'
+  | 'experiment'
+  | 'secondary-data';
 
-export type QuestionBankRow = Database['public']['Tables']['question_bank']['Row']
-export type QuestionBankInsert = Database['public']['Tables']['question_bank']['Insert']
-export type QuestionBankUpdate = Database['public']['Tables']['question_bank']['Update']
+export type DataCollectionStatus =
+  | 'not-started'
+  | 'in-progress'
+  | 'completed'
+  | 'on-hold';
 
-export type ProgressTrackingRow = Database['public']['Tables']['progress_tracking']['Row']
-export type ProgressTrackingInsert = Database['public']['Tables']['progress_tracking']['Insert']
-export type ProgressTrackingUpdate = Database['public']['Tables']['progress_tracking']['Update']
+export interface DataCollectionConfig {
+  method: DataCollectionMethod;
+  status: DataCollectionStatus;
+  targetSampleSize?: number;
+  currentSampleSize?: number;
+  startDate?: Date;
+  endDate?: Date;
+  location?: string;
+  notes?: string;
+}
 
-export type TimelineEventRow = Database['public']['Tables']['timeline_events']['Row']
-export type TimelineEventInsert = Database['public']['Tables']['timeline_events']['Insert']
-export type TimelineEventUpdate = Database['public']['Tables']['timeline_events']['Update']
+// Research Design Types
+
+export interface ResearchDesign {
+  type: 'quantitative' | 'qualitative' | 'mixed-methods';
+  approach: string;
+  variables?: string[];
+  hypotheses?: string[];
+}
+
+// Question Types
+
+export type QuestionType =
+  | 'multiple-choice'
+  | 'text'
+  | 'rating-scale'
+  | 'yes-no'
+  | 'ranking'
+  | 'matrix';
+
+export interface QuestionTemplate {
+  id: string;
+  type: QuestionType;
+  text: string;
+  options?: string[];
+  required: boolean;
+}
