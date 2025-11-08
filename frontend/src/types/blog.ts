@@ -9,6 +9,21 @@
 export type PostStatus = 'draft' | 'published' | 'scheduled' | 'archived';
 
 /**
+ * Blog post (alias for backward compatibility)
+ */
+export type BlogPost = Post;
+
+/**
+ * Blog category (alias for backward compatibility)
+ */
+export type BlogCategory = Category;
+
+/**
+ * Blog tag (alias for backward compatibility)
+ */
+export type BlogTag = Tag;
+
+/**
  * Blog post
  */
 export interface Post {
@@ -21,6 +36,7 @@ export interface Post {
   author?: {
     id: string;
     full_name: string | null;
+    name?: string | null; // Alias for full_name
     email: string;
     avatar_url: string | null;
   };
@@ -28,13 +44,30 @@ export interface Post {
   category: string | null;
   tags: string[];
   featured_image: string | null;
+  featured_image_alt?: string | null;
   meta_description: string | null;
   view_count: number;
   like_count: number;
+  views?: number; // Alias for view_count
+  likes?: number; // Alias for like_count
+  reading_time?: number; // Estimated reading time in minutes
   published_at: string | null;
   scheduled_at: string | null;
   created_at: string;
   updated_at: string;
+  seo?: {
+    title?: string;
+    meta_title?: string; // Alias for title
+    description?: string;
+    meta_description?: string; // Alias for description
+    keywords?: string[];
+    meta_keywords?: string; // Alias for keywords
+    og_image?: string;
+    og_title?: string;
+    og_description?: string;
+    twitter_card?: string;
+    canonical_url?: string;
+  };
 }
 
 /**
@@ -97,16 +130,19 @@ export interface GetPostsResponse {
  * Blog category
  */
 export interface Category {
+  id?: string;
   name: string;
   slug: string;
   description: string | null;
   post_count: number;
+  color?: string;
 }
 
 /**
  * Blog tag
  */
 export interface Tag {
+  id?: string;
   name: string;
   slug: string;
   post_count: number;
@@ -190,7 +226,7 @@ export interface ProjectSummary {
 export interface Reference {
   id: string;
   title: string;
-  authors: string[];
+  authors: string[] | Array<{ firstName: string; lastName: string }>;
   year: number;
   journal?: string;
   doi?: string;
@@ -198,6 +234,28 @@ export interface Reference {
   notes?: string;
   tags?: string[];
   created_at?: string;
+  createdAt?: string; // Alias for created_at
+  attachments?: string[];
+  metadata?: {
+    publisher?: string;
+    volume?: string;
+    issue?: string;
+    pages?: string;
+    abstract?: string;
+    type?: string;
+    keywords?: string[];
+    citationCount?: number;
+    impactFactor?: number;
+  };
+  publication?: {
+    name?: string;
+    volume?: string;
+    issue?: string;
+    pages?: string;
+    journal?: string;
+    year?: number;
+    doi?: string;
+  };
 }
 
 /**

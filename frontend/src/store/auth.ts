@@ -5,10 +5,33 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { signIn, signUp, signOut, signInWithGoogle, signInWithLinkedIn } from '@/lib/supabase/auth'
 import type { SignInData, SignUpData } from '@/lib/supabase/auth'
+
+// Extend Supabase User type with profile
+export interface User extends SupabaseUser {
+  full_name?: string | null;
+  avatar_url?: string | null;
+  status?: 'active' | 'inactive' | 'suspended' | 'banned';
+  last_login_at?: string | null;
+  profile?: {
+    firstName?: string
+    lastName?: string
+    institution?: string
+    orcidId?: string
+    researchDomain?: string[]
+  }
+  subscription?: {
+    plan?: string
+    status?: string
+    expires_at?: string
+    type?: string
+  }
+  createdAt?: string
+  updatedAt?: string
+}
 
 interface AuthState {
   user: User | null
@@ -26,6 +49,7 @@ interface AuthState {
   logout: () => Promise<void>
   clearError: () => void
   refreshSession: () => Promise<void>
+  updateUser: (updates: Partial<User>) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -195,6 +219,15 @@ export const useAuthStore = create<AuthState>()(
           console.error('Session refresh error:', error)
           set({
             error: error instanceof Error ? error.message : 'Failed to refresh session',
+          })
+        }
+      },
+
+      updateUser: (updates: Partial<User>) => {
+        const currentUser = get().user
+        if (currentUser) {
+          set({
+            user: { ...currentUser, ...updates }
           })
         }
       },

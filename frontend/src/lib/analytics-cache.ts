@@ -39,7 +39,7 @@ class AnalyticsCache {
 
       if (error || !data) return null
 
-      return data.data
+      return (data as any).data || data
     } catch (error) {
       console.error('Cache get error:', error)
       return null

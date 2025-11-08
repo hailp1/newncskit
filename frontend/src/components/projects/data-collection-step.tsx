@@ -19,12 +19,14 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { 
+import type { 
   DataCollectionConfig, 
+  ResearchDesign,
+  QuestionTemplate
+} from '@/types/workflow';
+import { 
   DataCollectionMethod, 
   DataCollectionStatus,
-  ResearchDesign,
-  QuestionTemplate,
   QuestionType
 } from '@/types/workflow';
 

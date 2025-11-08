@@ -12,7 +12,7 @@ export interface AdminUser {
 export async function verifyAdminAuth(request: NextRequest): Promise<AdminUser | null> {
   try {
     // Use Supabase Auth instead of JWT
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error || !user) {

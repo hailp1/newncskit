@@ -55,7 +55,7 @@ export async function updateUserProfile(
   const supabase = createBrowserClient()
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
+    .update(updates as any) // Type assertion for strict Supabase types
     .eq('id', userId)
     .select()
     .single()

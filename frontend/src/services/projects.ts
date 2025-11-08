@@ -6,7 +6,7 @@ export interface ServiceProject {
   status: string;
   phase?: any;
   progress: number;
-  user_id: number;
+  user_id: string | number; // Allow both string and number
   created_at: string;
   updated_at: string;
 }

@@ -79,7 +79,12 @@ export const useProjectStore = create<ProjectState & ProjectActions>((set, get) 
     set({ isLoading: true, error: null })
     
     try {
-      const updatedProject = await projectsService.updateProject(id, updates)
+      // Ensure user_id is string if provided
+      const sanitizedUpdates = {
+        ...updates,
+        user_id: updates.user_id ? String(updates.user_id) : undefined
+      }
+      const updatedProject = await projectsService.updateProject(id, sanitizedUpdates)
       const { projects, currentProject } = get()
       
       // Update projects list

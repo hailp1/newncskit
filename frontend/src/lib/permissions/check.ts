@@ -34,10 +34,11 @@ export async function hasPermission(
   }
   
   // Check role-based permissions
-  const rolePermissions = roleHasPermission(user.role as UserRole, permission)
+  const userRole = (user as any).role as UserRole
+  const rolePermissions = roleHasPermission(userRole, permission)
   if (rolePermissions) {
     // Cache the role permissions
-    const allRolePerms = await getRolePermissions(user.role as UserRole)
+    const allRolePerms = await getRolePermissions(userRole)
     setCache(userId, allRolePerms)
     return true
   }
@@ -53,16 +54,16 @@ export async function hasPermission(
   }
   
   // Filter out expired permissions
-  const validPerms = explicitPerms.filter(p => 
+  const validPerms = (explicitPerms as any[]).filter((p: any) => 
     !p.expires_at || new Date(p.expires_at) > new Date()
   )
   
-  const hasExplicit = validPerms.some(p => p.permission === permission)
+  const hasExplicit = validPerms.some((p: any) => p.permission === permission)
   
   // Cache all permissions (role + explicit)
   const allPerms = [
-    ...await getRolePermissions(user.role as UserRole),
-    ...validPerms.map(p => p.permission as Permission),
+    ...await getRolePermissions(userRole),
+    ...validPerms.map((p: any) => p.permission as Permission),
   ]
   setCache(userId, allPerms)
   
@@ -123,7 +124,8 @@ export async function getUserPermissions(userId: string): Promise<Permission[]> 
   }
   
   // Get role permissions
-  const rolePerms = await getRolePermissions(user.role as UserRole)
+  const userRole = (user as any).role as UserRole
+  const rolePerms = await getRolePermissions(userRole)
   
   // Get explicit permissions
   const { data: explicitPerms } = await supabase
@@ -131,9 +133,9 @@ export async function getUserPermissions(userId: string): Promise<Permission[]> 
     .select('permission, expires_at')
     .eq('user_id', userId)
   
-  const validExplicitPerms = (explicitPerms || [])
-    .filter(p => !p.expires_at || new Date(p.expires_at) > new Date())
-    .map(p => p.permission as Permission)
+  const validExplicitPerms = ((explicitPerms as any[]) || [])
+    .filter((p: any) => !p.expires_at || new Date(p.expires_at) > new Date())
+    .map((p: any) => p.permission as Permission)
   
   // Combine and deduplicate
   const allPerms = Array.from(new Set([...rolePerms, ...validExplicitPerms]))
@@ -165,7 +167,8 @@ export async function isAdmin(userId: string): Promise<boolean> {
   
   if (!user) return false
   
-  return user.role === 'admin' || user.role === 'super_admin'
+  const userRole = (user as any).role
+  return userRole === 'admin' || userRole === 'super_admin'
 }
 
 /**
@@ -181,5 +184,6 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
   
   if (!user) return false
   
-  return user.role === 'super_admin'
+  const userRole = (user as any).role
+  return userRole === 'super_admin'
 }

@@ -120,7 +120,11 @@ export interface DataHealthReport {
   missingData: {
     totalMissing: number;
     percentageMissing: number;
-    variablesWithMissing: string[];
+    variablesWithMissing: Array<{
+      variable: string;
+      missingCount: number;
+      missingPercentage: number;
+    }>;
   };
   outliers: {
     totalOutliers: number;
@@ -128,6 +132,7 @@ export interface DataHealthReport {
       variable: string;
       outlierCount: number;
       outlierIndices: number[];
+      outlierPercentage?: number;
     }>;
   };
   dataTypes: {
@@ -137,6 +142,7 @@ export interface DataHealthReport {
     date: number;
   };
   recommendations: string[];
+  analysisTime?: number;
 }
 
 // ============================================================================
@@ -427,14 +433,14 @@ export interface SEMResult {
 // UI State Types
 // ============================================================================
 
-export interface WorkflowStep {
+export interface AnalysisWorkflowStep {
   id: number;
   name: string;
   status: 'pending' | 'current' | 'completed' | 'error';
   canNavigate: boolean;
 }
 
-export interface ValidationError {
+export interface AnalysisValidationError {
   field: string;
   message: string;
 }

@@ -123,7 +123,7 @@ class ErrorLogger {
         url: typeof window !== 'undefined' ? window.location.href : undefined
       },
       timestamp: new Date().toISOString(),
-      environment: env.app.env
+      environment: process.env.NODE_ENV || 'development'
     }
 
     // Add to in-memory logs

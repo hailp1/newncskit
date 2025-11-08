@@ -24,6 +24,19 @@ export interface User {
   bio?: string | null;
   location?: string | null;
   website?: string | null;
+  profile?: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    website?: string | null;
+  };
+  subscription?: {
+    plan?: string;
+    status?: string;
+    expires_at?: string;
+    type?: string;
+  };
 }
 
 /**

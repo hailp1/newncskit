@@ -207,7 +207,13 @@ export async function listFiles(
     throw new Error(`List failed: ${error.message}`)
   }
 
-  return data || []
+  // Map to include size property from metadata
+  return (data || []).map(file => ({
+    name: file.name,
+    id: file.id,
+    updated_at: file.updated_at || new Date().toISOString(),
+    size: (file.metadata as any)?.size || 0
+  }))
 }
 
 /**
