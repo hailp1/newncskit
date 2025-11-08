@@ -199,3 +199,30 @@ export interface Reference {
   tags?: string[];
   created_at?: string;
 }
+
+/**
+ * Full project details
+ */
+export interface Project {
+  id: string;
+  title: string;
+  description?: string;
+  phase: string;
+  progress?: number;
+  status?: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  lastActivity?: Date;
+  collaboratorCount?: number;
+}
+
+/**
+ * Project creation input
+ */
+export interface ProjectCreation {
+  title: string;
+  description?: string;
+  phase?: string;
+  status?: string;
+}

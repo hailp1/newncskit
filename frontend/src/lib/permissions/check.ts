@@ -163,7 +163,9 @@ export async function isAdmin(userId: string): Promise<boolean> {
     .eq('id', userId)
     .single()
   
-  return user?.role === 'admin' || user?.role === 'super_admin'
+  if (!user) return false
+  
+  return user.role === 'admin' || user.role === 'super_admin'
 }
 
 /**
@@ -177,5 +179,7 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     .eq('id', userId)
     .single()
   
-  return user?.role === 'super_admin'
+  if (!user) return false
+  
+  return user.role === 'super_admin'
 }
