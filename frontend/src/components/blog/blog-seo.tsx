@@ -30,7 +30,7 @@ export function BlogSEO({
         {/* Basic Meta Tags */}
         <title>{post.seo.meta_title || post.title}</title>
         <meta name="description" content={post.seo.meta_description || post.excerpt} />
-        <meta name="keywords" content={post.seo.meta_keywords?.join(', ') || post.tags.join(', ')} />
+        <meta name="keywords" content={(Array.isArray(post.seo.meta_keywords) ? post.seo.meta_keywords.join(', ') : post.seo.meta_keywords) || (Array.isArray(post.tags) ? post.tags.join(', ') : '')} />
         <meta name="author" content={post.author.name} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={post.seo.canonical_url || postUrl} />
@@ -49,7 +49,7 @@ export function BlogSEO({
         <meta property="article:published_time" content={post.published_at} />
         <meta property="article:modified_time" content={post.updated_at} />
         <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={post.category.name} />
+        <meta property="article:section" content={typeof post.category === 'object' ? post.category.name : post.category || ''} />
         {post.tags.map(tag => (
           <meta key={tag} property="article:tag" content={tag} />
         ))}
@@ -89,8 +89,8 @@ export function BlogSEO({
                 "@type": "WebPage",
                 "@id": postUrl
               },
-              "articleSection": post.category.name,
-              "keywords": post.tags.join(', '),
+              "articleSection": typeof post.category === 'object' ? post.category.name : post.category || '',
+              "keywords": Array.isArray(post.tags) ? post.tags.join(', ') : '',
               "wordCount": post.content.replace(/<[^>]*>/g, '').split(/\s+/).length,
               "timeRequired": `PT${post.reading_time}M`,
               "url": postUrl

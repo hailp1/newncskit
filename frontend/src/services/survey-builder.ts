@@ -529,7 +529,7 @@ class SurveyBuilderService {
               variable: variable.name,
               construct: variable.construct,
               options: template.options as string[],
-              scale: template.scale,
+              scale: typeof template.scale === 'object' ? template.scale : undefined,
               required: true,
               order: order++,
               section: variable.construct,

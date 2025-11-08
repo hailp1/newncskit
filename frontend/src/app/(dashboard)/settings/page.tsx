@@ -142,8 +142,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Admin Panel */}
-      {isAdmin && (
-        <AdminSettingsPanel user={user} />
+      {isAdmin && user && (
+        <AdminSettingsPanel user={user as any} />
       )}
 
       {/* Success Message */}

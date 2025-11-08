@@ -427,10 +427,12 @@ function CreateMilestoneForm({ onSubmit, onCancel }: CreateMilestoneFormProps) {
     e.preventDefault();
     
     const milestone: Omit<Milestone, 'id' | 'projectId'> = {
+      title: formData.name,
       name: formData.name,
       description: formData.description,
       type: formData.type,
       status: MilestoneStatus.NOT_STARTED,
+      dueDate: formData.plannedCompletionDate ? new Date(formData.plannedCompletionDate) : new Date(),
       progressPercentage: 0,
       estimatedHours: formData.estimatedHours || undefined,
       plannedStartDate: formData.plannedStartDate ? new Date(formData.plannedStartDate) : undefined,

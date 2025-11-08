@@ -41,8 +41,8 @@ export interface Post {
     avatar_url: string | null;
   };
   status: PostStatus;
-  category: string | null;
-  tags: string[];
+  category: string | null | Category;
+  tags: string[] | Tag[];
   featured_image: string | null;
   featured_image_alt?: string | null;
   meta_description: string | null;
@@ -61,7 +61,7 @@ export interface Post {
     description?: string;
     meta_description?: string; // Alias for description
     keywords?: string[];
-    meta_keywords?: string; // Alias for keywords
+    meta_keywords?: string[] | string; // Can be array or string
     og_image?: string;
     og_title?: string;
     og_description?: string;

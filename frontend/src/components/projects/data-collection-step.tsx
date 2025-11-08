@@ -111,6 +111,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               text: `I find ${projectData?.title || 'this system'} useful in my work`,
               textVi: `Tôi thấy ${projectData?.title || 'hệ thống này'} hữu ích trong công việc`,
               type: QuestionType.LIKERT,
+              required: true,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,
@@ -132,6 +133,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               text: `I find ${projectData?.title || 'this system'} easy to use`,
               textVi: `Tôi thấy ${projectData?.title || 'hệ thống này'} dễ sử dụng`,
               type: QuestionType.LIKERT,
+              required: true,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,
@@ -153,6 +155,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
               text: `I intend to use ${projectData?.title || 'this system'} in the future`,
               textVi: `Tôi có ý định sử dụng ${projectData?.title || 'hệ thống này'} trong tương lai`,
               type: QuestionType.LIKERT,
+              required: true,
               theoreticalModel: framework.name,
               researchVariable: variable.name,
               construct: variable.construct,
@@ -195,7 +198,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
           type: template.type as any,
           variable: template.researchVariable,
           construct: template.construct,
-          scale: template.scale,
+          scale: typeof template.scale === 'object' ? template.scale : undefined,
           required: true
         });
       });
@@ -278,6 +281,7 @@ export function DataCollectionStep({ projectData, researchDesign, onComplete, on
   // Handle completion
   const handleComplete = () => {
     const dataCollection: DataCollectionConfig = {
+      method: collectionMethod,
       surveyId: generatedSurvey ? 'generated_survey_' + Date.now() : undefined,
       campaignId: collectionMethod === DataCollectionMethod.INTERNAL_SURVEY ? 'campaign_' + Date.now() : undefined,
       targetSampleSize,

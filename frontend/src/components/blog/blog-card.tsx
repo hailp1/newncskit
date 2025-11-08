@@ -33,14 +33,16 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
             </Link>
             
             {/* Category Badge */}
-            <div className="absolute top-4 left-4">
-              <Badge 
-                className="text-white border-0"
-                style={{ backgroundColor: post.category.color }}
-              >
-                {post.category.name}
-              </Badge>
-            </div>
+            {post.category && typeof post.category === 'object' && (
+              <div className="absolute top-4 left-4">
+                <Badge 
+                  className="text-white border-0"
+                  style={{ backgroundColor: post.category.color }}
+                >
+                  {post.category.name}
+                </Badge>
+              </div>
+            )}
 
             {/* Reading Time */}
             <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center">

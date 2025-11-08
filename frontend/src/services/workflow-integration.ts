@@ -162,8 +162,8 @@ class WorkflowIntegrationService {
         duration: 30, // Default duration
         eligibilityCriteria: {
           minAge: 18,
-          demographics: [],
-          experience: []
+          demographics: {},
+          experience: 0
         }
       });
     } catch (error) {

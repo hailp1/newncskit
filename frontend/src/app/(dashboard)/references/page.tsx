@@ -23,6 +23,7 @@ const mockReferences: Reference[] = [
       { firstName: 'John', lastName: 'Smith' },
       { firstName: 'Jane', lastName: 'Doe' },
     ],
+    year: 2023,
     publication: {
       journal: 'Nature Medicine',
       year: 2023,
@@ -50,6 +51,7 @@ const mockReferences: Reference[] = [
       { firstName: 'Alice', lastName: 'Johnson' },
       { firstName: 'Bob', lastName: 'Wilson' },
     ],
+    year: 2023,
     publication: {
       journal: 'Energy Policy',
       year: 2023,

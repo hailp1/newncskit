@@ -40,7 +40,7 @@ interface ProfileEditFormProps {
 }
 
 export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
-  const { user, setUser } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedDomains, setSelectedDomains] = useState<string[]>(
@@ -79,7 +79,7 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
       })
 
       // Update user in store
-      setUser(updatedUser)
+      updateUser(updatedUser)
       
       onSuccess?.()
     } catch (err) {
