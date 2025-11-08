@@ -41,7 +41,7 @@ const mockReferences: Reference[] = [
     tags: ['AI', 'Healthcare', 'Deep Learning'],
     notes: 'Excellent overview of current state-of-the-art methods. Key reference for methodology section.',
     attachments: [],
-    createdAt: new Date('2024-01-10'),
+    createdAt: '2024-01-10',
   },
   {
     id: '2',
@@ -67,7 +67,7 @@ const mockReferences: Reference[] = [
     tags: ['Energy', 'Sustainability', 'Policy'],
     notes: 'Important for background on energy policy frameworks.',
     attachments: [],
-    createdAt: new Date('2024-01-08'),
+    createdAt: '2024-01-08',
   },
 ]
 
