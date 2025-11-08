@@ -35,6 +35,35 @@ export default function VariableGroupEditor({
   onSave,
   onCancel,
 }: VariableGroupEditorProps) {
+  // Debug logging
+  console.log('[VariableGroupEditor] Initialized with:', {
+    projectId,
+    variablesCount: variables?.length || 0,
+    existingGroupsCount: existingGroups?.length || 0,
+    suggestionsCount: suggestions?.length || 0,
+  });
+
+  // Validation
+  if (!projectId) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <p className="text-red-800 font-medium">Error: No project ID provided</p>
+        <p className="text-sm text-red-600 mt-2">Please go back and upload a file first.</p>
+      </div>
+    );
+  }
+
+  if (!variables || variables.length === 0) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <p className="text-yellow-800 font-medium">Warning: No variables found</p>
+        <p className="text-sm text-yellow-600 mt-2">
+          The data health check may not have completed successfully. Please go back and try again.
+        </p>
+      </div>
+    );
+  }
+
   const [groups, setGroups] = useState<VariableGroup[]>(existingGroups);
   const [ungroupedVariables, setUngroupedVariables] = useState<AnalysisVariable[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -237,6 +266,26 @@ export default function VariableGroupEditor({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Suggestions Message */}
+      {showSuggestions && suggestions.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">No Automatic Suggestions</h3>
+              <p className="text-sm text-gray-700">
+                We couldn't find obvious grouping patterns in your variable names. 
+                You can still create groups manually below by dragging variables into groups.
+              </p>
+              <p className="text-xs text-gray-600 mt-2">
+                <strong>Tip:</strong> Variables with common prefixes (e.g., Q1_, Q2_) or sequential numbering (Item1, Item2) 
+                are easier to group automatically.
+              </p>
+            </div>
           </div>
         </div>
       )}

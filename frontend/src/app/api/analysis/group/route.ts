@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const { data: variables, error: variablesError } = await supabase
       .from('analysis_variables')
       .select('*')
-      .eq('analysis_project_id', projectId)
+      .eq('project_id', projectId)
       .order('column_name');
 
     if (variablesError) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Convert database format to service format
     const analysisVariables = (variables as any[]).map((v: any) => ({
       id: v.id,
-      projectId: v.analysis_project_id,
+      projectId: v.project_id,
       columnName: v.column_name,
       displayName: v.display_name,
       dataType: v.data_type,
@@ -79,14 +79,23 @@ export async function POST(request: NextRequest) {
       createdAt: v.created_at,
     }));
 
+    console.log('[Variable Grouping] Processing', analysisVariables.length, 'variables');
+    console.log('[Variable Grouping] Sample variables:', analysisVariables.slice(0, 3).map(v => v.columnName));
+
     // Run grouping analysis
     const suggestions = VariableGroupService.suggestGroups(analysisVariables);
+
+    console.log('[Variable Grouping] Generated', suggestions.length, 'suggestions');
+    if (suggestions.length > 0) {
+      console.log('[Variable Grouping] Sample suggestion:', suggestions[0]);
+    }
 
     return NextResponse.json({
       success: true,
       suggestions,
       totalVariables: variables.length,
       suggestedGroups: suggestions.length,
+      variables: analysisVariables, // Include variables in response for debugging
     });
 
   } catch (error) {

@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       const { error: clearError } = await (supabase
         .from('analysis_variables') as any)
         .update({ variable_group_id: null })
-        .eq('analysis_project_id', projectId)
+        .eq('project_id', projectId)
         .not('id', 'in', `(${allGroupedVariableIds.join(',')})`);
 
       if (clearError) {

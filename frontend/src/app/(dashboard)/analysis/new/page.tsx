@@ -74,12 +74,17 @@ export default function NewAnalysisPage() {
   };
 
   const handleHealthContinue = async () => {
-    if (!projectId) return;
+    if (!projectId) {
+      setError('No project ID available. Please upload a file first.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
+      console.log('[Grouping] Fetching suggestions for project:', projectId);
+      
       // Get variable grouping suggestions
       const response = await fetch('/api/analysis/group', {
         method: 'POST',
@@ -87,15 +92,28 @@ export default function NewAnalysisPage() {
         body: JSON.stringify({ projectId }),
       });
 
+      console.log('[Grouping] Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[Grouping] API error:', errorData);
         throw new Error(errorData.error || 'Failed to get grouping suggestions');
       }
 
       const data = await response.json();
+      console.log('[Grouping] Received data:', {
+        suggestionsCount: data.suggestions?.length || 0,
+        totalVariables: data.totalVariables,
+        suggestedGroups: data.suggestedGroups,
+      });
+      
       setGroupSuggestions(data.suggestions || []);
+      
+      // Always move to group step, even if no suggestions
       setCurrentStep('group');
+      console.log('[Grouping] Moved to group step');
     } catch (err) {
+      console.error('[Grouping] Error:', err);
       setError((err as Error).message);
     } finally {
       setLoading(false);
