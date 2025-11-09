@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PageLayout from '@/components/layout/page-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,9 +19,8 @@ import {
   MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
-import { blogService, BlogPost, BlogCategory } from '@/services/blog';
+import { blogService } from '@/services/blog';
 
-// Interface để map từ API response
 interface BlogPostDisplay {
   id: string;
   title: string;
@@ -40,106 +39,141 @@ interface BlogPostDisplay {
   featured: boolean;
 }
 
+// Cache for blog data
+let cachedPosts: BlogPostDisplay[] | null = null;
+let cachedCategories: string[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPostDisplay[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<BlogPostDisplay[]>([]);
   const [categories, setCategories] = useState<string[]>(['Tất cả']);
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const POSTS_PER_PAGE = 10;
 
   useEffect(() => {
     loadBlogData();
   }, []);
 
-  useEffect(() => {
-    filterPosts();
-  }, [selectedCategory, searchQuery, posts]);
-
   const loadBlogData = async () => {
     try {
       setIsLoading(true);
       
-      // Load published posts
-      const postsResponse = await blogService.getPublishedPosts({ limit: 50 });
-      const blogPosts = postsResponse.results;
+      // Check cache first
+      const now = Date.now();
+      if (cachedPosts && cachedCategories && (now - cacheTimestamp) < CACHE_DURATION) {
+        setPosts(cachedPosts);
+        setCategories(cachedCategories);
+        setIsLoading(false);
+        return;
+      }
       
-      // Load categories
-      const categoriesResponse = await blogService.getCategories();
+      // Load data in parallel
+      const [postsResponse, categoriesResponse] = await Promise.all([
+        blogService.getPublishedPosts({ page: 0, limit: 50 }),
+        blogService.getCategories()
+      ]);
       
-      // Transform API data to display format
+      const blogPosts = postsResponse.results || [];
+      
+      // Transform API data
       const displayPosts: BlogPostDisplay[] = blogPosts.map(post => ({
-        id: post.id,
+        id: String(post.id),
         title: post.title,
-        excerpt: post.excerpt,
+        excerpt: post.excerpt || '',
         content: post.content,
         author: {
-          name: `${post.author.first_name} ${post.author.last_name}`.trim() || post.author.username,
-          avatar: undefined // API không có avatar field
+          name: `${post.author?.first_name || ''} ${post.author?.last_name || ''}`.trim() || post.author?.username || 'Anonymous',
+          avatar: undefined
         },
         publishedAt: post.published_at || post.created_at,
-        readTime: post.reading_time,
-        category: post.categories.length > 0 ? post.categories[0].name : 'Chưa phân loại',
-        tags: post.tags.map(tag => tag.name),
-        views: post.view_count,
-        comments: post.comment_count,
-        featured: post.categories.some(cat => cat.name.toLowerCase().includes('featured')) || post.seo_score > 80
+        readTime: post.reading_time || Math.ceil((post.content?.split(' ').length || 0) / 200),
+        category: post.categories && post.categories.length > 0 ? post.categories[0].name : 'Chưa phân loại',
+        tags: Array.isArray(post.tags) ? post.tags.map(tag => typeof tag === 'string' ? tag : tag.name) : [],
+        views: post.view_count || 0,
+        comments: post.comment_count || 0,
+        featured: post.view_count > 100 || false
       }));
       
-      setPosts(displayPosts);
+      const categoryNames = ['Tất cả', ...categoriesResponse.map((cat: any) => cat.name)];
       
-      // Set categories
-      const categoryNames = ['Tất cả', ...categoriesResponse.map(cat => cat.name)];
+      // Update cache
+      cachedPosts = displayPosts;
+      cachedCategories = categoryNames;
+      cacheTimestamp = now;
+      
+      setPosts(displayPosts);
       setCategories(categoryNames);
       
     } catch (error) {
       console.error('Error loading blog data:', error);
-      // Fallback to empty state
       setPosts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filterPosts = () => {
+  // Memoize filtered posts
+  const filteredPosts = useMemo(() => {
     let filtered = posts;
 
-    // Lọc theo danh mục
     if (selectedCategory !== 'Tất cả') {
       filtered = filtered.filter(post => post.category === selectedCategory);
     }
 
-    // Lọc theo từ khóa tìm kiếm
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        post.title.toLowerCase().includes(query) ||
+        post.excerpt.toLowerCase().includes(query) ||
+        post.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
 
-    setFilteredPosts(filtered);
-  };
+    return filtered;
+  }, [posts, selectedCategory, searchQuery]);
 
-  const featuredPosts = filteredPosts.filter(post => post.featured);
-  const regularPosts = filteredPosts.filter(post => !post.featured);
+  // Paginate posts
+  const paginatedPosts = useMemo(() => {
+    const start = 0;
+    const end = page * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, end);
+  }, [filteredPosts, page]);
 
-  const formatDate = (dateString: string) => {
+  const featuredPosts = useMemo(() => 
+    paginatedPosts.filter(post => post.featured).slice(0, 2),
+    [paginatedPosts]
+  );
+
+  const regularPosts = useMemo(() => 
+    paginatedPosts.filter(post => !post.featured),
+    [paginatedPosts]
+  );
+
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-  };
+  }, []);
 
-  const handlePostClick = async (postId: string) => {
+  const handlePostClick = useCallback(async (postId: string) => {
     try {
-      // Increment view count when user clicks on post
       await blogService.incrementView(postId);
     } catch (error) {
       console.error('Error incrementing view count:', error);
     }
-  };
+  }, []);
+
+  const handleLoadMore = useCallback(() => {
+    setPage(prev => prev + 1);
+  }, []);
+
+  const hasMore = paginatedPosts.length < filteredPosts.length;
 
   if (isLoading) {
     return (
@@ -176,7 +210,7 @@ export default function BlogPage() {
               <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
                 Những hiểu biết sâu sắc, phương pháp luận và thực tiễn tốt nhất từ thế giới nghiên cứu khảo sát và phân tích dữ liệu
               </p>
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-4 flex-wrap">
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                   Hiểu biết nghiên cứu
                 </Badge>
@@ -205,13 +239,14 @@ export default function BlogPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {categories.map((category) => (
                 <Button
                   key={category}
                   variant={selectedCategory === category ? "default" : "outline"}
                   onClick={() => setSelectedCategory(category)}
                   className="whitespace-nowrap"
+                  size="sm"
                 >
                   {category}
                 </Button>
@@ -227,7 +262,7 @@ export default function BlogPage() {
                 <h2 className="text-2xl font-bold text-gray-900">Bài viết nổi bật</h2>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
-                {featuredPosts.slice(0, 2).map((post) => (
+                {featuredPosts.map((post) => (
                   <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-2"></div>
                     <CardHeader>
@@ -246,8 +281,8 @@ export default function BlogPage() {
                     <CardContent>
                       <p className="text-gray-600 mb-4 line-clamp-3">{post.excerpt}</p>
                       
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                        <div className="flex items-center gap-4 flex-wrap">
                           <div className="flex items-center gap-1">
                             <User className="h-4 w-4" />
                             <span>{post.author.name}</span>
@@ -258,13 +293,13 @@ export default function BlogPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            <span>{post.readTime} phút đọc</span>
+                            <span>{post.readTime} phút</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           {post.tags.slice(0, 2).map((tag) => (
                             <Badge key={tag} variant="outline" className="text-xs">
                               {tag}
@@ -275,10 +310,6 @@ export default function BlogPage() {
                           <div className="flex items-center gap-1">
                             <Eye className="h-4 w-4" />
                             <span>{post.views}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="h-4 w-4" />
-                            <span>{post.comments}</span>
                           </div>
                         </div>
                       </div>
@@ -296,7 +327,7 @@ export default function BlogPage() {
               <h2 className="text-2xl font-bold text-gray-900">Bài viết mới nhất</h2>
             </div>
             
-            {filteredPosts.length === 0 ? (
+            {paginatedPosts.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
                   <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -311,7 +342,7 @@ export default function BlogPage() {
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row gap-6">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
                             <Badge variant="secondary">{post.category}</Badge>
                             {post.featured && (
                               <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
@@ -328,8 +359,8 @@ export default function BlogPage() {
                           
                           <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
                           
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
                               <div className="flex items-center gap-1">
                                 <User className="h-4 w-4" />
                                 <span>{post.author.name}</span>
@@ -340,7 +371,7 @@ export default function BlogPage() {
                               </div>
                               <div className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
-                                <span>{post.readTime} phút đọc</span>
+                                <span>{post.readTime} phút</span>
                               </div>
                             </div>
                             
@@ -368,10 +399,6 @@ export default function BlogPage() {
                               <Eye className="h-4 w-4" />
                               <span>{post.views}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <MessageCircle className="h-4 w-4" />
-                              <span>{post.comments}</span>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -383,9 +410,9 @@ export default function BlogPage() {
           </div>
 
           {/* Load More Button */}
-          {filteredPosts.length > 0 && (
+          {hasMore && (
             <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleLoadMore}>
                 Tải thêm bài viết
               </Button>
             </div>
