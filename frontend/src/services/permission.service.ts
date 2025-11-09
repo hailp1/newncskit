@@ -3,7 +3,7 @@
  * Manages user permissions, grants, revokes, and caching
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { Permission, UserRole, ROLE_PERMISSIONS } from '@/lib/permissions/constants'
 import { getFromCache, setCache, invalidateCache as clearCache } from '@/lib/permissions/cache'
 
@@ -20,7 +20,7 @@ export class PermissionService {
     }
 
     // Get user from database
-    const supabase = await createClient()
+    const supabase = createClient()
     const { data: user, error } = await supabase
       .from('profiles')
       .select('role')
@@ -75,7 +75,7 @@ export class PermissionService {
     grantedBy: string,
     expiresAt?: Date
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Insert permission
     const { error } = await supabase.from('permissions').insert({
@@ -108,7 +108,7 @@ export class PermissionService {
     permission: Permission,
     revokedBy: string
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Delete permission
     const { error } = await supabase
@@ -141,7 +141,7 @@ export class PermissionService {
       return cached
     }
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get user role
     const { data: user } = await supabase
@@ -180,7 +180,7 @@ export class PermissionService {
    * Get user's explicit permissions (not from role)
    */
   async getExplicitPermissions(userId: string) {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('permissions')
@@ -253,7 +253,7 @@ export class PermissionService {
 
     // Invalidate cache for all users with this role
     // This ensures they get updated permissions on next check
-    const supabase = await createClient()
+    const supabase = createClient()
     const { data: users } = await supabase
       .from('profiles')
       .select('id')
@@ -300,7 +300,7 @@ export class PermissionService {
    * Check if user already has a permission (prevent duplicates)
    */
   async hasExplicitPermission(userId: string, permission: Permission): Promise<boolean> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('permissions')
@@ -361,7 +361,7 @@ export class PermissionService {
     action: string,
     details: any
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     await supabase.from('admin_logs').insert({
       admin_id: adminId,
