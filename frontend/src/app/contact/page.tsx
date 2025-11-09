@@ -219,7 +219,7 @@ export default function ContactPage() {
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 mb-1">Need immediate help?</div>
                     <div className="text-gray-600">
-                      Check our <a href="/docs" className="text-blue-600 hover:underline">documentation</a> or 
+                      Check our <a href="https://docs.ncskit.org" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">documentation</a> or 
                       browse our <a href="/help" className="text-blue-600 hover:underline">help center</a> for 
                       quick answers to common questions.
                     </div>

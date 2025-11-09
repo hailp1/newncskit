@@ -1,22 +1,12 @@
 import Link from 'next/link'
-import { 
-  BeakerIcon, 
-  DocumentTextIcon, 
-  BookOpenIcon, 
-  AcademicCapIcon,
-  ChartBarIcon,
-  SparklesIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  MapPinIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline'
+import { BeakerIcon } from '@heroicons/react/24/outline'
 
 const navigation = {
   product: [
     { name: 'Data Analysis', href: '/analysis' },
     { name: 'Survey Campaigns', href: '/campaigns' },
     { name: 'Projects', href: '/projects' },
+    { name: 'Documentation', href: 'https://docs.ncskit.org', external: true },
     { name: 'Blog', href: '/blog' },
   ],
   company: [
@@ -96,13 +86,29 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-white mb-4">Product</h3>
             <ul className="space-y-3">
-              {navigation.product.map((item) => (
-                <li key={item.name}>
-                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+              {navigation.product.map((item) => {
+                if (item.external) {
+                  return (
+                    <li key={item.name}>
+                      <a 
+                        href={item.href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-gray-400 hover:text-white transition-colors"
+                      >
+                        {item.name}
+                      </a>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={item.name}>
+                    <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

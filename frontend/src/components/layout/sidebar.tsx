@@ -47,9 +47,10 @@ const navigation = [
   { name: 'Blog', href: '/blog', icon: BookOpenIcon },
   { 
     name: 'Documentation', 
-    href: '/docs', 
+    href: 'https://docs.ncskit.org', 
     icon: BookOpenIcon,
-    description: 'User guides, API docs, and system architecture'
+    description: 'User guides, API docs, and system architecture',
+    external: true
   },
 ]
 
@@ -81,10 +82,16 @@ export function Sidebar() {
               const isActive = pathname === item.href || 
                 (item.href !== '/dashboard' && pathname.startsWith(item.href))
               
+              const LinkComponent = item.external ? 'a' : Link;
+              const linkProps = item.external 
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {};
+              
               return (
-                <Link
+                <LinkComponent
                   key={item.name}
                   href={item.href}
+                  {...linkProps}
                   className={cn(
                     "group flex items-center px-2 py-2 text-sm font-medium rounded-md relative",
                     isActive
@@ -118,7 +125,7 @@ export function Sidebar() {
                       <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                     </div>
                   )}
-                </Link>
+                </LinkComponent>
               )
             })}
             
