@@ -1,0 +1,10 @@
+backend/
+r-analytics/
+scripts/
+docs/
+.kiro/
+*.md
+!frontend/README.md
+.git/
+.vscode/
+node_modules/
