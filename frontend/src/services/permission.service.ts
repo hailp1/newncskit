@@ -196,6 +196,157 @@ export class PermissionService {
   }
 
   /**
+   * Get permissions for a specific role
+   * Uses cache for performance
+   */
+  async getRolePermissions(role: UserRole): Promise<Permission[]> {
+    // Create cache key for role
+    const cacheKey = `role:${role}`
+    
+    // Check cache first
+    const cached = getFromCache(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    // Get role permissions from constants
+    const rolePermissions = ROLE_PERMISSIONS[role]
+    
+    if (!rolePermissions) {
+      throw new Error(`Role not found: ${role}`)
+    }
+
+    // Cache the result
+    setCache(cacheKey, rolePermissions)
+
+    return rolePermissions
+  }
+
+  /**
+   * Update permissions for a role
+   * Note: This updates the in-memory ROLE_PERMISSIONS mapping
+   * For persistent changes, update the constants file
+   */
+  async updateRolePermissions(
+    role: UserRole,
+    permissions: Permission[],
+    updatedBy: string
+  ): Promise<void> {
+    // Validate role exists
+    if (!ROLE_PERMISSIONS[role]) {
+      throw new Error(`Role not found: ${role}`)
+    }
+
+    // Validate permissions
+    for (const permission of permissions) {
+      if (!Object.values(Permission).includes(permission)) {
+        throw new Error(`Invalid permission: ${permission}`)
+      }
+    }
+
+    // Update the role permissions in memory
+    ROLE_PERMISSIONS[role] = permissions
+
+    // Invalidate cache for this role
+    const cacheKey = `role:${role}`
+    clearCache(cacheKey)
+
+    // Invalidate cache for all users with this role
+    // This ensures they get updated permissions on next check
+    const supabase = await createClient()
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', role)
+
+    if (users) {
+      users.forEach((user: any) => {
+        this.invalidateCache(user.id)
+      })
+    }
+
+    // Log the permission change
+    await this.logAdminAction(updatedBy, 'update_role_permissions', {
+      role,
+      permissions,
+      permission_count: permissions.length,
+    })
+  }
+
+  /**
+   * Validate permission format and existence
+   */
+  validatePermission(permission: string): { valid: boolean; error?: string } {
+    // Check if permission is empty
+    if (!permission || permission.trim() === '') {
+      return { valid: false, error: 'Permission cannot be empty' }
+    }
+
+    // Check if permission exists in the system
+    if (!Object.values(Permission).includes(permission as Permission)) {
+      return { valid: false, error: `Permission '${permission}' does not exist in the system` }
+    }
+
+    // Check format (should be lowercase with underscores)
+    const validFormat = /^[a-z_]+$/.test(permission)
+    if (!validFormat) {
+      return { valid: false, error: 'Permission must be lowercase with underscores only' }
+    }
+
+    return { valid: true }
+  }
+
+  /**
+   * Check if user already has a permission (prevent duplicates)
+   */
+  async hasExplicitPermission(userId: string, permission: Permission): Promise<boolean> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('permissions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('permission', permission)
+      .maybeSingle()
+
+    if (error) {
+      throw new Error(`Failed to check permission: ${error.message}`)
+    }
+
+    return !!data
+  }
+
+  /**
+   * Validate and grant permission (with duplicate check)
+   */
+  async validateAndGrantPermission(
+    userId: string,
+    permission: Permission,
+    grantedBy: string,
+    expiresAt?: Date
+  ): Promise<{ success: boolean; error?: string }> {
+    // Validate permission format
+    const validation = this.validatePermission(permission)
+    if (!validation.valid) {
+      return { success: false, error: validation.error }
+    }
+
+    // Check for duplicates
+    const hasDuplicate = await this.hasExplicitPermission(userId, permission)
+    if (hasDuplicate) {
+      return { success: false, error: 'User already has this permission' }
+    }
+
+    // Grant the permission
+    try {
+      await this.grantPermission(userId, permission, grantedBy, expiresAt)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  }
+
+  /**
    * Invalidate permission cache for a user
    */
   invalidateCache(userId: string): void {

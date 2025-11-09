@@ -7,15 +7,13 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuthStore } from '@/store/auth'
-import { authService } from '@/services/auth'
+import { profileServiceClient as profileService, UserProfile } from '@/services/profile.service.client'
 
 const profileSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   institution: z.string().optional(),
   orcidId: z.string().optional(),
-  researchDomain: z.array(z.string()).min(1, 'Please select at least one research domain'),
+  researchDomains: z.array(z.string()).optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -35,16 +33,16 @@ const researchDomains = [
 ]
 
 interface ProfileEditFormProps {
+  profile: UserProfile
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
-  const { user, updateUser } = useAuthStore()
+export function ProfileEditForm({ profile, onSuccess, onCancel }: ProfileEditFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedDomains, setSelectedDomains] = useState<string[]>(
-    user?.profile.researchDomain || []
+    profile.research_domains || []
   )
 
   const {
@@ -55,31 +53,24 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: user?.profile.firstName || '',
-      lastName: user?.profile.lastName || '',
-      institution: user?.profile.institution || '',
-      orcidId: user?.profile.orcidId || '',
-      researchDomain: user?.profile.researchDomain || [],
+      fullName: profile.full_name || '',
+      institution: profile.institution || '',
+      orcidId: profile.orcid_id || '',
+      researchDomains: profile.research_domains || [],
     },
   })
 
   const onSubmit = async (data: ProfileFormData) => {
-    if (!user) return
-
     setIsLoading(true)
     setError(null)
 
     try {
-      const updatedUser = await authService.updateProfile(user.id, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        institution: data.institution,
-        orcidId: data.orcidId,
-        researchDomain: data.researchDomain,
+      await profileService.updateProfile({
+        full_name: data.fullName,
+        institution: data.institution || null,
+        orcid_id: data.orcidId || null,
+        research_domains: data.researchDomains || null,
       })
-
-      // Update user in store
-      updateUser(updatedUser)
       
       onSuccess?.()
     } catch (err) {
@@ -95,7 +86,7 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
       : [...selectedDomains, domain]
     
     setSelectedDomains(newDomains)
-    setValue('researchDomain', newDomains)
+    setValue('researchDomains', newDomains)
   }
 
   return (
@@ -105,35 +96,19 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="firstName" className="text-sm font-medium">
-                First Name *
-              </label>
-              <Input
-                id="firstName"
-                {...register('firstName')}
-                className={errors.firstName ? 'border-red-500' : ''}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="lastName" className="text-sm font-medium">
-                Last Name *
-              </label>
-              <Input
-                id="lastName"
-                {...register('lastName')}
-                className={errors.lastName ? 'border-red-500' : ''}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName.message}</p>
-              )}
-            </div>
+          {/* Full Name */}
+          <div className="space-y-2">
+            <label htmlFor="fullName" className="text-sm font-medium">
+              Full Name *
+            </label>
+            <Input
+              id="fullName"
+              {...register('fullName')}
+              className={errors.fullName ? 'border-red-500' : ''}
+            />
+            {errors.fullName && (
+              <p className="text-sm text-red-500">{errors.fullName.message}</p>
+            )}
           </div>
 
           {/* Institution */}
@@ -165,7 +140,7 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
 
           {/* Research Domains */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Research Domains *</label>
+            <label className="text-sm font-medium">Research Domains</label>
             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
               {researchDomains.map((domain) => (
                 <label key={domain} className="flex items-center space-x-2 text-sm">
@@ -179,8 +154,8 @@ export function ProfileEditForm({ onSuccess, onCancel }: ProfileEditFormProps) {
                 </label>
               ))}
             </div>
-            {errors.researchDomain && (
-              <p className="text-sm text-red-500">{errors.researchDomain.message}</p>
+            {errors.researchDomains && (
+              <p className="text-sm text-red-500">{errors.researchDomains.message}</p>
             )}
           </div>
 

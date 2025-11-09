@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,8 @@ import { useAuthStore } from '@/store/auth'
 import { ChangePasswordForm } from '@/components/auth/change-password-form'
 import AdminSettingsPanel from '@/components/admin/admin-settings-panel'
 import Link from 'next/link'
+import { profileService, UserProfile } from '@/services/profile.service'
+import { Validator } from '@/services/validator'
 
 const RESEARCH_DOMAINS = [
   'Marketing',
@@ -35,20 +37,45 @@ export default function SettingsPage() {
                   user?.profile?.firstName === 'Admin'
   
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
 
   const [formData, setFormData] = useState({
-    firstName: user?.profile.firstName || '',
-    lastName: user?.profile.lastName || '',
-    email: user?.email || '',
-    institution: user?.profile.institution || '',
-    orcidId: user?.profile.orcidId || '',
-    researchDomain: user?.profile.researchDomain || [],
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    fullName: '',
+    email: '',
+    institution: '',
+    orcidId: '',
+    researchDomains: [] as string[],
   })
+
+  // Load profile data on mount
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    try {
+      setIsFetching(true)
+      const profileData = await profileService.getProfile()
+      setProfile(profileData)
+      
+      // Populate form with profile data
+      setFormData({
+        fullName: profileData.full_name || '',
+        email: profileData.email || '',
+        institution: profileData.institution || '',
+        orcidId: profileData.orcid_id || '',
+        researchDomains: profileData.research_domains || [],
+      })
+    } catch (err) {
+      console.error('Failed to load profile:', err)
+      setError(err instanceof Error ? err.message : 'Không thể tải thông tin cá nhân')
+    } finally {
+      setIsFetching(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,57 +84,59 @@ export default function SettingsPage() {
     setSuccess(false)
 
     try {
-      // Validate passwords if changing
-      if (formData.newPassword) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          throw new Error('Mật khẩu mới không khớp')
-        }
-        if (formData.newPassword.length < 6) {
-          throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự')
-        }
-        if (!formData.currentPassword) {
-          throw new Error('Vui lòng nhập mật khẩu hiện tại')
+      // Validate all inputs before save
+      if (formData.fullName.trim()) {
+        const nameValidation = Validator.validateName(formData.fullName)
+        if (!nameValidation.isValid) {
+          throw new Error(nameValidation.error || 'Tên không hợp lệ')
         }
       }
 
-      // Update profile
-      const updatedUser = {
-        ...user!,
-        email: formData.email,
-        profile: {
-          ...user!.profile,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          institution: formData.institution,
-          orcidId: formData.orcidId,
-          researchDomain: formData.researchDomain
+      if (formData.email.trim()) {
+        if (!Validator.validateEmail(formData.email)) {
+          throw new Error('Email không hợp lệ')
         }
       }
 
-      // In real app, call API to update user
-      // await authService.updateProfile(user!.id, updatedUser.profile)
-      // if (formData.newPassword) {
-      //   await authService.changePassword(formData.currentPassword, formData.newPassword)
-      // }
+      if (formData.orcidId.trim()) {
+        if (!Validator.validateOrcidId(formData.orcidId)) {
+          throw new Error('ORCID ID không hợp lệ. Định dạng: 0000-0000-0000-000X')
+        }
+      }
 
-      // Update local state
-      updateUser(updatedUser)
+      if (formData.institution.trim()) {
+        const institutionValidation = Validator.validateInstitution(formData.institution)
+        if (!institutionValidation.isValid) {
+          throw new Error(institutionValidation.error || 'Tên tổ chức không hợp lệ')
+        }
+      }
+
+      if (formData.researchDomains.length > 0) {
+        const domainsValidation = Validator.validateResearchDomains(formData.researchDomains)
+        if (!domainsValidation.isValid) {
+          throw new Error(domainsValidation.error || 'Lĩnh vực nghiên cứu không hợp lệ')
+        }
+      }
+
+      // Call ProfileService to update profile
+      const updatedProfile = await profileService.updateProfile({
+        full_name: formData.fullName.trim() || null,
+        institution: formData.institution.trim() || null,
+        orcid_id: formData.orcidId.trim() || null,
+        research_domains: formData.researchDomains.length > 0 ? formData.researchDomains : null,
+      })
+
+      // Update local profile state
+      setProfile(updatedProfile)
       
       setSuccess(true)
-      
-      // Clear password fields
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }))
 
-      // Auto hide success message
+      // Auto hide success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra')
+      console.error('Profile update error:', err)
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật thông tin')
     } finally {
       setIsLoading(false)
     }
@@ -116,10 +145,22 @@ export default function SettingsPage() {
   const toggleResearchDomain = (domain: string) => {
     setFormData(prev => ({
       ...prev,
-      researchDomain: prev.researchDomain.includes(domain)
-        ? prev.researchDomain.filter(d => d !== domain)
-        : [...prev.researchDomain, domain]
+      researchDomains: prev.researchDomains.includes(domain)
+        ? prev.researchDomains.filter(d => d !== domain)
+        : [...prev.researchDomains, domain]
     }))
+  }
+
+  // Show loading state while fetching profile
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải thông tin...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -166,36 +207,27 @@ export default function SettingsPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Họ *</label>
-                    <Input
-                      value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      placeholder="Nhập họ"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Tên *</label>
-                    <Input
-                      value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      placeholder="Nhập tên"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Họ và tên</label>
+                  <Input
+                    value={formData.fullName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="Nhập họ và tên đầy đủ"
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Email *</label>
+                  <label className="text-sm font-medium">Email</label>
                   <Input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    disabled
+                    className="bg-gray-50 cursor-not-allowed"
                     placeholder="email@example.com"
-                    required
                   />
+                  <p className="text-xs text-gray-500">
+                    Email không thể thay đổi
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -227,7 +259,7 @@ export default function SettingsPage() {
                       <label key={domain} className="flex items-center space-x-2 text-sm">
                         <input
                           type="checkbox"
-                          checked={formData.researchDomain.includes(domain)}
+                          checked={formData.researchDomains.includes(domain)}
                           onChange={() => toggleResearchDomain(domain)}
                           className="rounded border-gray-300"
                         />
@@ -270,8 +302,11 @@ export default function SettingsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-900">Loại tài khoản</p>
                 <p className="text-sm text-gray-600">
-                  {user?.subscription?.type || 'Free'}
-                  {isAdmin && (
+                  {profile?.subscription_type === 'free' && 'Miễn phí'}
+                  {profile?.subscription_type === 'premium' && 'Premium'}
+                  {profile?.subscription_type === 'institutional' && 'Tổ chức'}
+                  {!profile?.subscription_type && 'Miễn phí'}
+                  {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
                     <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                       Admin
                     </span>
@@ -280,22 +315,39 @@ export default function SettingsPage() {
               </div>
               
               <div>
+                <p className="text-sm font-medium text-gray-900">Trạng thái</p>
+                <p className="text-sm text-gray-600">
+                  {profile?.is_active ? (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Đang hoạt động
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Tạm khóa
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div>
                 <p className="text-sm font-medium text-gray-900">Ngày tạo</p>
                 <p className="text-sm text-gray-600">
-                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                  {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('vi-VN') : 'Không xác định'}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm font-medium text-gray-900">Lần cập nhật cuối</p>
                 <p className="text-sm text-gray-600">
-                  {user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString('vi-VN') : 'N/A'}
+                  {profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString('vi-VN') : 'Không xác định'}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-900">Số dự án</p>
-                <p className="text-sm text-gray-600">0 dự án</p>
+                <p className="text-sm font-medium text-gray-900">Đăng nhập lần cuối</p>
+                <p className="text-sm text-gray-600">
+                  {profile?.last_login_at ? new Date(profile.last_login_at).toLocaleDateString('vi-VN') : 'Không xác định'}
+                </p>
               </div>
             </CardContent>
           </Card>

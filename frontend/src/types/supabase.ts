@@ -20,29 +20,47 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
+          institution: string | null
+          orcid_id: string | null
+          research_domains: string[] | null
           role: string
+          subscription_type: string
+          is_active: boolean
           status: string
           created_at: string
           updated_at: string
+          last_login_at: string | null
         }
         Insert: {
           id: string
           email: string
           full_name?: string | null
           avatar_url?: string | null
+          institution?: string | null
+          orcid_id?: string | null
+          research_domains?: string[] | null
           role?: string
+          subscription_type?: string
+          is_active?: boolean
           status?: string
           created_at?: string
           updated_at?: string
+          last_login_at?: string | null
         }
         Update: {
           id?: string
           email?: string
           full_name?: string | null
           avatar_url?: string | null
+          institution?: string | null
+          orcid_id?: string | null
+          research_domains?: string[] | null
           role?: string
+          subscription_type?: string
+          is_active?: boolean
           status?: string
           updated_at?: string
+          last_login_at?: string | null
         }
         Relationships: [
           {
