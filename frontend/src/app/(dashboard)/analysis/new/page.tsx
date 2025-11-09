@@ -17,6 +17,7 @@ import {
   AnalysisType
 } from '@/types/analysis';
 import { CheckCircle, Circle, Loader2 } from 'lucide-react';
+import { getApiUrl } from '@/lib/api-client';
 
 type WorkflowStep = 'upload' | 'health' | 'group' | 'demographic' | 'analyze' | 'results';
 
@@ -49,7 +50,7 @@ export default function NewAnalysisPage() {
 
     try {
       // Automatically run health check
-      const response = await fetch('/api/analysis/health', {
+      const response = await fetch(getApiUrl('api/analysis/health'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: uploadedProjectId }),
@@ -88,7 +89,7 @@ export default function NewAnalysisPage() {
       console.log('[Grouping] Fetching suggestions for project:', projectId);
       
       // Get variable grouping suggestions
-      const response = await fetch('/api/analysis/group', {
+      const response = await fetch(getApiUrl('api/analysis/group'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId }),
@@ -133,7 +134,7 @@ export default function NewAnalysisPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/analysis/groups/save', {
+      const response = await fetch(getApiUrl('api/analysis/groups/save'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, groups, demographics }),
@@ -164,7 +165,7 @@ export default function NewAnalysisPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/analysis/demographic/save', {
+      const response = await fetch(getApiUrl('api/analysis/demographic/save'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -202,7 +203,7 @@ export default function NewAnalysisPage() {
 
     try {
       // Save analysis configurations
-      const response = await fetch('/api/analysis/config/save', {
+      const response = await fetch(getApiUrl('api/analysis/config/save'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -221,7 +222,7 @@ export default function NewAnalysisPage() {
       setLoading(false);
 
       // Execute analyses in background
-      fetch('/api/analysis/execute', {
+      fetch(getApiUrl('api/analysis/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

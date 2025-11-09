@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, File, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { getApiUrl } from '@/lib/api-client';
 
 interface CSVUploaderProps {
   onUploadComplete: (projectId: string, preview: any[]) => void;
@@ -99,12 +100,14 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
         });
       }, 200);
 
-      console.log('[CSVUploader] Sending request to /api/analysis/upload');
+      // Use absolute URL to avoid path issues
+      const uploadUrl = getApiUrl('api/analysis/upload');
+      console.log('[CSVUploader] Sending request to:', uploadUrl);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch('/api/analysis/upload', {
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
