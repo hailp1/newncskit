@@ -31,6 +31,20 @@ export default function DashboardPage() {
       color: 'bg-blue-500'
     },
     {
+      title: 'Data Analysis',
+      description: 'Upload and analyze CSV data',
+      icon: ChartBarIcon,
+      href: '/analysis/new',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Survey Campaigns',
+      description: 'Create and manage campaigns',
+      icon: BeakerIcon,
+      href: '/campaigns',
+      color: 'bg-purple-500'
+    },
+    {
       title: 'Smart Editor',
       description: 'AI-powered writing assistant',
       icon: DocumentTextIcon,
@@ -42,27 +56,13 @@ export default function DashboardPage() {
       description: 'Discover trending topics',
       icon: SparklesIcon,
       href: '/topics',
-      color: 'bg-purple-500'
+      color: 'bg-orange-500'
     },
     {
       title: 'Journal Finder',
       description: 'Find suitable journals',
       icon: BookOpenIcon,
       href: '/journals',
-      color: 'bg-orange-500'
-    },
-    {
-      title: 'Analytics',
-      description: 'View research analytics',
-      icon: ChartBarIcon,
-      href: '/analysis',
-      color: 'bg-indigo-500'
-    },
-    {
-      title: 'Blog',
-      description: 'Read research insights',
-      icon: BookOpenIcon,
-      href: '/blog',
       color: 'bg-teal-500'
     }
   ]
