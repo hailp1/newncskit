@@ -72,7 +72,9 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     maxSize: 50 * 1024 * 1024 // 50MB
   });
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: File, retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    
     setUploading(true);
     setProgress(0);
     setError(null);
@@ -80,7 +82,7 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     let progressInterval: NodeJS.Timeout | null = null;
 
     try {
-      console.log('[CSVUploader] Starting upload for:', file.name);
+      console.log('[CSVUploader] Starting upload for:', file.name, `(attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
       
       const formData = new FormData();
       formData.append('file', file);
@@ -99,10 +101,16 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
 
       console.log('[CSVUploader] Sending request to /api/analysis/upload');
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch('/api/analysis/upload', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       if (progressInterval) clearInterval(progressInterval);
 
@@ -113,18 +121,26 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('[CSVUploader] Non-JSON response:', text);
+        console.error('[CSVUploader] Non-JSON response:', text.substring(0, 500));
+        
+        // If we get HTML, it might be a Next.js error page
+        if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+          throw new Error('Server error: Received HTML instead of JSON. Check server logs.');
+        }
+        
         throw new Error('Server returned invalid response format');
       }
 
-      // Try to parse JSON
+      // Parse JSON response
+      const responseText = await response.text();
+      console.log('[CSVUploader] Response text:', responseText.substring(0, 200));
+      
       let data;
       try {
-        const responseText = await response.text();
-        console.log('[CSVUploader] Response text:', responseText.substring(0, 200));
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('[CSVUploader] JSON parse error:', parseError);
+        console.error('[CSVUploader] Response text:', responseText);
         throw new Error('Failed to parse server response');
       }
 
@@ -152,6 +168,18 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
       
       console.error('[CSVUploader] Upload error:', err);
       const error = err as Error;
+      
+      // Handle network errors with retry
+      if ((error.name === 'AbortError' || error.message.includes('fetch')) && retryCount < MAX_RETRIES) {
+        console.log(`[CSVUploader] Retrying upload (${retryCount + 1}/${MAX_RETRIES})...`);
+        setError(`Vấn đề kết nối - Đang thử lại... (${retryCount + 1}/${MAX_RETRIES})`);
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        
+        return uploadFile(file, retryCount + 1);
+      }
+      
       const errorMessage = error.message || 'Upload failed. Please try again.';
       setError(errorMessage);
       onError(new Error(errorMessage));

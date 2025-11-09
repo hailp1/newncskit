@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Handle OPTIONS for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   // Set response headers
   const responseHeaders = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
   };
 
   try {
     console.log('[Upload API] Starting upload...');
     console.log('[Upload API] Request method:', request.method);
+    console.log('[Upload API] Request URL:', request.url);
+    console.log('[Upload API] Request headers:', Object.fromEntries(request.headers.entries()));
+    
+    // Validate content type
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('multipart/form-data')) {
+      console.error('[Upload API] Invalid content type:', contentType);
+      return NextResponse.json(
+        { success: false, error: 'Invalid content type. Expected multipart/form-data' },
+        { status: 400, headers: responseHeaders }
+      );
+    }
     
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -110,18 +136,44 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[Upload API] Unexpected error:', error);
+    console.error('[Upload API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     
+    // Ensure we always return JSON
+    const errorResponse = { 
+      success: false,
+      error: errorMessage,
+      details: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('[Upload API] Sending error response:', JSON.stringify(errorResponse));
+    
     return NextResponse.json(
-      { 
-        success: false,
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
-      },
+      errorResponse,
       { 
         status: 500,
         headers: responseHeaders,
       }
     );
   }
+}
+
+// Add a catch-all handler to ensure we always return JSON
+export async function GET() {
+  return NextResponse.json(
+    { 
+      success: false, 
+      error: 'Method not allowed. Use POST to upload files.',
+      allowedMethods: ['POST', 'OPTIONS']
+    },
+    { 
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        'Allow': 'POST, OPTIONS'
+      }
+    }
+  );
 }
