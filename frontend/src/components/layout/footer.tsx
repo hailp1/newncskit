@@ -54,18 +54,42 @@ export function Footer() {
     <footer className="bg-gray-900" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Footer</h2>
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Brand Section */}
-          <div className="lg:col-span-2">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Brand & Newsletter Section */}
+          <div className="lg:col-span-4">
             <div className="flex items-center space-x-2 mb-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                 <BeakerIcon className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold text-white">NCSKIT</span>
             </div>
-            <p className="text-sm text-gray-400 mb-6 max-w-md">
+            <p className="text-sm text-gray-400 mb-6">
               Nền tảng nghiên cứu thông minh cho mọi người. Từ khảo sát đến phân tích, tất cả trong một nơi.
             </p>
+            
+            {/* Newsletter */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-white mb-3">Stay Updated</h3>
+              <p className="text-xs text-gray-400 mb-3">
+                Get the latest research insights and platform updates.
+              </p>
+              <form className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Subscribe
+                </button>
+              </form>
+            </div>
+
+            {/* Social Links */}
             <div className="flex space-x-4">
               {navigation.social.map((item) => (
                 <a 
@@ -83,7 +107,7 @@ export function Footer() {
           </div>
 
           {/* Product Links */}
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-sm font-semibold text-white mb-4">Product</h3>
             <ul className="space-y-3">
               {navigation.product.map((item) => {
@@ -113,7 +137,7 @@ export function Footer() {
           </div>
 
           {/* Company & Legal */}
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-sm font-semibold text-white mb-4">Company</h3>
             <ul className="space-y-3 mb-6">
               {navigation.company.map((item) => (
@@ -133,6 +157,43 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          {/* Contact & Hours */}
+          <div className="lg:col-span-4">
+            <h3 className="text-sm font-semibold text-white mb-4">Contact Information</h3>
+            <ul className="space-y-3 mb-6">
+              <li>
+                <a href="mailto:support@ncskit.org" className="text-sm text-gray-400 hover:text-white transition-colors flex items-start">
+                  <span className="mr-2">📧</span>
+                  <span>support@ncskit.org</span>
+                </a>
+              </li>
+              <li>
+                <a href="tel:+84123456789" className="text-sm text-gray-400 hover:text-white transition-colors flex items-start">
+                  <span className="mr-2">📞</span>
+                  <span>+84 (0) 123 456 789</span>
+                </a>
+              </li>
+              <li className="text-sm text-gray-400 flex items-start">
+                <span className="mr-2">📍</span>
+                <span>Ho Chi Minh City, Vietnam</span>
+              </li>
+              <li>
+                <a href="https://www.ncskit.org" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 hover:text-white transition-colors flex items-start">
+                  <span className="mr-2">🌐</span>
+                  <span>www.ncskit.org</span>
+                </a>
+              </li>
+            </ul>
+
+            <h3 className="text-sm font-semibold text-white mb-4">Business Hours</h3>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li>Monday - Friday: 9:00 AM - 6:00 PM (ICT)</li>
+              <li>Saturday: 9:00 AM - 12:00 PM (ICT)</li>
+              <li>Sunday: Closed</li>
+              <li className="text-blue-400 font-medium mt-2">24/7 Online Support Available</li>
             </ul>
           </div>
         </div>
