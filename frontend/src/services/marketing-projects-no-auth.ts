@@ -102,8 +102,6 @@ export const marketingProjectsService = {
   // Create new marketing project WITHOUT authentication check (for testing with RLS disabled)
   async createProject(userId: string, projectData: MarketingProjectCreation): Promise<MarketingProject> {
     try {
-      console.log('🚀 Creating project')
-      
       // Use a default test user ID if none provided
       const testUserId = userId || '9adc5570-5708-4cea-b150-4d37958509bb' // From our test users
       
@@ -158,13 +156,6 @@ export const marketingProjectsService = {
         reference_count: 0
       }
 
-      console.log('📝 Inserting project data:', {
-        title: insertData.title,
-        user_id: insertData.user_id.substring(0, 8) + '...',
-        domain_id: insertData.business_domain_id,
-        models: insertData.selected_models
-      })
-
       // Create project
       const { data, error } = await supabase
         .from('projects')
@@ -205,8 +196,6 @@ export const marketingProjectsService = {
           throw new Error(`Không thể tạo dự án: ${errorMessage}`)
         }
       }
-
-      console.log('✅ Project created successfully:', data.id)
 
       return {
         ...data,

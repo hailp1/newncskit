@@ -46,13 +46,16 @@ export type DemographicType = 'categorical' | 'ordinal' | 'continuous';
 
 export interface VariableGroup {
   id: string;
-  projectId: string;
   name: string;
+  variables: string[]; // column names
+  createdAt: Date;
+  updatedAt: Date;
+  isCustom: boolean; // true if user created/edited
+  // Legacy fields for backward compatibility
+  projectId?: string;
   description?: string;
-  groupType: GroupType;
-  displayOrder: number;
-  createdAt: string;
-  variables?: AnalysisVariable[];
+  groupType?: GroupType;
+  displayOrder?: number;
 }
 
 export type GroupType = 'construct' | 'demographic' | 'control';
@@ -195,6 +198,30 @@ export interface VariableGroupSuggestion {
   variables: string[];
   confidence: number; // 0-1
   reason: string;
+  pattern: 'prefix' | 'numbering' | 'semantic'; // Pattern type detected
+  editable: boolean; // Whether the group name can be edited
+}
+
+// ============================================================================
+// Demographic Detection Types
+// ============================================================================
+
+export interface DemographicSuggestion {
+  variable: AnalysisVariable;
+  confidence: number; // 0-1
+  type: DemographicType | null;
+  reasons: string[];
+  autoSelected: boolean; // true if confidence > 0.8
+}
+
+export interface DemographicVariable extends AnalysisVariable {
+  semanticName: string;
+  demographicType: DemographicType;
+  isDemographic: true;
+  confidence?: number;
+  reasons?: string[];
+  ranks?: RankDefinition[];
+  ordinalCategories?: string[];
 }
 
 // ============================================================================

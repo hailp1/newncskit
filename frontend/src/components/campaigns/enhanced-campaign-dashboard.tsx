@@ -195,20 +195,8 @@ export default function EnhancedCampaignDashboard() {
     if (selectedCampaigns.length === 0) return
 
     try {
-      switch (action) {
-        case 'delete':
-          // TODO: Implement bulk delete
-          console.log('Bulk delete:', selectedCampaigns)
-          break
-        case 'export':
-          // TODO: Implement bulk export
-          console.log('Bulk export:', selectedCampaigns)
-          break
-        case 'statusUpdate':
-          // TODO: Implement bulk status update
-          console.log('Bulk status update:', selectedCampaigns, status)
-          break
-      }
+      // Bulk operations will be implemented in future release
+      alert(`Bulk ${action} feature coming soon! Selected: ${selectedCampaigns.length} campaigns`)
       setSelectedCampaigns([])
     } catch (error) {
       console.error(`Error ${action}:`, error)

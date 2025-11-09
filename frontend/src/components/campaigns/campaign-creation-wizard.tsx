@@ -213,8 +213,8 @@ export default function CampaignCreationWizard() {
   const submitCampaign = async () => {
     setIsSubmitting(true)
     try {
-      // TODO: Implement campaign submission
-      console.log('Submitting campaign:', formData)
+      // Campaign submission will be implemented with backend integration
+      alert('Campaign creation feature coming soon!')
       // await campaignService.createCampaign(formData)
     } catch (error) {
       console.error('Error creating campaign:', error)

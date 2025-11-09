@@ -186,8 +186,8 @@ export default function CampaignAnalyticsDashboard({ campaignId }: CampaignAnaly
 
   const exportAnalytics = async (format: 'csv' | 'excel' | 'pdf') => {
     try {
-      // TODO: Implement export functionality
-      console.log(`Exporting analytics as ${format}`)
+      // Export functionality will be implemented in future release
+      alert(`Export to ${format.toUpperCase()} coming soon!`)
     } catch (error) {
       console.error('Error exporting analytics:', error)
     }

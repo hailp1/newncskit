@@ -77,7 +77,8 @@ export class ErrorLogger {
     // Store locally for debugging
     this.storeLocal(log);
 
-    // TODO: Send to monitoring service (e.g., Sentry)
+    // Monitoring service (Sentry) will be integrated in future release
+    // For now, errors are logged locally and can be viewed in browser console
   }
 
   private static storeLocal(log: ErrorLog) {

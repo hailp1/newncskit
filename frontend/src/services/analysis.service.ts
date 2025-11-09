@@ -533,6 +533,39 @@ export class AnalysisService {
     const status = await this.checkRServerAvailability();
     return status.available;
   }
+
+  /**
+   * Save variable groups and demographics to database
+   * Task 12.1: Create save API endpoint
+   * Requirements: 7.2
+   */
+  static async saveGroupsAndDemographics(
+    projectId: string,
+    groups: any[],
+    demographics: any[]
+  ): Promise<{ success: boolean; message: string; groupCount: number; demographicCount: number }> {
+    try {
+      const response = await fetch('/api/analysis/groups/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          groups,
+          demographics,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save configuration');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Save groups and demographics error:', error);
+      throw error;
+    }
+  }
 }
 
 // ============================================================================

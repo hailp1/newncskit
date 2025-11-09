@@ -61,12 +61,15 @@ export class VariableGroupService {
     for (const [prefix, vars] of prefixMap) {
       // Only suggest groups with 2+ variables
       if (vars.length >= 2) {
-        suggestions.push({
+        const suggestion: VariableGroupSuggestion = {
           suggestedName: this.formatGroupName(prefix),
           variables: vars.map(v => v.columnName),
           confidence: this.calculatePrefixConfidence(vars),
           reason: `Variables share common prefix "${prefix}"`,
-        });
+          pattern: 'prefix',
+          editable: true
+        };
+        suggestions.push(suggestion);
       }
     }
 
@@ -108,12 +111,15 @@ export class VariableGroupService {
         );
 
         if (isSequential) {
-          suggestions.push({
+          const suggestion: VariableGroupSuggestion = {
             suggestedName: this.formatGroupName(base),
             variables: vars.map(v => v.columnName).sort(),
             confidence: 0.9,
             reason: `Variables follow sequential numbering pattern (${base}1, ${base}2, ...)`,
-          });
+            pattern: 'numbering',
+            editable: true
+          };
+          suggestions.push(suggestion);
         }
       }
     }
@@ -178,12 +184,15 @@ export class VariableGroupService {
       });
 
       if (matchingVars.length >= 2) {
-        suggestions.push({
+        const suggestion: VariableGroupSuggestion = {
           suggestedName: pattern.name,
           variables: matchingVars.map(v => v.columnName),
           confidence: 0.7,
           reason: `Variables contain keywords related to "${pattern.name}"`,
-        });
+          pattern: 'semantic',
+          editable: true
+        };
+        suggestions.push(suggestion);
       }
     }
 

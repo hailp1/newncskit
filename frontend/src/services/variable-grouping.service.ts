@@ -72,11 +72,13 @@ export class VariableGroupingService {
     
     return Array.from(prefixMap.entries())
       .filter(([_, vars]) => vars.length >= 2)
-      .map(([prefix, vars]) => ({
+      .map(([prefix, vars]): VariableGroupSuggestion => ({
         suggestedName: this.generateGroupName(prefix, vars),
         variables: vars.map(v => v.columnName),
         confidence: 0.9,
-        reason: `Variables share common prefix "${prefix}" (${vars.length} items)`
+        reason: `Variables share common prefix "${prefix}" (${vars.length} items)`,
+        pattern: 'prefix',
+        editable: true
       }));
   }
 
@@ -111,11 +113,13 @@ export class VariableGroupingService {
     
     return Array.from(baseMap.entries())
       .filter(([_, vars]) => vars.length >= 3)
-      .map(([base, vars]) => ({
+      .map(([base, vars]): VariableGroupSuggestion => ({
         suggestedName: this.generateGroupName(base, vars),
         variables: vars.map(v => v.columnName),
         confidence: 0.85,
-        reason: `Variables follow numbering pattern "${base}1, ${base}2, ..." (${vars.length} items)`
+        reason: `Variables follow numbering pattern "${base}1, ${base}2, ..." (${vars.length} items)`,
+        pattern: 'numbering',
+        editable: true
       }));
   }
 
@@ -171,12 +175,15 @@ export class VariableGroupingService {
       });
       
       if (matchingVars.length >= 2) {
-        suggestions.push({
+        const suggestion: VariableGroupSuggestion = {
           suggestedName: pattern.name,
           variables: matchingVars.map(v => v.columnName),
           confidence: pattern.confidence,
-          reason: `Variables contain semantic keywords related to "${pattern.name}" (${matchingVars.length} items)`
-        });
+          reason: `Variables contain semantic keywords related to "${pattern.name}" (${matchingVars.length} items)`,
+          pattern: 'semantic',
+          editable: true
+        };
+        suggestions.push(suggestion);
       }
     });
     
@@ -356,5 +363,214 @@ export class VariableGroupingService {
     }
     
     return matrix[str2.length][str1.length];
+  }
+
+  /**
+   * Normalize variable name for case-insensitive pattern matching
+   * Converts to lowercase while preserving original case in results
+   * @param name - Variable name to normalize
+   * @returns Normalized lowercase name
+   */
+  static normalizeForMatching(name: string): string {
+    return name.toLowerCase().trim();
+  }
+
+  /**
+   * Determine the most common case variation for a group name
+   * Counts case variations (EM, Em, em) and returns the most frequent
+   * Handles ties by preferring title case
+   * @param names - Array of variable names with same prefix
+   * @param prefix - The normalized prefix to extract case from
+   * @returns Most common case variation of the prefix
+   */
+  static getMostCommonCase(names: string[], prefix: string): string {
+    const prefixLength = prefix.length;
+    const caseVariations = new Map<string, number>();
+    
+    // Extract and count case variations
+    names.forEach(name => {
+      const extractedPrefix = name.substring(0, prefixLength);
+      const count = caseVariations.get(extractedPrefix) || 0;
+      caseVariations.set(extractedPrefix, count + 1);
+    });
+    
+    // Find most common case
+    let mostCommon = '';
+    let maxCount = 0;
+    
+    caseVariations.forEach((count, variation) => {
+      if (count > maxCount) {
+        mostCommon = variation;
+        maxCount = count;
+      } else if (count === maxCount) {
+        // Handle ties by preferring title case (first letter uppercase)
+        const isCurrentTitleCase = mostCommon.charAt(0) === mostCommon.charAt(0).toUpperCase();
+        const isNewTitleCase = variation.charAt(0) === variation.charAt(0).toUpperCase();
+        
+        if (isNewTitleCase && !isCurrentTitleCase) {
+          mostCommon = variation;
+        }
+      }
+    });
+    
+    return mostCommon || prefix;
+  }
+
+  /**
+   * Suggest variable groups with case-insensitive matching
+   * Groups variables like EM1, Em2, em3 into one group "Em"
+   * @param variables - Array of analysis variables
+   * @returns Array of group suggestions with confidence scores
+   */
+  static suggestGroupsCaseInsensitive(variables: AnalysisVariable[]): VariableGroupSuggestion[] {
+    const suggestions: VariableGroupSuggestion[] = [];
+    
+    // 1. Group by prefix patterns with case-insensitive matching
+    const prefixGroups = this.groupByPrefixCaseInsensitive(variables);
+    suggestions.push(...prefixGroups);
+    
+    // 2. Group by numbering patterns with case-insensitive matching
+    const numberGroups = this.groupByNumberingCaseInsensitive(variables);
+    suggestions.push(...numberGroups);
+    
+    // 3. Group by semantic similarity (already case-insensitive)
+    const semanticGroups = this.groupBySemantic(variables);
+    suggestions.push(...semanticGroups);
+    
+    // Remove duplicates and sort by confidence
+    return this.deduplicateAndSort(suggestions);
+  }
+
+  /**
+   * Group variables by common prefix with case-insensitive matching
+   * @param variables - Array of analysis variables
+   * @returns Array of group suggestions
+   */
+  private static groupByPrefixCaseInsensitive(variables: AnalysisVariable[]): VariableGroupSuggestion[] {
+    const prefixMap = new Map<string, AnalysisVariable[]>();
+    
+    variables.forEach(variable => {
+      const normalized = this.normalizeForMatching(variable.columnName);
+      
+      // Extract prefix patterns (case-insensitive):
+      // - Q1_, Q2_, Q3_ -> q
+      // - Sat1_, Sat2_ -> sat
+      // - Trust_1, Trust_2 -> trust
+      const patterns = [
+        /^([a-z]+)\d+_/,  // q1_, q2_
+        /^([a-z]+)_\d+/,  // trust_1, trust_2
+        /^([a-z]+\d+)_/,  // q1a_, q1b_
+      ];
+      
+      for (const pattern of patterns) {
+        const match = normalized.match(pattern);
+        if (match) {
+          const prefix = match[1];
+          if (!prefixMap.has(prefix)) {
+            prefixMap.set(prefix, []);
+          }
+          prefixMap.get(prefix)!.push(variable);
+          break;
+        }
+      }
+    });
+    
+    return Array.from(prefixMap.entries())
+      .filter(([_, vars]) => vars.length >= 2)
+      .map(([prefix, vars]) => {
+        // Get most common case for group name
+        const originalNames = vars.map(v => v.columnName);
+        const groupName = this.getMostCommonCase(originalNames, prefix);
+        
+        const suggestion: VariableGroupSuggestion = {
+          suggestedName: this.generateGroupName(groupName, vars),
+          variables: originalNames,
+          confidence: 0.9,
+          reason: `Variables share common prefix "${groupName}" (case-insensitive, ${vars.length} items)`,
+          pattern: 'prefix',
+          editable: true
+        };
+        return suggestion;
+      });
+  }
+
+  /**
+   * Group variables by numbering pattern with case-insensitive matching
+   * @param variables - Array of analysis variables
+   * @returns Array of group suggestions
+   */
+  private static groupByNumberingCaseInsensitive(variables: AnalysisVariable[]): VariableGroupSuggestion[] {
+    const baseMap = new Map<string, AnalysisVariable[]>();
+    
+    variables.forEach(variable => {
+      const normalized = this.normalizeForMatching(variable.columnName);
+      
+      // Extract base name patterns (case-insensitive):
+      // - Item1, Item2 -> item
+      // - Question1, Question2 -> question
+      // - Var_1, Var_2 -> var
+      const patterns = [
+        /^([a-z_]+)\d+$/,     // item1, item2
+        /^([a-z]+)_?\d+$/,    // var1, var_1
+      ];
+      
+      for (const pattern of patterns) {
+        const match = normalized.match(pattern);
+        if (match) {
+          const base = match[1].replace(/_$/, ''); // Remove trailing underscore
+          if (!baseMap.has(base)) {
+            baseMap.set(base, []);
+          }
+          baseMap.get(base)!.push(variable);
+          break;
+        }
+      }
+    });
+    
+    return Array.from(baseMap.entries())
+      .filter(([_, vars]) => vars.length >= 3)
+      .map(([base, vars]) => {
+        // Get most common case for group name
+        const originalNames = vars.map(v => v.columnName);
+        const groupName = this.getMostCommonCase(originalNames, base);
+        
+        const suggestion: VariableGroupSuggestion = {
+          suggestedName: this.generateGroupName(groupName, vars),
+          variables: originalNames,
+          confidence: 0.85,
+          reason: `Variables follow numbering pattern "${groupName}1, ${groupName}2, ..." (case-insensitive, ${vars.length} items)`,
+          pattern: 'numbering',
+          editable: true
+        };
+        return suggestion;
+      });
+  }
+
+  /**
+   * Validate group name for correctness
+   * @param name - Group name to validate
+   * @param existingNames - Array of existing group names
+   * @returns Validation result with error message if invalid
+   */
+  static validateGroupName(name: string, existingNames: string[]): {
+    valid: boolean;
+    error?: string;
+  } {
+    // Check for empty names
+    if (!name || name.trim().length === 0) {
+      return { valid: false, error: 'Group name cannot be empty' };
+    }
+    
+    // Check for duplicate names (case-insensitive)
+    const normalizedName = this.normalizeForMatching(name);
+    const isDuplicate = existingNames.some(
+      existingName => this.normalizeForMatching(existingName) === normalizedName
+    );
+    
+    if (isDuplicate) {
+      return { valid: false, error: 'Group name already exists' };
+    }
+    
+    return { valid: true };
   }
 }

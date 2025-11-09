@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CSVUploader from '@/components/analysis/CSVUploader';
 import DataHealthDashboard from '@/components/analysis/DataHealthDashboard';
-import VariableGroupEditor from '@/components/analysis/VariableGroupEditor';
-import DemographicConfig from '@/components/analysis/DemographicConfig';
+import VariableGroupingPanel from '@/components/analysis/VariableGroupingPanel';
+import DemographicSelectionPanel from '@/components/analysis/DemographicSelectionPanel';
 import AnalysisSelector from '@/components/analysis/AnalysisSelector';
 import AnalysisProgress from '@/components/analysis/AnalysisProgress';
 import ResultsViewer from '@/components/analysis/ResultsViewer';
@@ -35,6 +35,8 @@ export default function NewAnalysisPage() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [healthReport, setHealthReport] = useState<DataHealthReport | null>(null);
   const [variables, setVariables] = useState<AnalysisVariable[]>([]);
+  const [groups, setGroups] = useState<VariableGroup[]>([]);
+  const [demographics, setDemographics] = useState<any[]>([]);
   const [groupSuggestions, setGroupSuggestions] = useState<VariableGroupSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +122,11 @@ export default function NewAnalysisPage() {
     }
   };
 
-  const handleGroupsSave = async (groups: VariableGroup[]) => {
+  const handleGroupsChange = (updatedGroups: VariableGroup[]) => {
+    setGroups(updatedGroups);
+  };
+
+  const handleGroupsSave = async () => {
     if (!projectId) return;
 
     setLoading(true);
@@ -130,7 +136,7 @@ export default function NewAnalysisPage() {
       const response = await fetch('/api/analysis/groups/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, groups }),
+        body: JSON.stringify({ projectId, groups, demographics }),
       });
 
       if (!response.ok) {
@@ -147,7 +153,11 @@ export default function NewAnalysisPage() {
     }
   };
 
-  const handleDemographicSave = async (demographics: any[]) => {
+  const handleDemographicsChange = (updatedDemographics: any[]) => {
+    setDemographics(updatedDemographics);
+  };
+
+  const handleDemographicSave = async () => {
     if (!projectId) return;
 
     setLoading(true);
@@ -353,18 +363,19 @@ export default function NewAnalysisPage() {
             )}
 
             {currentStep === 'group' && projectId && (
-              <VariableGroupEditor
-                projectId={projectId}
+              <VariableGroupingPanel
                 variables={variables}
-                suggestions={groupSuggestions}
+                initialGroups={groups}
+                onGroupsChange={handleGroupsChange}
                 onSave={handleGroupsSave}
               />
             )}
 
             {currentStep === 'demographic' && projectId && (
-              <DemographicConfig
-                projectId={projectId}
+              <DemographicSelectionPanel
                 variables={variables}
+                initialDemographics={demographics}
+                onDemographicsChange={handleDemographicsChange}
                 onSave={handleDemographicSave}
               />
             )}

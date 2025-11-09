@@ -2,12 +2,168 @@ import {
   AnalysisVariable, 
   RankDefinition, 
   RankPreview,
-  DemographicType 
+  DemographicType,
+  DemographicSuggestion
 } from '@/types/analysis';
 
 export class DemographicService {
   /**
+   * Demographic keyword patterns with weights and types
+   */
+  private static readonly DEMOGRAPHIC_PATTERNS = [
+    // Age patterns
+    { keywords: ['age', 'tuoi'], type: 'continuous' as DemographicType, weight: 0.95 },
+    
+    // Gender patterns
+    { keywords: ['gender', 'sex', 'gioi_tinh', 'gioitinh'], type: 'categorical' as DemographicType, weight: 0.95 },
+    
+    // Income patterns
+    { keywords: ['income', 'salary', 'thu_nhap', 'thunhap', 'luong'], type: 'ordinal' as DemographicType, weight: 0.9 },
+    
+    // Education patterns
+    { keywords: ['education', 'degree', 'hoc_van', 'hocvan', 'trinh_do', 'trinhdo'], type: 'ordinal' as DemographicType, weight: 0.9 },
+    
+    // Location patterns
+    { keywords: ['location', 'city', 'province', 'region', 'dia_diem', 'diadiem', 'thanh_pho', 'thanhpho', 'tinh', 'khu_vuc', 'khuvuc'], type: 'categorical' as DemographicType, weight: 0.85 },
+    
+    // Occupation patterns
+    { keywords: ['occupation', 'job', 'nghe_nghiep', 'nghenghiep', 'cong_viec', 'congviec'], type: 'categorical' as DemographicType, weight: 0.85 },
+    
+    // Marital status patterns
+    { keywords: ['marital', 'married', 'hon_nhan', 'honnhan', 'tinh_trang', 'tinhtrang'], type: 'categorical' as DemographicType, weight: 0.8 },
+    
+    // Ethnicity patterns
+    { keywords: ['ethnicity', 'race', 'dan_toc', 'dantoc'], type: 'categorical' as DemographicType, weight: 0.8 },
+    
+    // Religion patterns
+    { keywords: ['religion', 'ton_giao', 'tongiao'], type: 'categorical' as DemographicType, weight: 0.8 },
+  ];
+
+  /**
+   * Detect demographic variables with confidence scores
+   * Analyzes all variables for demographic likelihood
+   * Returns suggestions sorted by confidence
+   * Filters out low-confidence suggestions (< 0.6)
+   */
+  static detectDemographics(variables: AnalysisVariable[]): DemographicSuggestion[] {
+    return variables
+      .map(v => this.analyzeDemographic(v))
+      .filter(s => s.confidence >= 0.6)
+      .sort((a, b) => b.confidence - a.confidence);
+  }
+
+  /**
+   * Analyze single variable for demographic likelihood
+   * Checks for demographic keywords (age, gender, income, etc.)
+   * Calculates confidence score based on keyword matches
+   * Detects demographic type (categorical, ordinal, continuous)
+   * Generates reasons for suggestion
+   */
+  private static analyzeDemographic(variable: AnalysisVariable): DemographicSuggestion {
+    const name = variable.columnName.toLowerCase();
+    let confidence = 0;
+    let type: DemographicType | null = null;
+    const reasons: string[] = [];
+
+    // Check for demographic keywords
+    for (const pattern of this.DEMOGRAPHIC_PATTERNS) {
+      const matchedKeyword = pattern.keywords.find(kw => name.includes(kw));
+      if (matchedKeyword) {
+        confidence = Math.max(confidence, pattern.weight);
+        type = pattern.type;
+        reasons.push(`Contains demographic keyword: "${matchedKeyword}"`);
+        break; // Use first match only
+      }
+    }
+
+    // Check data characteristics for additional confidence
+    if (variable.dataType === 'numeric') {
+      const uniqueCount = variable.uniqueCount || 0;
+      
+      if (uniqueCount < 10) {
+        confidence += 0.05;
+        reasons.push('Numeric with few unique values (< 10)');
+        
+        // Adjust type if not already set
+        if (!type) {
+          type = 'ordinal';
+        }
+      } else if (uniqueCount < 100) {
+        confidence += 0.03;
+        reasons.push('Numeric with moderate unique values');
+        
+        if (!type) {
+          type = 'continuous';
+        }
+      }
+    }
+
+    if (variable.dataType === 'categorical') {
+      const uniqueCount = variable.uniqueCount || 0;
+      
+      if (uniqueCount >= 2 && uniqueCount <= 10) {
+        confidence += 0.05;
+        reasons.push('Categorical with reasonable categories (2-10)');
+        
+        if (!type) {
+          type = 'categorical';
+        }
+      }
+    }
+
+    // Check for common demographic value patterns
+    if (name.includes('male') || name.includes('female') || name.includes('nam') || name.includes('nu')) {
+      confidence = Math.max(confidence, 0.9);
+      type = 'categorical';
+      reasons.push('Contains gender-related terms');
+    }
+
+    // Ensure we have a type if confidence is high enough
+    if (confidence >= 0.6 && !type) {
+      type = this.detectDemographicType(variable);
+      reasons.push(`Inferred type from data characteristics: ${type}`);
+    }
+
+    return {
+      variable,
+      confidence: Math.min(confidence, 1.0), // Cap at 1.0
+      type,
+      reasons,
+      autoSelected: confidence > 0.8
+    };
+  }
+
+  /**
+   * Generate semantic name from column name
+   * Converts column name to human-readable format
+   * Handles underscores and camelCase
+   * Capitalizes properly
+   */
+  static generateSemanticName(columnName: string): string {
+    // Replace underscores, hyphens, and dots with spaces
+    let name = columnName.replace(/[_\-\.]/g, ' ');
+    
+    // Handle camelCase by inserting spaces before capital letters
+    name = name.replace(/([a-z])([A-Z])/g, '$1 $2');
+    
+    // Trim and convert to lowercase
+    name = name.trim().toLowerCase();
+    
+    // Split into words
+    const words = name.split(/\s+/);
+    
+    // Capitalize first letter of each word
+    const capitalized = words.map(word => {
+      if (word.length === 0) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+    
+    return capitalized.join(' ');
+  }
+
+  /**
    * Suggest potential demographic variables based on common names
+   * @deprecated Use detectDemographics() instead for better accuracy
    */
   static suggestDemographics(variables: AnalysisVariable[]): string[] {
     const demographicKeywords = [
@@ -247,38 +403,39 @@ export class DemographicService {
 
   /**
    * Suggest semantic name based on variable name
+   * @deprecated Use generateSemanticName() instead
    */
   static suggestSemanticName(columnName: string): string {
     const nameLower = columnName.toLowerCase();
 
     // Age variations
     if (nameLower.includes('age') || nameLower.includes('tuoi')) {
-      return 'age';
+      return 'Age';
     }
 
     // Gender variations
     if (nameLower.includes('gender') || nameLower.includes('sex') || 
         nameLower.includes('gioi') || nameLower.includes('tinh')) {
-      return 'gender';
+      return 'Gender';
     }
 
     // Income variations
     if (nameLower.includes('income') || nameLower.includes('salary') || 
         nameLower.includes('thu') || nameLower.includes('nhap') || 
         nameLower.includes('luong')) {
-      return 'income';
+      return 'Income';
     }
 
     // Education variations
     if (nameLower.includes('education') || nameLower.includes('degree') || 
         nameLower.includes('hoc') || nameLower.includes('van')) {
-      return 'education';
+      return 'Education';
     }
 
     // Occupation variations
     if (nameLower.includes('occupation') || nameLower.includes('job') || 
         nameLower.includes('nghe') || nameLower.includes('nghiep')) {
-      return 'occupation';
+      return 'Occupation';
     }
 
     // Location variations
@@ -286,20 +443,17 @@ export class DemographicService {
         nameLower.includes('city') || nameLower.includes('province') ||
         nameLower.includes('dia') || nameLower.includes('chi') ||
         nameLower.includes('thanh') || nameLower.includes('pho')) {
-      return 'location';
+      return 'Location';
     }
 
     // Marital status
     if (nameLower.includes('marital') || nameLower.includes('married') || 
         nameLower.includes('hon') || nameLower.includes('nhan')) {
-      return 'marital_status';
+      return 'Marital Status';
     }
 
-    // Default: use cleaned column name
-    return columnName
-      .replace(/[_\-\.]/g, ' ')
-      .toLowerCase()
-      .trim();
+    // Default: use generateSemanticName
+    return this.generateSemanticName(columnName);
   }
 
   /**

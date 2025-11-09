@@ -35,14 +35,6 @@ export default function VariableGroupEditor({
   onSave,
   onCancel,
 }: VariableGroupEditorProps) {
-  // Debug logging
-  console.log('[VariableGroupEditor] Initialized with:', {
-    projectId,
-    variablesCount: variables?.length || 0,
-    existingGroupsCount: existingGroups?.length || 0,
-    suggestionsCount: suggestions?.length || 0,
-  });
-
   // Validation
   if (!projectId) {
     return (
@@ -74,7 +66,7 @@ export default function VariableGroupEditor({
   // Initialize ungrouped variables
   useEffect(() => {
     const groupedVariableNames = new Set(
-      groups.flatMap(g => g.variables?.map(v => v.columnName) || [])
+      groups.flatMap(g => g.variables || [])
     );
     const ungrouped = variables.filter(v => !groupedVariableNames.has(v.columnName));
     setUngroupedVariables(ungrouped);
@@ -89,8 +81,10 @@ export default function VariableGroupEditor({
       description: suggestion.reason,
       groupType: 'construct',
       displayOrder: groups.length,
-      createdAt: new Date().toISOString(),
-      variables: variables.filter(v => suggestion.variables.includes(v.columnName)),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isCustom: false,
+      variables: suggestion.variables, // Already string[] of column names
     };
 
     setGroups([...groups, newGroup]);
@@ -110,7 +104,9 @@ export default function VariableGroupEditor({
       name: 'New Group',
       groupType: 'construct',
       displayOrder: groups.length,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isCustom: true,
       variables: [],
     };
 
@@ -143,8 +139,13 @@ export default function VariableGroupEditor({
     setGroups(groups.map(g => {
       if (g.id === groupId) {
         const existingVars = g.variables || [];
-        if (!existingVars.find(v => v.id === variable.id)) {
-          return { ...g, variables: [...existingVars, variable] };
+        if (!existingVars.includes(variable.columnName)) {
+          return { 
+            ...g, 
+            variables: [...existingVars, variable.columnName],
+            updatedAt: new Date(),
+            isCustom: true
+          };
         }
       }
       return g;
@@ -152,10 +153,15 @@ export default function VariableGroupEditor({
   };
 
   // Remove variable from group
-  const removeVariableFromGroup = (variableId: string, groupId: string) => {
+  const removeVariableFromGroup = (variableColumnName: string, groupId: string) => {
     setGroups(groups.map(g => {
       if (g.id === groupId) {
-        return { ...g, variables: g.variables?.filter(v => v.id !== variableId) };
+        return { 
+          ...g, 
+          variables: g.variables?.filter(v => v !== variableColumnName),
+          updatedAt: new Date(),
+          isCustom: true
+        };
       }
       return g;
     }));
@@ -429,28 +435,33 @@ export default function VariableGroupEditor({
                 {/* Variables in Group */}
                 <div className="space-y-1">
                   {group.variables && group.variables.length > 0 ? (
-                    group.variables.map((variable) => (
-                      <div
-                        key={variable.id}
-                        className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {variable.columnName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {variable.dataType}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => removeVariableFromGroup(variable.id, group.id)}
-                          className="p-1 text-red-600 hover:bg-red-100 rounded ml-2"
-                          title="Remove from group"
+                    group.variables.map((columnName) => {
+                      const variable = variables.find(v => v.columnName === columnName);
+                      if (!variable) return null;
+                      
+                      return (
+                        <div
+                          key={variable.id}
+                          className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {variable.columnName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {variable.dataType}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeVariableFromGroup(variable.columnName, group.id)}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded ml-2"
+                            title="Remove from group"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-6 text-gray-500 text-sm border-2 border-dashed border-gray-200 rounded">
                       Drag variables here to add them to this group

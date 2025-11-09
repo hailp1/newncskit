@@ -33,8 +33,6 @@ class ApiClient {
       },
     });
 
-    console.log('API Client initialized with baseURL:', this.config.baseURL);
-
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
@@ -61,7 +59,6 @@ class ApiClient {
           originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
           
           if (originalRequest._retryCount <= this.config.retryAttempts) {
-            console.log(`Retrying request (${originalRequest._retryCount}/${this.config.retryAttempts}):`, originalRequest.url);
             await this.delay(this.config.retryDelay * originalRequest._retryCount);
             return this.client(originalRequest);
           }

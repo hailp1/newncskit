@@ -153,16 +153,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               <p className="text-sm text-gray-600 text-center mb-3">
                 If this problem persists, please report it to our support team.
               </p>
-              <button
-                onClick={() => {
-                  // TODO: Implement error reporting
-                  alert('Error reporting feature coming soon!');
-                }}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-              >
-                <Bug className="w-4 h-4" />
-                Report This Issue
-              </button>
+              {/* Error reporting will be added in future release with Sentry integration */}
             </div>
           </div>
         </div>

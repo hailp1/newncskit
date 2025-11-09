@@ -79,16 +79,8 @@ export async function POST(request: NextRequest) {
       createdAt: v.created_at,
     }));
 
-    console.log('[Variable Grouping] Processing', analysisVariables.length, 'variables');
-    console.log('[Variable Grouping] Sample variables:', analysisVariables.slice(0, 3).map(v => v.columnName));
-
     // Run grouping analysis
     const suggestions = VariableGroupService.suggestGroups(analysisVariables);
-
-    console.log('[Variable Grouping] Generated', suggestions.length, 'suggestions');
-    if (suggestions.length > 0) {
-      console.log('[Variable Grouping] Sample suggestion:', suggestions[0]);
-    }
 
     return NextResponse.json({
       success: true,
