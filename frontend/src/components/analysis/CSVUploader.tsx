@@ -77,46 +77,84 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     setProgress(0);
     setError(null);
 
+    let progressInterval: NodeJS.Timeout | null = null;
+
     try {
+      console.log('[CSVUploader] Starting upload for:', file.name);
+      
       const formData = new FormData();
       formData.append('file', file);
       formData.append('name', file.name.replace('.csv', ''));
 
       // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
-            clearInterval(progressInterval);
+            if (progressInterval) clearInterval(progressInterval);
             return 90;
           }
           return prev + 10;
         });
       }, 200);
 
+      console.log('[CSVUploader] Sending request to /api/analysis/upload');
+      
       const response = await fetch('/api/analysis/upload', {
         method: 'POST',
         body: formData,
       });
 
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+      console.log('[CSVUploader] Response status:', response.status);
+      console.log('[CSVUploader] Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('[CSVUploader] Non-JSON response:', text);
+        throw new Error('Server returned invalid response format');
       }
 
-      const data = await response.json();
+      // Try to parse JSON
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('[CSVUploader] Response text:', responseText.substring(0, 200));
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[CSVUploader] JSON parse error:', parseError);
+        throw new Error('Failed to parse server response');
+      }
+
+      if (!response.ok) {
+        console.error('[CSVUploader] Upload failed:', data);
+        throw new Error(data.error || `Upload failed with status ${response.status}`);
+      }
+
+      console.log('[CSVUploader] Upload successful:', data);
       setProgress(100);
+
+      // Validate response data
+      if (!data.project || !data.project.id) {
+        throw new Error('Invalid response: missing project ID');
+      }
 
       // Wait a bit to show 100% before completing
       setTimeout(() => {
-        onUploadComplete(data.project.id, data.preview);
+        console.log('[CSVUploader] Calling onUploadComplete');
+        onUploadComplete(data.project.id, data.preview || []);
       }, 500);
 
     } catch (err) {
+      if (progressInterval) clearInterval(progressInterval);
+      
+      console.error('[CSVUploader] Upload error:', err);
       const error = err as Error;
-      setError(error.message);
-      onError(error);
+      const errorMessage = error.message || 'Upload failed. Please try again.';
+      setError(errorMessage);
+      onError(new Error(errorMessage));
     } finally {
       setUploading(false);
     }

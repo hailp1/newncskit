@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Upload API] Starting upload...');
+    
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
 
+    console.log('[Upload API] File received:', file?.name, file?.size);
+
     if (!file) {
+      console.error('[Upload API] No file provided');
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
@@ -14,62 +19,107 @@ export async function POST(request: NextRequest) {
     }
 
     // Read file content
-    const text = await file.text();
-    const lines = text.split('\n').filter(line => line.trim());
+    let text: string;
+    try {
+      text = await file.text();
+      console.log('[Upload API] File read successfully, length:', text.length);
+    } catch (readError) {
+      console.error('[Upload API] Error reading file:', readError);
+      return NextResponse.json(
+        { error: 'Failed to read file content' },
+        { status: 400 }
+      );
+    }
+
+    // Split lines and filter empty ones
+    const lines = text.split(/\r?\n/).filter(line => line.trim());
+    console.log('[Upload API] Total lines:', lines.length);
     
     if (lines.length < 2) {
+      console.error('[Upload API] Not enough lines');
       return NextResponse.json(
         { error: 'File must contain at least a header row and one data row' },
         { status: 400 }
       );
     }
 
-    // Parse CSV header
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Parse CSV header - handle both comma and semicolon
+    const delimiter = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0]
+      .split(delimiter)
+      .map(h => h.trim().replace(/^["']|["']$/g, ''))
+      .filter(h => h.length > 0);
     
+    console.log('[Upload API] Headers:', headers);
+    
+    if (headers.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid headers found in CSV file' },
+        { status: 400 }
+      );
+    }
+
     // Parse first few rows for preview
-    const previewRows = lines.slice(1, Math.min(6, lines.length)).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      const row: Record<string, string> = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      return row;
-    });
+    const previewRows = lines.slice(1, Math.min(6, lines.length)).map((line, idx) => {
+      try {
+        const values = line
+          .split(delimiter)
+          .map(v => v.trim().replace(/^["']|["']$/g, ''));
+        
+        const row: Record<string, string> = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] || '';
+        });
+        return row;
+      } catch (parseError) {
+        console.error(`[Upload API] Error parsing row ${idx}:`, parseError);
+        return {};
+      }
+    }).filter(row => Object.keys(row).length > 0);
+
+    console.log('[Upload API] Preview rows:', previewRows.length);
 
     // Generate project ID
-    const projectId = `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const projectId = `project-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    console.log('[Upload API] Generated project ID:', projectId);
 
-    // Store in localStorage (temporary solution)
-    const projectData = {
-      id: projectId,
-      name: name || file.name.replace('.csv', ''),
-      fileName: file.name,
-      fileSize: file.size,
-      rowCount: lines.length - 1,
-      columnCount: headers.length,
-      headers,
-      data: text,
-      uploadedAt: new Date().toISOString()
-    };
-
-    return NextResponse.json({
+    const response = {
       success: true,
       project: {
         id: projectId,
-        name: projectData.name,
-        rowCount: projectData.rowCount,
-        columnCount: projectData.columnCount
+        name: name || file.name.replace('.csv', ''),
+        rowCount: lines.length - 1,
+        columnCount: headers.length
       },
       preview: previewRows,
       headers
+    };
+
+    console.log('[Upload API] Sending response:', JSON.stringify(response).substring(0, 200));
+
+    return NextResponse.json(response, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('[Upload API] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Upload failed' },
-      { status: 500 }
+      { 
+        success: false,
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      },
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 }
