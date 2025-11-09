@@ -1,20 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  // Set response headers
+  const responseHeaders = {
+    'Content-Type': 'application/json',
+  };
+
   try {
     console.log('[Upload API] Starting upload...');
+    console.log('[Upload API] Request method:', request.method);
     
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
 
-    console.log('[Upload API] File received:', file?.name, file?.size);
+    console.log('[Upload API] File received:', file?.name, file?.size, file?.type);
 
     if (!file) {
       console.error('[Upload API] No file provided');
       return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
+        { success: false, error: 'No file provided' },
+        { status: 400, headers: responseHeaders }
       );
     }
 
@@ -26,8 +32,8 @@ export async function POST(request: NextRequest) {
     } catch (readError) {
       console.error('[Upload API] Error reading file:', readError);
       return NextResponse.json(
-        { error: 'Failed to read file content' },
-        { status: 400 }
+        { success: false, error: 'Failed to read file content' },
+        { status: 400, headers: responseHeaders }
       );
     }
 
@@ -38,24 +44,24 @@ export async function POST(request: NextRequest) {
     if (lines.length < 2) {
       console.error('[Upload API] Not enough lines');
       return NextResponse.json(
-        { error: 'File must contain at least a header row and one data row' },
-        { status: 400 }
+        { success: false, error: 'File must contain at least a header row and one data row' },
+        { status: 400, headers: responseHeaders }
       );
     }
 
     // Parse CSV header - handle both comma and semicolon
     const delimiter = lines[0].includes(';') ? ';' : ',';
-    const headers = lines[0]
+    const csvHeaders = lines[0]
       .split(delimiter)
       .map(h => h.trim().replace(/^["']|["']$/g, ''))
       .filter(h => h.length > 0);
     
-    console.log('[Upload API] Headers:', headers);
+    console.log('[Upload API] CSV Headers:', csvHeaders);
     
-    if (headers.length === 0) {
+    if (csvHeaders.length === 0) {
       return NextResponse.json(
-        { error: 'No valid headers found in CSV file' },
-        { status: 400 }
+        { success: false, error: 'No valid headers found in CSV file' },
+        { status: 400, headers: responseHeaders }
       );
     }
 
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
           .map(v => v.trim().replace(/^["']|["']$/g, ''));
         
         const row: Record<string, string> = {};
-        headers.forEach((header, index) => {
+        csvHeaders.forEach((header, index) => {
           row[header] = values[index] || '';
         });
         return row;
@@ -89,19 +95,17 @@ export async function POST(request: NextRequest) {
         id: projectId,
         name: name || file.name.replace('.csv', ''),
         rowCount: lines.length - 1,
-        columnCount: headers.length
+        columnCount: csvHeaders.length
       },
       preview: previewRows,
-      headers
+      headers: csvHeaders
     };
 
     console.log('[Upload API] Sending response:', JSON.stringify(response).substring(0, 200));
 
     return NextResponse.json(response, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: responseHeaders,
     });
 
   } catch (error) {
@@ -116,9 +120,7 @@ export async function POST(request: NextRequest) {
       },
       { 
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: responseHeaders,
       }
     );
   }
