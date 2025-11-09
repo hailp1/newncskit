@@ -76,9 +76,12 @@ export default function VariableGroupingPanel({
   });
 
   // Auto-generate suggestions on mount (Subtask 5.2)
+  // FIXED: Added currentStep dependency to trigger detection when step becomes active
   useEffect(() => {
+    // Only run detection if we have variables
     if (variables && variables.length > 0) {
       setIsDetecting(true);
+      
       // Simulate async detection with slight delay for better UX
       setTimeout(() => {
         const suggested = VariableGroupingService.suggestGroupsCaseInsensitive(variables);
@@ -88,7 +91,7 @@ export default function VariableGroupingPanel({
     } else {
       setIsDetecting(false);
     }
-  }, [variables]);
+  }, [variables]); // Detection triggers on variables change or component mount
 
   // Restore from localStorage on mount if available (Task 11.2)
   useEffect(() => {

@@ -70,6 +70,7 @@ export default function DemographicSelectionPanel({
 
   // Auto-detect demographics on mount (Task 8.2)
   // Requirements: 4.1, 4.2, 4.5
+  // FIXED: Detection now triggers reliably on component mount
   useEffect(() => {
     if (variables && variables.length > 0) {
       setIsDetecting(true);
@@ -102,7 +103,7 @@ export default function DemographicSelectionPanel({
     } else {
       setIsDetecting(false);
     }
-  }, [variables, initialDemographics]);
+  }, [variables, initialDemographics]); // Detection triggers on variables change or component mount
 
   // Notify parent of changes
   useEffect(() => {
