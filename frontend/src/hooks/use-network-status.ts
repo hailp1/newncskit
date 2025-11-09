@@ -35,9 +35,9 @@ export function useNetworkStatus() {
     const checkConnectivity = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-        const response = await fetch('/api/health', {
+        const response = await fetch('/api/health/simple', {
           method: 'HEAD',
           signal: controller.signal,
         });
@@ -63,7 +63,7 @@ export function useNetworkStatus() {
     window.addEventListener('offline', updateOnlineStatus);
 
     // Check connectivity periodically
-    const connectivityInterval = setInterval(checkConnectivity, 30000); // Check every 30 seconds
+    const connectivityInterval = setInterval(checkConnectivity, 60000); // Check every 60 seconds
 
     // Initial connectivity check
     checkConnectivity();
