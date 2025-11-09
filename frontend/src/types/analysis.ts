@@ -113,6 +113,48 @@ export interface AnalysisResult {
 // Data Health Types
 // ============================================================================
 
+export interface MissingValueReport {
+  variable: string;
+  totalCount: number;
+  missingCount: number;
+  missingPercentage: number;
+}
+
+export interface OutlierReport {
+  outlierCount: number;
+  outlierPercentage: number;
+  outlierIndices: number[];
+  outlierValues: number[];
+  bounds: {
+    lower: number;
+    upper: number;
+  };
+  quartiles: {
+    q1: number;
+    q3: number;
+    iqr: number;
+  };
+}
+
+export interface BasicStats {
+  count: number;
+  mean: number;
+  median: number;
+  std: number;
+  min: number;
+  max: number;
+  range: number;
+  q1: number;
+  q3: number;
+}
+
+export interface QualityMetrics {
+  missingDataScore: number;
+  outlierScore: number;
+  dataTypeScore: number;
+  sampleSizeScore: number;
+}
+
 export interface DataHealthReport {
   overallScore: number; // 0-100
   totalRows: number;
@@ -120,19 +162,15 @@ export interface DataHealthReport {
   missingData: {
     totalMissing: number;
     percentageMissing: number;
-    variablesWithMissing: Array<{
-      variable: string;
-      missingCount: number;
-      missingPercentage: number;
-    }>;
+    variablesWithMissing: MissingValueReport[];
   };
   outliers: {
     totalOutliers: number;
     variablesWithOutliers: Array<{
       variable: string;
       outlierCount: number;
+      outlierPercentage: number;
       outlierIndices: number[];
-      outlierPercentage?: number;
     }>;
   };
   dataTypes: {
@@ -141,7 +179,10 @@ export interface DataHealthReport {
     text: number;
     date: number;
   };
+  basicStats: Record<string, BasicStats | null>;
   recommendations: string[];
+  calculatedAt: Date;
+  calculationMethod: 'client-side' | 'r-server';
   analysisTime?: number;
 }
 

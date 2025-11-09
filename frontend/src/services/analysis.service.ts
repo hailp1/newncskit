@@ -437,17 +437,124 @@ export class AnalysisService {
   }
 
   /**
-   * Check if R Analytics service is available
+   * Check R server availability with detailed status
+   * Only call this before executing analysis, not during upload/configuration
    */
-  static async checkRServiceHealth(): Promise<boolean> {
+  static async checkRServerAvailability(): Promise<RServerStatus> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(`${this.R_ANALYTICS_URL}/health`, {
         method: 'GET',
+        signal: controller.signal
       });
-      return response.ok;
-    } catch (error) {
-      console.error('R service health check failed:', error);
-      return false;
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          available: true,
+          status: data.status || 'healthy',
+          version: data.version,
+          uptime: data.uptime
+        };
+      }
+      
+      return {
+        available: false,
+        error: `Server returned status ${response.status}`
+      };
+    } catch (error: any) {
+      const errorMessage = error.name === 'AbortError' 
+        ? 'Connection timeout after 5 seconds'
+        : error.message;
+      
+      return {
+        available: false,
+        error: errorMessage,
+        instructions: [
+          '🔴 R Analytics Server is not available',
+          '',
+          '📍 Expected URL: http://localhost:8000',
+          '',
+          '🚀 To start the R server:',
+          '',
+          'Option 1 - Using PowerShell script:',
+          '  cd r-analytics',
+          '  .\\start.ps1',
+          '',
+          'Option 2 - Using Docker Compose:',
+          '  cd r-analytics',
+          '  docker-compose up -d',
+          '',
+          'Option 3 - Check if already running:',
+          '  docker ps | findstr ncskit-r-analytics',
+          '',
+          '✅ Once started, click "Retry Connection" below'
+        ]
+      };
     }
+  }
+
+  /**
+   * Execute analysis with R server availability check
+   * This is the ONLY place where R server should be checked
+   */
+  static async executeAnalysisWithCheck(
+    type: AnalysisType,
+    data: any,
+    variables: any[],
+    groups: any[],
+    demographics: any[],
+    config: any
+  ): Promise<any> {
+    // Check R server availability first
+    const serverStatus = await this.checkRServerAvailability();
+    
+    if (!serverStatus.available) {
+      throw new RServerUnavailableError(
+        'R Analytics Server is not available',
+        serverStatus.instructions || [],
+        serverStatus.error
+      );
+    }
+    
+    // Proceed with analysis execution
+    return this.executeAnalysis(type, data, variables, groups, demographics, config);
+  }
+
+  /**
+   * @deprecated Use checkRServerAvailability() instead
+   * Kept for backward compatibility
+   */
+  static async checkRServiceHealth(): Promise<boolean> {
+    const status = await this.checkRServerAvailability();
+    return status.available;
+  }
+}
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface RServerStatus {
+  available: boolean;
+  status?: string;
+  version?: string;
+  uptime?: number;
+  error?: string;
+  instructions?: string[];
+}
+
+export class RServerUnavailableError extends Error {
+  constructor(
+    message: string,
+    public instructions: string[],
+    public serverError?: string
+  ) {
+    super(message);
+    this.name = 'RServerUnavailableError';
   }
 }

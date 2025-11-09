@@ -1,277 +1,361 @@
-import { DataHealthReport, DataType } from '@/types/analysis';
-import { CSVParserService } from './csv-parser.service';
+/**
+ * Data Health Service
+ * Client-side data quality analysis without R server dependency
+ */
+
+export interface MissingValueReport {
+  variable: string;
+  totalCount: number;
+  missingCount: number;
+  missingPercentage: number;
+}
+
+export interface OutlierReport {
+  outlierCount: number;
+  outlierPercentage: number;
+  outlierIndices: number[];
+  outlierValues: number[];
+  bounds: {
+    lower: number;
+    upper: number;
+  };
+  quartiles: {
+    q1: number;
+    q3: number;
+    iqr: number;
+  };
+}
+
+export interface BasicStats {
+  count: number;
+  mean: number;
+  median: number;
+  std: number;
+  min: number;
+  max: number;
+  range: number;
+  q1: number;
+  q3: number;
+}
+
+export interface DataHealthReport {
+  overallScore: number;
+  totalRows: number;
+  totalColumns: number;
+  
+  missingData: {
+    totalMissing: number;
+    percentageMissing: number;
+    variablesWithMissing: MissingValueReport[];
+  };
+  
+  outliers: {
+    totalOutliers: number;
+    variablesWithOutliers: Array<{
+      variable: string;
+      outlierCount: number;
+      outlierPercentage: number;
+      outlierIndices: number[];
+    }>;
+  };
+  
+  dataTypes: {
+    numeric: number;
+    categorical: number;
+    text: number;
+    date: number;
+  };
+  
+  basicStats: Record<string, BasicStats | null>;
+  recommendations: string[];
+  calculatedAt: Date;
+  calculationMethod: 'client-side';
+}
+
+export type DataType = 'numeric' | 'categorical' | 'text' | 'date';
 
 export class DataHealthService {
   /**
-   * Analyze data quality and generate health report
+   * Analyze missing values across all columns
    */
-  static analyzeDataQuality(data: any[], headers: string[]): DataHealthReport {
-    const startTime = Date.now();
-
-    // Detect missing values
-    const missingData = this.detectMissingValues(data, headers);
-
-    // Detect outliers for numeric columns
-    const outliers = this.detectOutliers(data, headers);
-
-    // Detect data types
-    const dataTypes = this.detectDataTypes(data, headers);
-
-    // Calculate overall quality score
-    const overallScore = this.calculateQualityScore(missingData, outliers, dataTypes);
-
-    // Generate recommendations
-    const recommendations = this.generateRecommendations(missingData, outliers, dataTypes);
-
-    const duration = Date.now() - startTime;
-
-    return {
-      overallScore,
-      totalRows: data.length,
-      totalColumns: headers.length,
-      missingData,
-      outliers,
-      dataTypes,
-      recommendations,
-      analysisTime: duration,
-    };
-  }
-
-  /**
-   * Detect missing values in dataset
-   */
-  private static detectMissingValues(data: any[], headers: string[]) {
-    let totalMissing = 0;
-    const variablesWithMissing: Array<{
-      variable: string;
-      missingCount: number;
-      missingPercentage: number;
-    }> = [];
-
-    for (const header of headers) {
-      const values = data.map(row => row[header]);
-      const missingCount = values.filter(
-        v => v === null || v === undefined || v === '' || v === 'NA' || v === 'N/A'
+  static analyzeMissingValues(data: any[][]): MissingValueReport[] {
+    if (data.length < 2) return [];
+    
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    return headers.map((header, colIndex) => {
+      const columnValues = rows.map(row => row[colIndex]);
+      const missingCount = columnValues.filter(v => 
+        v === null || 
+        v === undefined || 
+        v === '' || 
+        v === 'NA' ||
+        v === 'N/A' ||
+        v === 'null'
       ).length;
-
-      if (missingCount > 0) {
-        totalMissing += missingCount;
-        variablesWithMissing.push({
-          variable: header,
-          missingCount,
-          missingPercentage: (missingCount / data.length) * 100,
-        });
-      }
-    }
-
-    const totalCells = data.length * headers.length;
-    const percentageMissing = (totalMissing / totalCells) * 100;
-
-    return {
-      totalMissing,
-      percentageMissing,
-      variablesWithMissing: variablesWithMissing.sort(
-        (a, b) => b.missingPercentage - a.missingPercentage
-      ),
-    };
+      
+      return {
+        variable: header || `Column_${colIndex + 1}`,
+        totalCount: columnValues.length,
+        missingCount,
+        missingPercentage: (missingCount / columnValues.length) * 100
+      };
+    });
   }
 
   /**
    * Detect outliers using IQR method
    */
-  private static detectOutliers(data: any[], headers: string[]) {
-    let totalOutliers = 0;
-    const variablesWithOutliers: Array<{
-      variable: string;
-      outlierCount: number;
-      outlierPercentage: number;
-      outlierIndices: number[];
-    }> = [];
-
-    for (const header of headers) {
-      const values = data.map(row => row[header]);
-      const numericValues = values
-        .map((v, idx) => ({ value: Number(v), index: idx }))
-        .filter(v => !isNaN(v.value));
-
-      if (numericValues.length < 4) continue; // Need at least 4 values for IQR
-
-      // Calculate IQR
-      const sorted = numericValues.map(v => v.value).sort((a, b) => a - b);
-      const q1Index = Math.floor(sorted.length * 0.25);
-      const q3Index = Math.floor(sorted.length * 0.75);
-      const q1 = sorted[q1Index];
-      const q3 = sorted[q3Index];
-      const iqr = q3 - q1;
-
-      const lowerBound = q1 - 1.5 * iqr;
-      const upperBound = q3 + 1.5 * iqr;
-
-      // Find outliers
-      const outlierIndices = numericValues
-        .filter(v => v.value < lowerBound || v.value > upperBound)
-        .map(v => v.index);
-
-      if (outlierIndices.length > 0) {
-        totalOutliers += outlierIndices.length;
-        variablesWithOutliers.push({
-          variable: header,
-          outlierCount: outlierIndices.length,
-          outlierPercentage: (outlierIndices.length / data.length) * 100,
-          outlierIndices: outlierIndices.slice(0, 10), // Limit to first 10
-        });
-      }
-    }
-
-    return {
-      totalOutliers,
-      variablesWithOutliers: variablesWithOutliers.sort(
-        (a, b) => b.outlierPercentage - a.outlierPercentage
-      ),
-    };
-  }
-
-  /**
-   * Detect data types for all columns
-   */
-  private static detectDataTypes(data: any[], headers: string[]) {
-    const typeMap = CSVParserService.detectDataTypes(data);
+  static detectOutliers(values: number[]): OutlierReport {
+    const validValues = values.filter(v => !isNaN(v) && v !== null && v !== undefined);
     
-    let numeric = 0;
-    let categorical = 0;
-    let text = 0;
-    let date = 0;
-
-    for (const [_, typeInfo] of typeMap) {
-      switch (typeInfo.type) {
-        case 'numeric':
-          numeric++;
-          break;
-        case 'categorical':
-          categorical++;
-          break;
-        case 'text':
-          text++;
-          break;
-        case 'date':
-          date++;
-          break;
-      }
+    if (validValues.length === 0) {
+      return {
+        outlierCount: 0,
+        outlierPercentage: 0,
+        outlierIndices: [],
+        outlierValues: [],
+        bounds: { lower: 0, upper: 0 },
+        quartiles: { q1: 0, q3: 0, iqr: 0 }
+      };
     }
-
+    
+    const sorted = [...validValues].sort((a, b) => a - b);
+    const n = sorted.length;
+    
+    // Calculate quartiles
+    const q1Index = Math.floor(n * 0.25);
+    const q3Index = Math.floor(n * 0.75);
+    
+    const q1 = sorted[q1Index];
+    const q3 = sorted[q3Index];
+    const iqr = q3 - q1;
+    
+    // Calculate bounds
+    const lowerBound = q1 - 1.5 * iqr;
+    const upperBound = q3 + 1.5 * iqr;
+    
+    // Find outliers
+    const outliers = values
+      .map((v, index) => ({ value: v, index }))
+      .filter(({ value }) => 
+        !isNaN(value) && 
+        value !== null && 
+        value !== undefined &&
+        (value < lowerBound || value > upperBound)
+      );
+    
     return {
-      numeric,
-      categorical,
-      text,
-      date,
-      details: Array.from(typeMap.entries()).map(([variable, info]) => ({
-        variable,
-        type: info.type,
-        confidence: info.confidence,
-        uniqueCount: info.uniqueCount,
-        missingCount: info.missingCount,
-      })),
+      outlierCount: outliers.length,
+      outlierPercentage: (outliers.length / values.length) * 100,
+      outlierIndices: outliers.map(o => o.index),
+      outlierValues: outliers.map(o => o.value),
+      bounds: { lower: lowerBound, upper: upperBound },
+      quartiles: { q1, q3, iqr }
     };
   }
 
   /**
-   * Calculate overall quality score (0-100)
+   * Calculate basic statistics for numeric data
    */
-  private static calculateQualityScore(
-    missingData: any,
-    outliers: any,
-    dataTypes: any
-  ): number {
-    // Missing data score (40% weight)
-    const missingScore = Math.max(0, 100 - missingData.percentageMissing * 2);
-
-    // Outlier score (30% weight)
-    const totalCells = missingData.totalMissing + outliers.totalOutliers;
-    const outlierPercentage = totalCells > 0 ? (outliers.totalOutliers / totalCells) * 100 : 0;
-    const outlierScore = Math.max(0, 100 - outlierPercentage * 3);
-
-    // Type consistency score (30% weight)
-    const totalColumns = dataTypes.numeric + dataTypes.categorical + dataTypes.text + dataTypes.date;
-    const avgConfidence = dataTypes.details.reduce((sum: number, d: any) => sum + d.confidence, 0) / totalColumns;
-    const typeScore = avgConfidence * 100;
-
-    // Weighted average
-    const overallScore = Math.round(
-      missingScore * 0.4 + outlierScore * 0.3 + typeScore * 0.3
-    );
-
-    return Math.max(0, Math.min(100, overallScore));
+  static calculateBasicStats(values: any[]): BasicStats | null {
+    const numericValues = values
+      .map(v => Number(v))
+      .filter(v => !isNaN(v) && v !== null && v !== undefined);
+    
+    const n = numericValues.length;
+    
+    if (n === 0) return null;
+    
+    // Mean
+    const sum = numericValues.reduce((a, b) => a + b, 0);
+    const mean = sum / n;
+    
+    // Variance and Standard Deviation
+    const variance = numericValues.reduce((sum, v) => 
+      sum + Math.pow(v - mean, 2), 0
+    ) / n;
+    const std = Math.sqrt(variance);
+    
+    // Sort for median and quartiles
+    const sorted = [...numericValues].sort((a, b) => a - b);
+    
+    // Median
+    const median = n % 2 === 0
+      ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+      : sorted[Math.floor(n / 2)];
+    
+    // Quartiles
+    const q1Index = Math.floor(n * 0.25);
+    const q3Index = Math.floor(n * 0.75);
+    const q1 = sorted[q1Index];
+    const q3 = sorted[q3Index];
+    
+    // Min, Max, Range
+    const min = Math.min(...numericValues);
+    const max = Math.max(...numericValues);
+    const range = max - min;
+    
+    return {
+      count: n,
+      mean: Number(mean.toFixed(3)),
+      median: Number(median.toFixed(3)),
+      std: Number(std.toFixed(3)),
+      min,
+      max,
+      range,
+      q1: Number(q1.toFixed(3)),
+      q3: Number(q3.toFixed(3))
+    };
   }
 
   /**
-   * Generate recommendations based on data quality
+   * Detect data type of a column
    */
-  private static generateRecommendations(
-    missingData: any,
-    outliers: any,
-    dataTypes: any
-  ): string[] {
+  static detectDataType(values: any[]): DataType {
+    const nonNullValues = values.filter(v => 
+      v !== null && 
+      v !== undefined && 
+      v !== '' &&
+      v !== 'NA' &&
+      v !== 'N/A'
+    );
+    
+    if (nonNullValues.length === 0) return 'text';
+    
+    // Check if numeric
+    const numericValues = nonNullValues.filter(v => !isNaN(Number(v)));
+    const numericRatio = numericValues.length / nonNullValues.length;
+    
+    if (numericRatio > 0.8) {
+      // Check if it's ordinal (limited unique values)
+      const uniqueValues = [...new Set(numericValues.map(v => Number(v)))];
+      if (uniqueValues.length <= 10 && uniqueValues.length > 1) {
+        return 'categorical';
+      }
+      return 'numeric';
+    }
+    
+    // Check if date
+    const dateValues = nonNullValues.filter(v => {
+      const date = new Date(v);
+      return !isNaN(date.getTime());
+    });
+    const dateRatio = dateValues.length / nonNullValues.length;
+    
+    if (dateRatio > 0.8) {
+      return 'date';
+    }
+    
+    // Check if categorical
+    const uniqueValues = [...new Set(nonNullValues)];
+    if (uniqueValues.length <= 20) {
+      return 'categorical';
+    }
+    
+    return 'text';
+  }
+
+  /**
+   * Calculate overall quality score
+   */
+  static calculateQualityScore(report: Partial<DataHealthReport>): number {
+    let score = 100;
+    
+    // Deduct for missing values (max 30 points)
+    if (report.missingData) {
+      const missingPenalty = Math.min(
+        report.missingData.percentageMissing * 0.5, 
+        30
+      );
+      score -= missingPenalty;
+    }
+    
+    // Deduct for outliers (max 20 points)
+    if (report.outliers) {
+      const outlierPenalty = Math.min(
+        report.outliers.totalOutliers * 0.1, 
+        20
+      );
+      score -= outlierPenalty;
+    }
+    
+    // Deduct for data type issues (max 10 points)
+    if (report.dataTypes) {
+      const totalColumns = Object.values(report.dataTypes).reduce((a, b) => a + b, 0);
+      const textRatio = report.dataTypes.text / totalColumns;
+      if (textRatio > 0.5) {
+        score -= 10;
+      }
+    }
+    
+    return Math.max(0, Math.round(score));
+  }
+
+  /**
+   * Generate recommendations based on data health
+   */
+  static generateRecommendations(report: Partial<DataHealthReport>): string[] {
     const recommendations: string[] = [];
-
+    
     // Missing data recommendations
-    if (missingData.percentageMissing > 10) {
+    if (report.missingData && report.missingData.percentageMissing > 5) {
       recommendations.push(
-        `High missing data rate (${missingData.percentageMissing.toFixed(1)}%). Consider data imputation or removing variables with >30% missing values.`
+        `${report.missingData.percentageMissing.toFixed(1)}% of data is missing. Consider imputation or removal of incomplete cases.`
       );
-    }
-
-    if (missingData.variablesWithMissing.length > 0) {
-      const topMissing = missingData.variablesWithMissing[0];
-      if (topMissing.missingPercentage > 30) {
+      
+      const highMissingVars = report.missingData.variablesWithMissing
+        .filter(v => v.missingPercentage > 20);
+      
+      if (highMissingVars.length > 0) {
         recommendations.push(
-          `Variable "${topMissing.variable}" has ${topMissing.missingPercentage.toFixed(1)}% missing values. Consider removing this variable.`
+          `Variables with >20% missing: ${highMissingVars.map(v => v.variable).join(', ')}. Consider removing these variables.`
         );
       }
     }
-
+    
     // Outlier recommendations
-    if (outliers.totalOutliers > 0) {
-      const outlierPercentage = (outliers.totalOutliers / (missingData.totalMissing + outliers.totalOutliers)) * 100;
-      if (outlierPercentage > 5) {
+    if (report.outliers && report.outliers.totalOutliers > 0) {
+      recommendations.push(
+        `${report.outliers.totalOutliers} outliers detected. Review these values before analysis.`
+      );
+      
+      const highOutlierVars = report.outliers.variablesWithOutliers
+        .filter(v => v.outlierPercentage > 5);
+      
+      if (highOutlierVars.length > 0) {
         recommendations.push(
-          `${outliers.totalOutliers} outliers detected (${outlierPercentage.toFixed(1)}%). Review outliers before analysis or consider robust statistical methods.`
+          `Variables with >5% outliers: ${highOutlierVars.map(v => v.variable).join(', ')}. Consider transformation or winsorization.`
         );
       }
     }
-
+    
     // Data type recommendations
-    if (dataTypes.text > dataTypes.numeric + dataTypes.categorical) {
-      recommendations.push(
-        `Many text columns detected. Ensure these are not meant to be categorical or numeric variables.`
-      );
+    if (report.dataTypes) {
+      if (report.dataTypes.text > report.dataTypes.numeric + report.dataTypes.categorical) {
+        recommendations.push(
+          'Most columns are text type. Ensure numeric variables are properly formatted.'
+        );
+      }
     }
-
-    const lowConfidenceVars = dataTypes.details.filter((d: any) => d.confidence < 0.7);
-    if (lowConfidenceVars.length > 0) {
-      recommendations.push(
-        `${lowConfidenceVars.length} variable(s) have ambiguous data types. Review and clean data if needed.`
-      );
-    }
-
+    
     // Sample size recommendations
-    if (missingData.totalRows < 30) {
+    if (report.totalRows && report.totalRows < 30) {
       recommendations.push(
-        `Small sample size (n=${missingData.totalRows}). Results may not be statistically reliable. Consider collecting more data.`
+        'Sample size is small (<30). Statistical tests may have limited power.'
       );
     }
-
-    // General recommendations
+    
     if (recommendations.length === 0) {
-      recommendations.push(
-        'Data quality looks good! You can proceed with confidence to the next step.'
-      );
+      recommendations.push('Data quality is good. Ready for analysis.');
     }
-
+    
     return recommendations;
   }
 
   /**
-   * Get quality score color
+   * Get color for quality score
    */
   static getScoreColor(score: number): string {
     if (score >= 80) return 'green';
@@ -281,12 +365,113 @@ export class DataHealthService {
   }
 
   /**
-   * Get quality score label
+   * Get label for quality score
    */
   static getScoreLabel(score: number): string {
     if (score >= 80) return 'Excellent';
     if (score >= 60) return 'Good';
     if (score >= 40) return 'Fair';
     return 'Poor';
+  }
+
+  /**
+   * Perform comprehensive data health check
+   */
+  static performHealthCheck(data: any[][]): DataHealthReport {
+    if (data.length < 2) {
+      throw new Error('Data must contain at least a header row and one data row');
+    }
+    
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Analyze missing values
+    const missingValueReports = this.analyzeMissingValues(data);
+    const totalMissing = missingValueReports.reduce((sum, v) => sum + v.missingCount, 0);
+    const totalCells = rows.length * headers.length;
+    const percentageMissing = (totalMissing / totalCells) * 100;
+    
+    // Detect data types and calculate statistics
+    const dataTypes = { numeric: 0, categorical: 0, text: 0, date: 0 };
+    const basicStats: Record<string, BasicStats | null> = {};
+    const outlierReports: Array<{
+      variable: string;
+      outlierCount: number;
+      outlierPercentage: number;
+      outlierIndices: number[];
+    }> = [];
+    
+    headers.forEach((header, colIndex) => {
+      const columnValues = rows.map(row => row[colIndex]);
+      const dataType = this.detectDataType(columnValues);
+      dataTypes[dataType]++;
+      
+      // Calculate stats for numeric columns
+      if (dataType === 'numeric') {
+        const stats = this.calculateBasicStats(columnValues);
+        basicStats[header] = stats;
+        
+        // Detect outliers
+        const numericValues = columnValues.map(v => Number(v));
+        const outlierReport = this.detectOutliers(numericValues);
+        
+        if (outlierReport.outlierCount > 0) {
+          outlierReports.push({
+            variable: header,
+            outlierCount: outlierReport.outlierCount,
+            outlierPercentage: outlierReport.outlierPercentage,
+            outlierIndices: outlierReport.outlierIndices
+          });
+        }
+      } else {
+        basicStats[header] = null;
+      }
+    });
+    
+    const totalOutliers = outlierReports.reduce((sum, v) => sum + v.outlierCount, 0);
+    
+    // Build partial report for quality score calculation
+    const partialReport = {
+      missingData: {
+        totalMissing,
+        percentageMissing,
+        variablesWithMissing: missingValueReports.filter(v => v.missingCount > 0)
+      },
+      outliers: {
+        totalOutliers,
+        variablesWithOutliers: outlierReports
+      },
+      dataTypes,
+      totalRows: rows.length
+    };
+    
+    // Calculate quality score
+    const overallScore = this.calculateQualityScore(partialReport);
+    
+    // Generate recommendations
+    const recommendations = this.generateRecommendations(partialReport);
+    
+    // Build complete report
+    const report: DataHealthReport = {
+      overallScore,
+      totalRows: rows.length,
+      totalColumns: headers.length,
+      missingData: {
+        totalMissing,
+        percentageMissing,
+        variablesWithMissing: missingValueReports.filter(v => v.missingCount > 0)
+      },
+      outliers: {
+        totalOutliers,
+        variablesWithOutliers: outlierReports
+      },
+      dataTypes,
+      basicStats,
+      recommendations,
+      calculatedAt: new Date(),
+      calculationMethod: 'client-side'
+    };
+    
+    return report;
   }
 }
