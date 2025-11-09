@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Get analysis counts for each project
     const projectsWithCounts = await Promise.all(
-      (projects || []).map(async (project) => {
+      (projects || []).map(async (project: any) => {
         const { count } = await supabase
           .from('analysis_results')
           .select('*', { count: 'exact', head: true })
