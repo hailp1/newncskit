@@ -4,7 +4,7 @@
  * Implements requirements: 3.1, 3.3, 4.1, 7.1
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { UserRole } from '@/lib/permissions/constants'
 
 /**
@@ -111,7 +111,7 @@ export class ProfileService {
    * @throws Error if user is not authenticated or profile not found
    */
   async getProfile(): Promise<UserProfile> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -179,7 +179,7 @@ export class ProfileService {
    * @throws Error if update fails
    */
   async updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -264,7 +264,7 @@ export class ProfileService {
    * @throws Error if password change fails
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -313,7 +313,7 @@ export class ProfileService {
    * @throws Error if upload fails
    */
   async uploadAvatar(file: File): Promise<string> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get current authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

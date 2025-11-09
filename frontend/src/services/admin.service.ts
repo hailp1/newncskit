@@ -3,7 +3,7 @@
  * Manages admin operations: users, roles, dashboard stats, logs
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { Permission, UserRole } from '@/lib/permissions/constants'
 import { permissionService } from './permission.service'
 
@@ -35,7 +35,7 @@ export class AdminService {
    * Get all users with pagination and filtering
    */
   async getUsers(params: GetUsersParams) {
-    const supabase = await createClient()
+    const supabase = createClient()
     const { page, limit, search, role, status } = params
 
     let query = supabase
@@ -78,7 +78,7 @@ export class AdminService {
    * Get user by ID
    */
   async getUserById(userId: string) {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('profiles')
@@ -113,7 +113,7 @@ export class AdminService {
       throw new Error('Insufficient permissions to edit users')
     }
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { error } = await (supabase as any)
       .from('profiles')
@@ -151,7 +151,7 @@ export class AdminService {
       throw new Error('Insufficient permissions to manage roles')
     }
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get current role
     const { data: user } = await supabase
@@ -203,7 +203,7 @@ export class AdminService {
       throw new Error('Insufficient permissions to suspend users')
     }
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { error } = await (supabase as any)
       .from('profiles')
@@ -227,7 +227,7 @@ export class AdminService {
    * Get dashboard statistics
    */
   async getDashboardStats(): Promise<DashboardStats> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get user stats
     const { count: totalUsers } = await supabase
@@ -305,7 +305,7 @@ export class AdminService {
     startDate?: string
     endDate?: string
   }) {
-    const supabase = await createClient()
+    const supabase = createClient()
     const { page, limit, adminId, action, startDate, endDate } = params
 
     let query = supabase
@@ -358,7 +358,7 @@ export class AdminService {
     targetId: string | number,
     details: any
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     await supabase.from('admin_logs').insert({
       admin_id: adminId,
@@ -373,7 +373,7 @@ export class AdminService {
    * Count users (helper)
    */
   private async countUsers(filters?: any): Promise<number> {
-    const supabase = await createClient()
+    const supabase = createClient()
     let query = supabase.from('profiles').select('*', { count: 'exact', head: true })
 
     if (filters?.status) {
@@ -388,7 +388,7 @@ export class AdminService {
    * Count posts (helper)
    */
   private async countPosts(filters?: any): Promise<number> {
-    const supabase = await createClient()
+    const supabase = createClient()
     let query = supabase.from('posts').select('*', { count: 'exact', head: true })
 
     if (filters?.status) {

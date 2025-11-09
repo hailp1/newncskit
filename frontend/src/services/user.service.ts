@@ -4,7 +4,7 @@
  * Implements requirements: 1.1, 1.2, 3.1, 3.2, 6.2, 6.3, 7.1, 8.1, 8.5
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { UserRole, Permission } from '@/lib/permissions/constants'
 import { permissionService } from './permission.service'
 
@@ -92,7 +92,7 @@ export class UserService {
     } = filters
 
     return this.withRetry(async () => {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Build query with pagination
       let query = supabase
@@ -157,7 +157,7 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Fetch user profile
       const { data: user, error } = await supabase
@@ -214,7 +214,7 @@ export class UserService {
     this.validateUserData(data)
 
     return this.withRetry(async () => {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Prepare update data (exclude sensitive fields)
       const updateData: any = {
@@ -291,7 +291,7 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Get current role for logging
       const { data: currentUser } = await supabase
@@ -358,7 +358,7 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       const { error } = await (supabase as any)
         .from('profiles')
@@ -465,7 +465,7 @@ export class UserService {
    * @param adminId - ID of admin performing the deletion
    */
   private async deleteUser(userId: string, adminId: string): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { error } = await (supabase as any)
       .from('profiles')
@@ -543,7 +543,7 @@ export class UserService {
     details: any
   ): Promise<void> {
     try {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       await (supabase as any).from('admin_logs').insert({
         admin_id: adminId,

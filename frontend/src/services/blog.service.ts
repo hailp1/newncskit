@@ -3,7 +3,7 @@
  * Manages blog posts: create, update, publish, delete
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { Permission } from '@/lib/permissions/constants'
 import { permissionService } from './permission.service'
 
@@ -43,7 +43,7 @@ export class BlogService {
       throw new Error('Insufficient permissions to create posts')
     }
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Generate slug
     const slug = this.generateSlug(post.title)
@@ -84,7 +84,7 @@ export class BlogService {
     data: UpdatePostInput,
     userId: string
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get post
     const { data: post } = await supabase
@@ -129,7 +129,7 @@ export class BlogService {
    * Publish post
    */
   async publishPost(postId: number, userId: string): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get post
     const { data: post } = await supabase
@@ -175,7 +175,7 @@ export class BlogService {
     scheduledAt: Date,
     userId: string
   ): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Check permission
     const canSchedule = await permissionService.hasPermission(
@@ -206,7 +206,7 @@ export class BlogService {
    * Delete post (archive)
    */
   async deletePost(postId: number, userId: string): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get post
     const { data: post } = await supabase
@@ -243,7 +243,7 @@ export class BlogService {
    * Get published posts with pagination
    */
   async getPublishedPosts(params: GetPostsParams) {
-    const supabase = await createClient()
+    const supabase = createClient()
     const { page, limit, category, tag } = params
 
     let query = supabase
@@ -284,7 +284,7 @@ export class BlogService {
    * Get post by slug
    */
   async getPostBySlug(slug: string) {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('posts')
@@ -304,7 +304,7 @@ export class BlogService {
    * Get my posts (for author)
    */
   async getMyPosts(authorId: string, params: GetPostsParams) {
-    const supabase = await createClient()
+    const supabase = createClient()
     const { page, limit, status } = params
 
     let query = supabase
@@ -337,7 +337,7 @@ export class BlogService {
    * Increment view count
    */
   async incrementViewCount(postId: number): Promise<void> {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Use RPC function if available, otherwise manual increment
     const { data: post } = await supabase
@@ -401,7 +401,7 @@ export class BlogService {
    * Get all categories
    */
   async getCategories() {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('posts')
@@ -430,7 +430,7 @@ export class BlogService {
    * Get all tags
    */
   async getTags() {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('posts')
