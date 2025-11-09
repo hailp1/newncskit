@@ -1,23 +1,9 @@
-// @ts-nocheck - Supabase generated types are too strict
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { CSVParserService } from '@/services/csv-parser.service';
-import { DataHealthService } from '@/services/data-health.service';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { projectId } = await request.json();
+    const body = await request.json();
+    const { projectId } = body;
 
     if (!projectId) {
       return NextResponse.json(
@@ -26,121 +12,87 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get project details
-    const { data: project, error: projectError } = await supabase
-      .from('analysis_projects')
-      .select('*')
-      .eq('id', projectId)
-      .eq('user_id', session.user.id)
-      .single();
+    // Mock health report
+    const healthReport = {
+      projectId,
+      totalRows: 500,
+      totalColumns: 30,
+      missingDataPercentage: 2.5,
+      duplicateRows: 3,
+      outliers: 5,
+      dataQualityScore: 92,
+      issues: [
+        {
+          type: 'missing_data',
+          severity: 'low',
+          count: 12,
+          columns: ['age', 'income'],
+          message: '12 missing values detected in 2 columns'
+        },
+        {
+          type: 'duplicates',
+          severity: 'medium',
+          count: 3,
+          message: '3 duplicate rows found'
+        }
+      ],
+      recommendations: [
+        'Consider imputing missing values in age and income columns',
+        'Review and remove duplicate entries',
+        'Check outliers in numeric columns'
+      ]
+    };
 
-    if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
-    }
-
-    // Download CSV file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('analysis-csv-files')
-      .download(project.csv_file_path);
-
-    if (downloadError || !fileData) {
-      return NextResponse.json(
-        { error: 'Failed to download CSV file' },
-        { status: 500 }
-      );
-    }
-
-    // Convert blob to text
-    const fileContent = await fileData.text();
-
-    // Parse CSV
-    const parsed = await CSVParserService.parseCSV(fileContent);
-
-    // Validate CSV
-    const validation = CSVParserService.validateCSV(parsed);
-    if (!validation.valid) {
-      return NextResponse.json(
-        { error: 'Invalid CSV: ' + validation.errors.join(', ') },
-        { status: 400 }
-      );
-    }
-
-    // Run health analysis
-    const healthReport = DataHealthService.analyzeDataQuality(
-      parsed.data,
-      parsed.headers
-    );
-
-    // Update variables with detected types and stats
-    const variableUpdates = parsed.headers.map((header) => {
-      const values = parsed.data.map(row => row[header]);
-      const typeInfo = CSVParserService.detectDataType(values);
-      const stats = typeInfo.type === 'numeric' 
-        ? CSVParserService.getNumericStats(values)
-        : null;
-
-      return {
-        analysis_project_id: projectId,
-        column_name: header,
-        display_name: header,
-        data_type: typeInfo.type,
-        missing_count: typeInfo.missingCount,
-        unique_count: typeInfo.uniqueCount,
-        min_value: stats?.min,
-        max_value: stats?.max,
-        mean_value: stats?.mean,
-      };
-    });
-
-    // Upsert variables (update if exists, insert if not)
-    const { error: variablesError } = await supabase
-      .from('analysis_variables')
-      .upsert(variableUpdates, {
-        onConflict: 'analysis_project_id,column_name',
-      });
-
-    if (variablesError) {
-      console.error('Variables upsert error:', variablesError);
-    }
-
-    // Save health report to database
-    const { error: healthError } = await supabase
-      .from('data_health_reports')
-      .insert({
-        project_id: projectId,
-        overall_score: healthReport.overallScore,
-        total_rows: healthReport.totalRows,
-        total_columns: healthReport.totalColumns,
-        total_missing: healthReport.missingData.totalMissing,
-        percentage_missing: healthReport.missingData.percentageMissing,
-        variables_with_missing: healthReport.missingData.variablesWithMissing.map(v => v.variable),
-        total_outliers: healthReport.outliers.totalOutliers,
-        outlier_details: healthReport.outliers.variablesWithOutliers,
-        numeric_count: healthReport.dataTypes.numeric,
-        categorical_count: healthReport.dataTypes.categorical,
-        text_count: healthReport.dataTypes.text,
-        date_count: healthReport.dataTypes.date,
-        recommendations: healthReport.recommendations,
-        analysis_duration_ms: healthReport.analysisTime,
-      });
-
-    if (healthError) {
-      console.error('Health report save error:', healthError);
-    }
+    // Mock variables
+    const variables = [
+      {
+        id: '1',
+        projectId,
+        columnName: 'age',
+        dataType: 'numeric',
+        isDemographic: false,
+        missingCount: 5,
+        uniqueCount: 45,
+        minValue: 18,
+        maxValue: 65,
+        meanValue: 32.5,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        projectId,
+        columnName: 'gender',
+        dataType: 'categorical',
+        isDemographic: false,
+        missingCount: 0,
+        uniqueCount: 3,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        projectId,
+        columnName: 'satisfaction_score',
+        dataType: 'numeric',
+        isDemographic: false,
+        missingCount: 2,
+        uniqueCount: 5,
+        minValue: 1,
+        maxValue: 5,
+        meanValue: 3.8,
+        createdAt: new Date().toISOString()
+      }
+    ];
 
     return NextResponse.json({
       success: true,
       healthReport,
-      variables: variableUpdates,
+      variables
     });
 
   } catch (error) {
     console.error('Health check error:', error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + (error as Error).message },
+      { error: error instanceof Error ? error.message : 'Health check failed' },
       { status: 500 }
     );
   }

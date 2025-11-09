@@ -39,7 +39,7 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     return null;
   };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
     
     if (acceptedFiles.length === 0) {
@@ -56,6 +56,9 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     }
 
     setSelectedFile(file);
+    
+    // Auto-upload after file selection
+    await uploadFile(file);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -69,17 +72,15 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     maxSize: 50 * 1024 * 1024 // 50MB
   });
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
+  const uploadFile = async (file: File) => {
     setUploading(true);
     setProgress(0);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('name', selectedFile.name.replace('.csv', ''));
+      formData.append('file', file);
+      formData.append('name', file.name.replace('.csv', ''));
 
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
@@ -119,6 +120,11 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    await uploadFile(selectedFile);
   };
 
   const handleRemoveFile = () => {
