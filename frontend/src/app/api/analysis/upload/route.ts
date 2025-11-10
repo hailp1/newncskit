@@ -153,15 +153,23 @@ export async function POST(request: NextRequest) {
         csv_file_size: file.size,
         row_count: lines.length - 1,
         column_count: csvHeaders.length,
-        status: 'uploaded',
+        status: 'draft', // Valid status: draft, configured, analyzing, completed, error
       })
       .select()
       .single();
 
     if (projectError || !project) {
       console.error(`[Upload] ${correlationId}: Project creation failed:`, projectError);
+      console.error(`[Upload] ${correlationId}: Error details:`, JSON.stringify(projectError, null, 2));
+      console.error(`[Upload] ${correlationId}: Insert data:`, {
+        user_id: session.user.id,
+        name: name || file.name.replace('.csv', ''),
+        csv_file_size: file.size,
+        row_count: lines.length - 1,
+        column_count: csvHeaders.length,
+      });
       return createErrorResponse(
-        'Failed to create project',
+        `Failed to create project: ${projectError?.message || 'Unknown error'}`,
         500,
         correlationId
       );
