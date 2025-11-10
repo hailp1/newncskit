@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       .from('analysis_variables')
       .select('*')
       .eq('analysis_project_id', projectId)
-      .order('display_order');
+      .order('created_at');
 
     if (variablesError) {
       console.error('[Group] Database error:', variablesError);

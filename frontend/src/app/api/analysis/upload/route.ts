@@ -178,13 +178,12 @@ export async function POST(request: NextRequest) {
     console.log(`[Upload] ${correlationId}: Project created: ${project.id}`);
 
     // Create variables in database
-    const variables = csvHeaders.map((header, index) => ({
+    const variables = csvHeaders.map((header) => ({
       analysis_project_id: project.id,
       column_name: header,
       display_name: header,
       data_type: 'numeric', // Will be detected properly later
       is_demographic: false,
-      display_order: index,
     }));
 
     const { error: variablesError } = await (supabase

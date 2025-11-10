@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       .from('analysis_variables')
       .select('*')
       .eq('analysis_project_id', projectId)
-      .order('display_order');
+      .order('created_at');
 
     if (variablesError) {
       console.error('[Variables] Database error:', variablesError);
