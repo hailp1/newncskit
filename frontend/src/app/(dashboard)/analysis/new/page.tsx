@@ -42,9 +42,15 @@ export default function NewAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadedHeaders, setUploadedHeaders] = useState<string[]>([]);
+  const [uploadedPreview, setUploadedPreview] = useState<any[]>([]);
 
-  const handleUploadComplete = async (uploadedProjectId: string, preview: any[], uploadHealthReport?: DataHealthReport) => {
+  const handleUploadComplete = async (uploadedProjectId: string, preview: any[], uploadHealthReport?: DataHealthReport, headers?: string[]) => {
     setProjectId(uploadedProjectId);
+    
+    // Store headers and preview for grouping
+    if (headers) setUploadedHeaders(headers);
+    if (preview) setUploadedPreview(preview);
     
     // If health report is provided from upload, use it directly
     if (uploadHealthReport) {
@@ -97,11 +103,15 @@ export default function NewAnalysisPage() {
     try {
       console.log('[Grouping] Fetching suggestions for project:', projectId);
       
-      // Get variable grouping suggestions
+      // Get variable grouping suggestions with real data
       const response = await fetch(getApiUrl('api/analysis/group'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify({ 
+          projectId,
+          headers: uploadedHeaders,
+          preview: uploadedPreview
+        }),
       });
 
       console.log('[Grouping] Response status:', response.status);

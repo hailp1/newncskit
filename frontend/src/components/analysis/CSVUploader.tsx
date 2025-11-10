@@ -6,7 +6,7 @@ import { Upload, File, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { getApiUrl } from '@/lib/api-client';
 
 interface CSVUploaderProps {
-  onUploadComplete: (projectId: string, preview: any[], healthReport?: any) => void;
+  onUploadComplete: (projectId: string, preview: any[], healthReport?: any, headers?: string[]) => void;
   onError: (error: Error) => void;
 }
 
@@ -165,7 +165,8 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
         onUploadComplete(
           projectData.project.id, 
           projectData.preview || [], 
-          projectData.healthReport
+          projectData.healthReport,
+          projectData.headers || []
         );
       }, 500);
 

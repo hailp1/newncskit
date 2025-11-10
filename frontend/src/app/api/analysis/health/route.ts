@@ -12,82 +12,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock health report
-    const healthReport = {
-      projectId,
-      totalRows: 500,
-      totalColumns: 30,
-      missingDataPercentage: 2.5,
-      duplicateRows: 3,
-      outliers: 5,
-      dataQualityScore: 92,
-      issues: [
-        {
-          type: 'missing_data',
-          severity: 'low',
-          count: 12,
-          columns: ['age', 'income'],
-          message: '12 missing values detected in 2 columns'
-        },
-        {
-          type: 'duplicates',
-          severity: 'medium',
-          count: 3,
-          message: '3 duplicate rows found'
-        }
-      ],
-      recommendations: [
-        'Consider imputing missing values in age and income columns',
-        'Review and remove duplicate entries',
-        'Check outliers in numeric columns'
-      ]
-    };
-
-    // Mock variables
-    const variables = [
-      {
-        id: '1',
-        projectId,
-        columnName: 'age',
-        dataType: 'numeric',
-        isDemographic: false,
-        missingCount: 5,
-        uniqueCount: 45,
-        minValue: 18,
-        maxValue: 65,
-        meanValue: 32.5,
-        createdAt: new Date().toISOString()
+    // Health check is now performed during upload
+    // This endpoint should not be called directly
+    // Return error to indicate data should come from upload
+    return NextResponse.json(
+      { 
+        error: 'Health check is performed during CSV upload. Please use the upload endpoint.',
+        suggestion: 'Upload your CSV file to get health report automatically.'
       },
-      {
-        id: '2',
-        projectId,
-        columnName: 'gender',
-        dataType: 'categorical',
-        isDemographic: false,
-        missingCount: 0,
-        uniqueCount: 3,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '3',
-        projectId,
-        columnName: 'satisfaction_score',
-        dataType: 'numeric',
-        isDemographic: false,
-        missingCount: 2,
-        uniqueCount: 5,
-        minValue: 1,
-        maxValue: 5,
-        meanValue: 3.8,
-        createdAt: new Date().toISOString()
-      }
-    ];
-
-    return NextResponse.json({
-      success: true,
-      healthReport,
-      variables
-    });
+      { status: 400 }
+    );
 
   } catch (error) {
     console.error('Health check error:', error);

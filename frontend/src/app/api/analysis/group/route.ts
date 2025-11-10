@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { VariableGroupingService } from '@/services/variable-grouping.service';
+import { DemographicService } from '@/services/demographic.service';
+
+// In-memory cache for uploaded data (temporary solution)
+// TODO: Replace with proper database storage
+const uploadCache = new Map<string, { headers: string[], preview: any[] }>();
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { projectId } = body;
+    const { projectId, headers, preview } = body;
 
     if (!projectId) {
       return NextResponse.json(
@@ -12,33 +18,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock grouping suggestions
-    const suggestions = [
-      {
-        groupName: 'Service Quality',
-        variables: ['service_speed', 'service_friendliness', 'service_professionalism'],
-        confidence: 0.92,
-        reasoning: 'These variables measure different aspects of service quality'
-      },
-      {
-        groupName: 'Facility Quality',
-        variables: ['facility_cleanliness', 'facility_comfort', 'facility_accessibility'],
-        confidence: 0.88,
-        reasoning: 'These variables relate to physical facility attributes'
-      },
-      {
-        groupName: 'Overall Satisfaction',
-        variables: ['overall_satisfaction', 'recommendation_likelihood'],
-        confidence: 0.85,
-        reasoning: 'These variables measure overall customer satisfaction'
-      }
-    ];
+    // Store data in cache if provided
+    if (headers && preview) {
+      uploadCache.set(projectId, { headers, preview });
+    }
+
+    // Get data from cache
+    const cachedData = uploadCache.get(projectId);
+    
+    if (!cachedData) {
+      return NextResponse.json(
+        { error: 'No data found for project. Please upload CSV first.' },
+        { status: 404 }
+      );
+    }
+
+    // Create mock AnalysisVariable objects from headers
+    const variables = cachedData.headers.map((header, index) => ({
+      id: `var-${index}`,
+      projectId,
+      columnName: header,
+      dataType: 'numeric' as const, // Will be detected properly later
+      isDemographic: false,
+      missingCount: 0,
+      uniqueCount: 0,
+      createdAt: new Date().toISOString()
+    }));
+
+    // Get grouping suggestions using the service
+    const groupingSuggestions = VariableGroupingService.suggestGroupsCaseInsensitive(variables);
+
+    // Get demographic suggestions
+    const demographicSuggestions = DemographicService.detectDemographics(variables);
 
     return NextResponse.json({
       success: true,
-      suggestions,
-      totalVariables: 15,
-      suggestedGroups: 3
+      suggestions: groupingSuggestions.map(s => ({
+        groupName: s.suggestedName,
+        variables: s.variables,
+        confidence: s.confidence,
+        reasoning: s.reason
+      })),
+      demographics: demographicSuggestions.map(d => ({
+        variable: d.variable,
+        confidence: d.confidence,
+        reasoning: d.reason,
+        suggestedType: d.suggestedType
+      })),
+      totalVariables: variables.length,
+      suggestedGroups: groupingSuggestions.length,
+      suggestedDemographics: demographicSuggestions.length
     });
 
   } catch (error) {
