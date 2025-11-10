@@ -1,0 +1,12 @@
+{
+  "name": "ncskit-scripts",
+  "version": "1.0.0",
+  "description": "Utility scripts for NCSKIT",
+  "scripts": {
+    "create-admin": "node create-admin-user.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  }
+}

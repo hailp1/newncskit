@@ -1,68 +1,119 @@
-// Create admin user script
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
+/**
+ * Script to create admin user in Supabase
+ * Run: node scripts/create-admin-user.js
+ */
 
-// Use DATABASE_URL if available, otherwise construct from individual env vars
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 
-    `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${process.env.POSTGRES_DB || 'ncskit'}`
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '.env.local' });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing environment variables:');
+  console.error('   NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓' : '✗');
+  console.error('   SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? '✓' : '✗');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
 });
 
 async function createAdminUser() {
-  const client = await pool.connect();
-  
-  try {
-    // Check if admin user exists
-    const existingUser = await client.query(
-      'SELECT id, email FROM users WHERE email = $1',
-      ['admin@ncskit.com']
-    );
+  console.log('🚀 Creating admin user...\n');
 
-    if (existingUser.rows.length > 0) {
-      console.log('✅ Admin user already exists:', existingUser.rows[0].email);
-      
-      // Update password to meet new requirements
-      const newPassword = 'Admin123!@#'; // Meets 12+ chars + complexity
-      const saltRounds = 12;
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
-      
-      await client.query(
-        'UPDATE users SET password_hash = $1, is_active = true WHERE email = $2',
-        [passwordHash, 'admin@ncskit.com']
-      );
-      
-      console.log('✅ Admin password updated to meet new security requirements');
-      console.log('📧 Email: admin@ncskit.com');
-      console.log('🔑 Password: Admin123!@#');
-      
-    } else {
-      // Create new admin user
-      const email = 'admin@ncskit.com';
-      const password = 'Admin123!@#'; // Meets 12+ chars + complexity
-      const fullName = 'NCSKIT Administrator';
-      const role = 'admin';
-      
-      const saltRounds = 12;
-      const passwordHash = await bcrypt.hash(password, saltRounds);
-      
-      const result = await client.query(
-        `INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified, created_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, NOW()) 
-         RETURNING id, email, full_name, role`,
-        [email, passwordHash, fullName, role, true, true]
-      );
-      
-      console.log('✅ Admin user created successfully!');
-      console.log('📧 Email: admin@ncskit.com');
-      console.log('🔑 Password: Admin123!@#');
-      console.log('👤 Role: admin');
-    }
+  const adminEmail = 'admin@ncskit.org';
+  const adminPassword = 'Admin@NCSKIT2024'; // Change this to a secure password
+
+  try {
+    // Check if user already exists
+    const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
     
+    if (listError) {
+      throw listError;
+    }
+
+    const existingUser = existingUsers.users.find(u => u.email === adminEmail);
+
+    if (existingUser) {
+      console.log('✓ Admin user already exists');
+      console.log('  ID:', existingUser.id);
+      console.log('  Email:', existingUser.email);
+      console.log('  Created:', existingUser.created_at);
+      
+      // Update user profile to admin role
+      const { error: updateError } = await supabase
+        .from('users')
+        .upsert({
+          id: existingUser.id,
+          email: adminEmail,
+          role: 'admin',
+          full_name: 'System Administrator',
+          updated_at: new Date().toISOString()
+        });
+
+      if (updateError) {
+        console.error('⚠️  Warning: Could not update user profile:', updateError.message);
+      } else {
+        console.log('✓ Admin role updated in users table');
+      }
+
+      console.log('\n📧 Login credentials:');
+      console.log('   Email:', adminEmail);
+      console.log('   Password: (use your existing password)');
+      return;
+    }
+
+    // Create new admin user
+    console.log('Creating new admin user...');
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: 'System Administrator',
+        role: 'admin'
+      }
+    });
+
+    if (createError) {
+      throw createError;
+    }
+
+    console.log('✓ Admin user created successfully!');
+    console.log('  ID:', newUser.user.id);
+    console.log('  Email:', newUser.user.email);
+
+    // Create user profile
+    const { error: profileError } = await supabase
+      .from('users')
+      .insert({
+        id: newUser.user.id,
+        email: adminEmail,
+        role: 'admin',
+        full_name: 'System Administrator',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (profileError) {
+      console.error('⚠️  Warning: Could not create user profile:', profileError.message);
+    } else {
+      console.log('✓ User profile created');
+    }
+
+    console.log('\n📧 Login credentials:');
+    console.log('   Email:', adminEmail);
+    console.log('   Password:', adminPassword);
+    console.log('\n⚠️  IMPORTANT: Change this password after first login!');
+
   } catch (error) {
     console.error('❌ Error:', error.message);
-  } finally {
-    client.release();
-    await pool.end();
+    process.exit(1);
   }
 }
 

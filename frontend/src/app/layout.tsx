@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   creator: "NCSKIT",
   publisher: "NCSKIT",
   robots: "index, follow",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     type: "website",
     locale: "vi_VN",
@@ -22,12 +29,21 @@ export const metadata: Metadata = {
     title: "NCSKIT - Research Management Platform",
     description: "Nền tảng quản lý nghiên cứu học thuật toàn diện với AI",
     siteName: "NCSKIT",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "NCSKIT - Nền tảng quản lý nghiên cứu học thuật",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "NCSKIT - Research Management Platform",
     description: "Nền tảng quản lý nghiên cứu học thuật toàn diện với AI",
     creator: "@ncskit",
+    images: ["/twitter-image.png"],
   },
 };
 

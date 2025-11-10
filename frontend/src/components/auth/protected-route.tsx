@@ -8,6 +8,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
+import { isAdmin } from '@/lib/auth-utils'
 import { Loader2 } from 'lucide-react'
 
 interface ProtectedRouteProps {
@@ -25,11 +26,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     }
 
     if (!isLoading && isAuthenticated && requireAdmin) {
-      const isAdmin = user?.user_metadata?.role === 'admin' || 
-                     user?.email === 'admin@ncskit.com' || 
-                     user?.email === 'admin@ncskit.org'
-      
-      if (!isAdmin) {
+      if (!isAdmin(user)) {
         router.push('/dashboard')
       }
     }
@@ -50,14 +47,8 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return null
   }
 
-  if (requireAdmin) {
-    const isAdmin = user?.user_metadata?.role === 'admin' || 
-                   user?.email === 'admin@ncskit.com' || 
-                   user?.email === 'admin@ncskit.org'
-    
-    if (!isAdmin) {
-      return null
-    }
+  if (requireAdmin && !isAdmin(user)) {
+    return null
   }
 
   return <>{children}</>

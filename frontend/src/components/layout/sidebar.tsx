@@ -17,6 +17,7 @@ import {
   UserIcon,
   FolderIcon,
   KeyIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -65,13 +66,16 @@ const adminNavigation = [
   { name: 'Token System', href: '/admin/tokens', icon: KeyIcon },
   { name: 'Permissions', href: '/admin/permissions', icon: CogIcon },
   { name: 'Rewards & Tasks', href: '/admin/rewards', icon: KeyIcon },
+  { name: 'Branding Settings', href: '/settings/branding', icon: PhotoIcon },
 ]
+
+import { isAdmin as checkIsAdmin } from '@/lib/auth-utils'
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user } = useAuthStore()
   
-  const isAdmin = user?.role && ['super_admin', 'admin', 'moderator'].includes(user.role)
+  const isAdmin = checkIsAdmin(user)
 
   return (
     <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:pt-16">

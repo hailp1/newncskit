@@ -12,6 +12,7 @@ import type { SignInData, SignUpData } from '@/lib/supabase/auth'
 
 // Extend Supabase User type with profile
 export interface User extends SupabaseUser {
+  role?: 'admin' | 'super_admin' | 'moderator' | 'user' | string | null;
   full_name?: string | null;
   avatar_url?: string | null;
   status?: 'active' | 'inactive' | 'suspended' | 'banned';
@@ -72,8 +73,25 @@ export const useAuthStore = create<AuthState>()(
           if (sessionError) throw sessionError
 
           if (session) {
+            // Fetch user profile with role from public.users table
+            const { data: userProfile } = await supabase
+              .from('users')
+              .select('role, full_name, avatar_url, status, last_login_at')
+              .eq('id', session.user.id)
+              .single()
+
+            // Merge session user with profile data
+            const enrichedUser: User = {
+              ...session.user,
+              role: (userProfile as any)?.role ?? null,
+              full_name: (userProfile as any)?.full_name ?? null,
+              avatar_url: (userProfile as any)?.avatar_url ?? null,
+              status: (userProfile as any)?.status ?? 'active',
+              last_login_at: (userProfile as any)?.last_login_at ?? null,
+            }
+
             set({
-              user: session.user,
+              user: enrichedUser,
               session,
               isAuthenticated: true,
               isLoading: false,
@@ -88,12 +106,36 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Listen for auth changes
-          supabase.auth.onAuthStateChange((_event, session) => {
-            set({
-              user: session?.user ?? null,
-              session,
-              isAuthenticated: !!session,
-            })
+          supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session) {
+              // Fetch user profile when auth state changes
+              const { data: userProfile } = await supabase
+                .from('users')
+                .select('role, full_name, avatar_url, status, last_login_at')
+                .eq('id', session.user.id)
+                .single()
+
+              const enrichedUser: User = {
+                ...session.user,
+                role: (userProfile as any)?.role ?? null,
+                full_name: (userProfile as any)?.full_name ?? null,
+                avatar_url: (userProfile as any)?.avatar_url ?? null,
+                status: (userProfile as any)?.status ?? 'active',
+                last_login_at: (userProfile as any)?.last_login_at ?? null,
+              }
+
+              set({
+                user: enrichedUser,
+                session,
+                isAuthenticated: true,
+              })
+            } else {
+              set({
+                user: null,
+                session: null,
+                isAuthenticated: false,
+              })
+            }
           })
         } catch (error) {
           console.error('Auth initialization error:', error)
@@ -110,8 +152,25 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null })
           const result = await signIn(data)
           
+          // Fetch user profile with role
+          const supabase = createClient()
+          const { data: userProfile } = await supabase
+            .from('users')
+            .select('role, full_name, avatar_url, status, last_login_at')
+            .eq('id', result.user.id)
+            .single()
+
+          const enrichedUser: User = {
+            ...result.user,
+            role: (userProfile as any)?.role ?? null,
+            full_name: (userProfile as any)?.full_name ?? null,
+            avatar_url: (userProfile as any)?.avatar_url ?? null,
+            status: (userProfile as any)?.status ?? 'active',
+            last_login_at: (userProfile as any)?.last_login_at ?? null,
+          }
+          
           set({
-            user: result.user,
+            user: enrichedUser,
             session: result.session,
             isAuthenticated: true,
             isLoading: false,
