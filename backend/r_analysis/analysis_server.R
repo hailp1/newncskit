@@ -96,8 +96,12 @@ get_data <- function(project_id) {
 
 # Cleanup expired data
 cleanup_expired <- function() {
+  start_time <- Sys.time()
   keys <- ls(analysis_data)
   removed_count <- 0
+  
+  cat("[Cleanup]", format(start_time, "%Y-%m-%d %H:%M:%S"), 
+      "Starting cleanup, checking", length(keys), "entries\n")
   
   for (key in keys) {
     stored <- analysis_data[[key]]
@@ -113,6 +117,8 @@ cleanup_expired <- function() {
   
   if (removed_count > 0) {
     cat("[Cleanup] Removed", removed_count, "expired entries\n")
+  } else {
+    cat("[Cleanup] No expired entries found\n")
   }
 }
 
@@ -125,7 +131,49 @@ later::later(function() {
 cat("[Init] ✓ Data store initialized with TTL and cleanup\n")
 
 # ============================================
-# 4. CORS FILTER WITH AUTHENTICATION
+# 4. REQUEST LOGGING AND MONITORING
+# ============================================
+
+# Request logging filter
+#* @filter logger
+function(req, res) {
+  start_time <- Sys.time()
+  
+  # Log incoming request
+  cat("[Request]", format(start_time, "%Y-%m-%d %H:%M:%S"), 
+      req$REQUEST_METHOD, req$PATH_INFO, "\n")
+  
+  # Continue with request
+  result <- plumber::forward()
+  
+  # Log execution time
+  end_time <- Sys.time()
+  elapsed <- as.numeric(difftime(end_time, start_time, units = "secs"))
+  cat("[Response]", req$PATH_INFO, "completed in", round(elapsed, 3), "seconds\n")
+  
+  return(result)
+}
+
+# Memory monitoring (scheduled)
+monitor_memory <- function() {
+  mem_info <- gc()
+  mem_used <- sum(mem_info[, 2])  # Total memory used in MB
+  data_count <- length(ls(analysis_data))
+  
+  cat("[Monitor]", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+      "Memory:", round(mem_used, 2), "MB | Cached projects:", data_count, "\n")
+}
+
+# Schedule memory monitoring every 60 seconds
+later::later(function() {
+  monitor_memory()
+  later::later(monitor_memory, delay = 60)  # Reschedule
+}, delay = 60)
+
+cat("[Init] ✓ Request logging and monitoring initialized\n")
+
+# ============================================
+# 5. CORS FILTER WITH AUTHENTICATION
 # ============================================
 #* @filter cors
 function(req, res) {
@@ -177,7 +225,7 @@ function(req, res) {
 }
 
 # ============================================
-# 5. ERROR HANDLER FILTER
+# 6. ERROR HANDLER FILTER
 # ============================================
 #* @filter error-handler
 function(req, res) {
@@ -195,7 +243,7 @@ function(req, res) {
 }
 
 # ============================================
-# 6. HEALTH CHECK ENDPOINT
+# 7. HEALTH CHECK ENDPOINT
 # ============================================
 #* @get /health
 function() {
@@ -237,7 +285,7 @@ function() {
 }
 
 # ============================================
-# 7. ANALYSIS ENDPOINTS
+# 8. ANALYSIS ENDPOINTS
 # ============================================
 # Note: Actual analysis logic is in helper files
 # These endpoints will call the helper functions

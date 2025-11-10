@@ -3,6 +3,36 @@
 
 library(psych)
 
+# Sample size validator for different statistical tests
+validate_sample_size <- function(n, test_type, additional_params = list()) {
+  min_n <- switch(test_type,
+    "shapiro_wilk" = 3,
+    "kolmogorov_smirnov" = 2,
+    "t_test" = 2,
+    "anova" = 3,
+    "regression" = additional_params$n_predictors + 2,
+    "efa" = additional_params$n_variables * 3,
+    "cfa" = 50,
+    "correlation" = 3,
+    2  # default minimum
+  )
+  
+  if (n < min_n) {
+    return(list(
+      valid = FALSE,
+      error = paste0("Insufficient sample size for ", test_type, ". Need at least ", min_n, " observations, got ", n),
+      required_n = min_n,
+      actual_n = n
+    ))
+  }
+  
+  return(list(
+    valid = TRUE,
+    required_n = min_n,
+    actual_n = n
+  ))
+}
+
 # Safe descriptive statistics with edge case handling
 calculate_descriptive_stats <- function(data, variables) {
   results <- list()

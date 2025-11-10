@@ -5,6 +5,7 @@
 
 
 
+
   - [x] 1.1 Update analysis_server.R to source helper files
 
     - Add source() calls at the top of `backend/r_analysis/analysis_server.R`
@@ -19,12 +20,14 @@
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
   
 
+
   - [ ] 1.2 Verify helper functions are loaded
     - Create verification function to check if required functions exist
     - List required functions: calculate_descriptive_stats, perform_linear_regression, perform_efa, perform_sem
     - Log missing functions if any
 
     - Stop server initialization if critical functions are missing
+
     - _Requirements: 1.3, 1.4_
 
   
@@ -32,6 +35,7 @@
     - Create GET /health endpoint in analysis_server.R
 
     - Check helper function availability
+
 
     - Return status, helper_functions, data_cached, timestamp
     - Return "unhealthy" status if functions are missing
@@ -51,6 +55,7 @@
     - Create `get_data(project_id)` function
     - Check if data exists for project_id
     - Validate TTL and remove expired data
+
     - Return NULL if data not found or expired
     - Log retrieval attempts
     - _Requirements: 2.1, 2.3_
@@ -62,10 +67,13 @@
     - Iterate through all stored data
 
 
+
     - Remove entries where TTL has expired
 
 
+
     - Log number of removed entries
+
     - _Requirements: 2.4, 10.5_
   
   - [ ] 2.4 Schedule automatic cleanup
@@ -77,7 +85,8 @@
     - _Requirements: 2.4_
 
 - [ ] 3. Implement CORS restrictions and authentication
-  - [ ] 3.1 Create CORS filter
+  - [x] 3.1 Create CORS filter
+
     - Add @filter cors to analysis_server.R
     - Read allowed origins from ALLOWED_ORIGINS environment variable
     - Check request origin against whitelist
@@ -86,13 +95,16 @@
     - Handle OPTIONS preflight requests
     - _Requirements: 3.1, 3.2, 3.5_
 
+
   
 
 
 
 
-  - [ ] 3.2 Create authentication filter
+  - [x] 3.2 Create authentication filter
+
     - Add @filter auth to analysis_server.R
+
     - Skip authentication for /health endpoint
 
     - Check X-API-Key header in requests
@@ -110,6 +122,7 @@
     - _Requirements: 9.1, 9.2, 9.3_
 
 
+
 - [x] 4. Add safe helper functions for edge cases
 
   - [ ] 4.1 Create safe z-score calculation
@@ -118,17 +131,22 @@
     - Return NA values with warning if sd = 0
     - Calculate z-scores only when sd > 0
     - _Requirements: 4.1, 4.4_
+
   
 
   - [x] 4.2 Create safe normality test
 
+
     - Create `test_normality_safe()` function
+
+
     - Check sample size >= 3
     - Check for constant variables (unique values = 1)
     - Check for zero variance
     - Return descriptive result for edge cases
     - Run Shapiro-Wilk test only when valid
     - Wrap in tryCatch for error handling
+
     - _Requirements: 4.2, 5.1_
 
   
@@ -136,10 +154,13 @@
     - Create `detect_outliers_safe()` function
     - Check for zero variance before calculating z-scores
     - Return empty list with warning if sd = 0
+
     - Map outlier indices back to original dataset positions
 
 
     - Handle NA values correctly
+
+
     - Return indices, values, and z_scores
     - _Requirements: 4.3, 7.1, 7.2, 7.3, 7.4, 7.5_
   
@@ -148,17 +169,22 @@
     - Exclude zero variance variables with warning
     - Log excluded variables
 
+
     - _Requirements: 4.5_
 
 - [ ] 5. Add sample size validation
-  - [ ] 5.1 Create sample size validator
+  - [x] 5.1 Create sample size validator
+
+
     - Create `validate_sample_size()` function
+
     - Check minimum requirements for different tests
     - Shapiro-Wilk: n >= 3
 
     - Kolmogorov-Smirnov: n >= 2
     - Return validation result with error message
     - _Requirements: 5.1, 5.2, 5.4_
+
   
   - [ ] 5.2 Add validation to regression
     - Update `perform_linear_regression()` in regression.R
@@ -167,10 +193,14 @@
     - Validate sample size before fitting model
     - Return HTTP 400 with descriptive error if insufficient
     - Include required sample size in error message
+
     - _Requirements: 5.3, 5.5_
+
   
+
   - [ ] 5.3 Add validation to factor analysis
     - Update `perform_efa()` in factor-analysis.R
+
 
 
 
@@ -179,30 +209,40 @@
     - _Requirements: 5.3, 5.5_
 
 
+
 - [ ] 6. Implement factor type conversion
   - [ ] 6.1 Add factor conversion to ANOVA
     - Update ANOVA functions to check variable types
     - Convert character variables to factors
+
     - Convert numeric grouping variables to factors
+
+
     - Log conversions for debugging
     - Preserve original data
     - _Requirements: 6.1, 6.3, 6.5_
   
-  - [ ] 6.2 Add factor conversion to t-tests
+  - [x] 6.2 Add factor conversion to t-tests
+
     - Update t-test functions to check grouping variable type
     - Convert to factor if character or numeric
     - Return error if conversion fails
     - _Requirements: 6.2, 6.4_
 
+
 - [ ] 7. Make bootstrap simulations configurable
-  - [ ] 7.1 Add bootstrap_sims parameter to CFA
+  - [x] 7.1 Add bootstrap_sims parameter to CFA
+
     - Update `perform_cfa()` in factor-analysis.R
+
+
     - Add bootstrap parameter (default FALSE)
     - Add bootstrap_samples parameter (default 1000)
     - Validate bootstrap_samples is positive integer
     - Log warning if bootstrap_samples > 2000
     - _Requirements: 8.1, 8.2, 8.4, 8.5_
   
+
   - [ ] 7.2 Add bootstrap_sims parameter to mediation
     - Update mediation analysis function
     - Add sims parameter with default 1000

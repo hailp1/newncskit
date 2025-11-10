@@ -12,6 +12,7 @@ required_packages <- c(
   "lavaan",         # Latent variable analysis
   "semTools",       # SEM tools
   "car",            # Companion to Applied Regression
+  "mediation",      # Mediation analysis
   "corrplot",       # Correlation plots
   "ggplot2",        # Graphics
   "gridExtra",      # Grid graphics
