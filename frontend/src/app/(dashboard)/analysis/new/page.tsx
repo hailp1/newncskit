@@ -94,62 +94,31 @@ export default function NewAnalysisPage() {
       variableCount: headers?.length || 0,
     });
     
-    // If health report is provided from upload, use it directly
+    // Health report is always provided from upload now
     if (uploadHealthReport) {
       setHealthReport(uploadHealthReport);
-      setCurrentStep('health');
-      return;
-    }
-
-    // Otherwise, fetch health report separately
-    setLoading(true);
-    setError(null);
-
-    // Task 14: Generate correlation ID and log API call start (Requirement 9.2)
-    const correlationId = workflowLogger.generateCorrelationId('health-check');
-    workflowLogger.logAPICallStart('api/analysis/health', 'POST', correlationId, {
-      projectId: uploadedProjectId,
-    });
-
-    try {
-      // Automatically run health check
-      const response = await fetch(getApiUrl('api/analysis/health'), {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Correlation-ID': correlationId,
-        },
-        body: JSON.stringify({ projectId: uploadedProjectId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const error = new Error(errorData.error || 'Health check failed');
-        
-        // Task 14: Log API call error (Requirement 9.4)
-        workflowLogger.logAPICallError('api/analysis/health', 'POST', correlationId, error, {
-          status: response.status,
-          errorData,
+      
+      // Load variables from database
+      setLoading(true);
+      try {
+        const response = await fetch(getApiUrl(`api/analysis/variables?projectId=${uploadedProjectId}`), {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         });
-        
-        throw error;
-      }
 
-      const data = await response.json();
+        if (response.ok) {
+          const data = await response.json();
+          setVariables(data.variables || []);
+        }
+      } catch (err) {
+        console.error('Failed to load variables:', err);
+      } finally {
+        setLoading(false);
+      }
       
-      // Task 14: Log API call completion (Requirement 9.2, 9.3)
-      workflowLogger.logAPICallComplete('api/analysis/health', 'POST', correlationId, response.status, true, {
-        variableCount: data.variables?.length || 0,
-        hasHealthReport: !!data.healthReport,
-      });
-      
-      setHealthReport(data.healthReport);
-      setVariables(data.variables || []);
       setCurrentStep('health');
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+    } else {
+      setError('Health report not available. Please try uploading again.');
     }
   };
 
@@ -403,8 +372,6 @@ export default function NewAnalysisPage() {
     // Task 14: Log API call start (Requirement 9.2)
     workflowLogger.logAPICallStart('api/analysis/group', 'POST', correlationIdRef.current, {
       projectId,
-      headerCount: uploadedHeaders.length,
-      previewRowCount: uploadedPreview.length,
       trigger: 'auto-continue',
     });
 
@@ -422,11 +389,7 @@ export default function NewAnalysisPage() {
           'Content-Type': 'application/json',
           'X-Correlation-ID': correlationIdRef.current
         },
-        body: JSON.stringify({ 
-          projectId,
-          headers: uploadedHeaders,
-          preview: uploadedPreview
-        }),
+        body: JSON.stringify({ projectId }),
       });
 
       if (!response.ok) {
@@ -544,8 +507,6 @@ export default function NewAnalysisPage() {
     const correlationId = workflowLogger.generateCorrelationId('refresh-suggestions');
     workflowLogger.logAPICallStart('api/analysis/group', 'POST', correlationId, {
       projectId,
-      headerCount: uploadedHeaders.length,
-      previewRowCount: uploadedPreview.length,
       trigger: 'refresh',
     });
 
@@ -556,11 +517,7 @@ export default function NewAnalysisPage() {
           'Content-Type': 'application/json',
           'X-Correlation-ID': correlationId,
         },
-        body: JSON.stringify({ 
-          projectId,
-          headers: uploadedHeaders,
-          preview: uploadedPreview
-        }),
+        body: JSON.stringify({ projectId }),
       });
 
       if (!response.ok) {
@@ -623,26 +580,20 @@ export default function NewAnalysisPage() {
     const correlationId = workflowLogger.generateCorrelationId('grouping-manual');
     workflowLogger.logAPICallStart('api/analysis/group', 'POST', correlationId, {
       projectId,
-      headerCount: uploadedHeaders.length,
-      previewRowCount: uploadedPreview.length,
       trigger: 'manual',
     });
 
     try {
       console.log('[Grouping] Fetching suggestions for project:', projectId);
       
-      // Get variable grouping suggestions with real data
+      // Get variable grouping suggestions from database
       const response = await fetch(getApiUrl('api/analysis/group'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'X-Correlation-ID': correlationId,
         },
-        body: JSON.stringify({ 
-          projectId,
-          headers: uploadedHeaders,
-          preview: uploadedPreview
-        }),
+        body: JSON.stringify({ projectId }),
       });
 
       console.log('[Grouping] Response status:', response.status);

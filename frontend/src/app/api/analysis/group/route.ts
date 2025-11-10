@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { VariableGroupingService } from '@/services/variable-grouping.service';
 import { DemographicService } from '@/services/demographic.service';
 import { RoleSuggestionService } from '@/services/role-suggestion.service';
-
-// In-memory cache for uploaded data (temporary solution)
-// TODO: Replace with proper database storage
-const uploadCache = new Map<string, { headers: string[], preview: any[] }>();
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
     const body = await request.json();
-    const { projectId, headers, preview } = body;
+    const { projectId } = body;
 
     if (!projectId) {
       return NextResponse.json(
@@ -19,32 +17,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store data in cache if provided
-    if (headers && preview) {
-      uploadCache.set(projectId, { headers, preview });
-    }
+    // Load project from database
+    const { data: project, error: projectError } = await supabase
+      .from('analysis_projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
 
-    // Get data from cache
-    const cachedData = uploadCache.get(projectId);
-    
-    if (!cachedData) {
+    if (projectError || !project) {
       return NextResponse.json(
-        { error: 'No data found for project. Please upload CSV first.' },
+        { error: 'Project not found' },
         { status: 404 }
       );
     }
 
-    // Create mock AnalysisVariable objects from headers
-    const variables = cachedData.headers.map((header, index) => ({
-      id: `var-${index}`,
-      projectId,
-      columnName: header,
-      dataType: 'numeric' as const, // Will be detected properly later
-      isDemographic: false,
-      missingCount: 0,
-      uniqueCount: 0,
-      createdAt: new Date().toISOString()
+    // Load variables from database
+    const { data: dbVariables, error: variablesError } = await supabase
+      .from('analysis_variables')
+      .select('*')
+      .eq('analysis_project_id', projectId)
+      .order('display_order');
+
+    if (variablesError) {
+      return NextResponse.json(
+        { error: 'Failed to load variables' },
+        { status: 500 }
+      );
+    }
+
+    // Convert database variables to AnalysisVariable format
+    const variables = (dbVariables || []).map((v: any) => ({
+      id: v.id,
+      projectId: v.analysis_project_id,
+      columnName: v.column_name,
+      displayName: v.display_name,
+      dataType: v.data_type || 'numeric',
+      isDemographic: v.is_demographic || false,
+      missingCount: v.missing_count || 0,
+      uniqueCount: v.unique_count || 0,
+      createdAt: v.created_at
     }));
+
+    if (variables.length === 0) {
+      return NextResponse.json(
+        { error: 'No variables found for project' },
+        { status: 404 }
+      );
+    }
 
     // Get grouping suggestions using the service
     const groupingSuggestions = VariableGroupingService.suggestGroupsCaseInsensitive(variables);

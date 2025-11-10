@@ -8,6 +8,7 @@ import {
   getCorsHeaders,
 } from '@/lib/api-middleware';
 import { DataHealthService } from '@/services/data-health.service';
+import { createClient } from '@/lib/supabase/server';
 
 // Handle OPTIONS for CORS preflight
 export async function OPTIONS() {
@@ -22,6 +23,15 @@ export async function POST(request: NextRequest) {
 
   try {
     logRequest(request, correlationId);
+
+    // Get Supabase client
+    const supabase = await createClient();
+
+    // Check authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return createErrorResponse('Unauthorized', 401, correlationId);
+    }
 
     // Validate content type
     const contentType = request.headers.get('content-type');
@@ -93,9 +103,6 @@ export async function POST(request: NextRequest) {
       return row;
     });
 
-    // Generate project ID
-    const projectId = `project-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-
     // Perform health check
     let healthReport;
     try {
@@ -107,10 +114,77 @@ export async function POST(request: NextRequest) {
       healthReport = null;
     }
 
+    // Upload CSV file to Supabase Storage
+    const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('analysis-csv-files')
+      .upload(fileName, file, {
+        contentType: 'text/csv',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error(`[Upload] ${correlationId}: Storage upload failed:`, uploadError);
+      return createErrorResponse(
+        'Failed to upload file to storage',
+        500,
+        correlationId
+      );
+    }
+
+    console.log(`[Upload] ${correlationId}: File uploaded to storage: ${fileName}`);
+
+    // Create project in database
+    const { data: project, error: projectError } = await (supabase
+      .from('analysis_projects') as any)
+      .insert({
+        user_id: session.user.id,
+        name: name || file.name.replace('.csv', ''),
+        description: `Uploaded on ${new Date().toLocaleDateString()}`,
+        csv_file_path: fileName,
+        row_count: lines.length - 1,
+        column_count: csvHeaders.length,
+        status: 'uploaded',
+      })
+      .select()
+      .single();
+
+    if (projectError || !project) {
+      console.error(`[Upload] ${correlationId}: Project creation failed:`, projectError);
+      return createErrorResponse(
+        'Failed to create project',
+        500,
+        correlationId
+      );
+    }
+
+    console.log(`[Upload] ${correlationId}: Project created: ${project.id}`);
+
+    // Create variables in database
+    const variables = csvHeaders.map((header, index) => ({
+      analysis_project_id: project.id,
+      column_name: header,
+      display_name: header,
+      data_type: 'numeric', // Will be detected properly later
+      is_demographic: false,
+      display_order: index,
+    }));
+
+    const { error: variablesError } = await (supabase
+      .from('analysis_variables') as any)
+      .insert(variables);
+
+    if (variablesError) {
+      console.error(`[Upload] ${correlationId}: Variables creation failed:`, variablesError);
+      // Don't fail the upload, variables can be created later
+    } else {
+      console.log(`[Upload] ${correlationId}: Created ${variables.length} variables`);
+    }
+
     const responseData = {
       project: {
-        id: projectId,
-        name: name || file.name.replace('.csv', ''),
+        id: project.id,
+        name: project.name,
         rowCount: lines.length - 1,
         columnCount: csvHeaders.length,
       },
@@ -119,11 +193,12 @@ export async function POST(request: NextRequest) {
       healthReport,
     };
 
-    console.log(`[Upload] ${correlationId}: Success - Project ${projectId} created`);
+    console.log(`[Upload] ${correlationId}: Success - Project ${project.id} created`);
 
     return createSuccessResponse(responseData, correlationId);
 
   } catch (error) {
+    console.error(`[Upload] ${correlationId}: Error:`, error);
     return createErrorResponse(
       error instanceof Error ? error : 'Upload failed',
       500,
