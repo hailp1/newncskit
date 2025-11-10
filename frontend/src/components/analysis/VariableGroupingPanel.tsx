@@ -670,31 +670,49 @@ export default function VariableGroupingPanel({
                           const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
                           
                           return (
-                            <div key={variable.id} className="flex items-center gap-3 py-2">
-                              <div className="flex-1 flex items-center gap-2">
-                                <span className="text-xs text-gray-500 font-mono">{varName}</span>
-                                <input
-                                  type="text"
-                                  value={variable.displayName || ''}
-                                  onChange={(e) => {
-                                    const newDisplayName = e.target.value;
-                                    setLocalVariables(prev => prev.map(v => 
-                                      v.id === variable.id 
-                                        ? { ...v, displayName: newDisplayName }
-                                        : v
-                                    ));
-                                  }}
-                                  placeholder="Display name (optional)"
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            <div key={variable.id} className="py-2 space-y-2">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 font-mono w-24 flex-shrink-0">{varName}</span>
+                                    <input
+                                      type="text"
+                                      value={variable.displayName || ''}
+                                      onChange={(e) => {
+                                        const newDisplayName = e.target.value;
+                                        setLocalVariables(prev => prev.map(v => 
+                                          v.id === variable.id 
+                                            ? { ...v, displayName: newDisplayName }
+                                            : v
+                                        ));
+                                      }}
+                                      placeholder="Display name (optional)"
+                                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                  <textarea
+                                    value={variable.semanticName || ''}
+                                    onChange={(e) => {
+                                      const newDescription = e.target.value;
+                                      setLocalVariables(prev => prev.map(v => 
+                                        v.id === variable.id 
+                                          ? { ...v, semanticName: newDescription }
+                                          : v
+                                      ));
+                                    }}
+                                    placeholder="Description (optional)"
+                                    rows={1}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                  />
+                                </div>
+                                <RoleTagSelector
+                                  entityId={variable.id}
+                                  entityName={variable.displayName || varName}
+                                  currentRole={roleTag?.role || 'none'}
+                                  suggestion={suggestion}
+                                  onRoleChange={(role) => handleRoleChange(variable.id, role)}
                                 />
                               </div>
-                              <RoleTagSelector
-                                entityId={variable.id}
-                                entityName={variable.displayName || varName}
-                                currentRole={roleTag?.role || 'none'}
-                                suggestion={suggestion}
-                                onRoleChange={(role) => handleRoleChange(variable.id, role)}
-                              />
                             </div>
                           );
                         })}
@@ -717,31 +735,49 @@ export default function VariableGroupingPanel({
                       const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
                       
                       return (
-                        <div key={variable.id} className="flex items-center gap-3 py-2">
-                          <div className="flex-1 flex items-center gap-2">
-                            <span className="text-xs text-gray-500 font-mono">{variable.columnName}</span>
-                            <input
-                              type="text"
-                              value={variable.displayName || ''}
-                              onChange={(e) => {
-                                const newDisplayName = e.target.value;
-                                setLocalVariables(prev => prev.map(v => 
-                                  v.id === variable.id 
-                                    ? { ...v, displayName: newDisplayName }
-                                    : v
-                                ));
-                              }}
-                              placeholder="Display name (optional)"
-                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        <div key={variable.id} className="py-2 space-y-2">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 font-mono w-24 flex-shrink-0">{variable.columnName}</span>
+                                <input
+                                  type="text"
+                                  value={variable.displayName || ''}
+                                  onChange={(e) => {
+                                    const newDisplayName = e.target.value;
+                                    setLocalVariables(prev => prev.map(v => 
+                                      v.id === variable.id 
+                                        ? { ...v, displayName: newDisplayName }
+                                        : v
+                                    ));
+                                  }}
+                                  placeholder="Display name (optional)"
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                              </div>
+                              <textarea
+                                value={variable.semanticName || ''}
+                                onChange={(e) => {
+                                  const newDescription = e.target.value;
+                                  setLocalVariables(prev => prev.map(v => 
+                                    v.id === variable.id 
+                                      ? { ...v, semanticName: newDescription }
+                                      : v
+                                  ));
+                                }}
+                                placeholder="Description (optional)"
+                                rows={1}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                              />
+                            </div>
+                            <RoleTagSelector
+                              entityId={variable.id}
+                              entityName={variable.displayName || variable.columnName}
+                              currentRole={roleTag?.role || 'none'}
+                              suggestion={suggestion}
+                              onRoleChange={(role) => handleRoleChange(variable.id, role)}
                             />
                           </div>
-                          <RoleTagSelector
-                            entityId={variable.id}
-                            entityName={variable.displayName || variable.columnName}
-                            currentRole={roleTag?.role || 'none'}
-                            suggestion={suggestion}
-                            onRoleChange={(role) => handleRoleChange(variable.id, role)}
-                          />
                         </div>
                       );
                     })}
