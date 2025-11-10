@@ -233,6 +233,7 @@
 - [ ] 7. Make bootstrap simulations configurable
   - [x] 7.1 Add bootstrap_sims parameter to CFA
 
+
     - Update `perform_cfa()` in factor-analysis.R
 
 
