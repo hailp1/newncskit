@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useVariableGroupingAutoSave } from '@/hooks/useVariableGroupingAutoSave';
-import { VariableGroup, DemographicVariable } from '@/types/analysis';
+import { VariableGroup, DemographicVariable, VariableRoleTag, AnalysisModelValidation } from '@/types/analysis';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -368,5 +368,202 @@ describe('useVariableGroupingAutoSave', () => {
 
     // Should be cleared
     expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+
+  // Task 11.1 & 11.2: Tests for roleTags and validationResult persistence
+  describe('roleTags and validationResult persistence', () => {
+    const mockRoleTags: VariableRoleTag[] = [
+      {
+        variableId: 'var-1',
+        columnName: 'Age',
+        role: 'control',
+        isUserAssigned: true,
+      },
+      {
+        variableId: 'var-2',
+        columnName: 'Satisfaction',
+        role: 'dependent',
+        isUserAssigned: true,
+      },
+    ];
+
+    const mockValidationResult: AnalysisModelValidation = {
+      isValid: true,
+      analysisTypes: ['regression'],
+      errors: [],
+      warnings: [],
+      suggestions: [],
+    };
+
+    it('should save roleTags to localStorage', async () => {
+      const { result, rerender } = renderHook(
+        ({ roleTags }) =>
+          useVariableGroupingAutoSave({
+            projectId: mockProjectId,
+            groups: mockGroups,
+            demographics: mockDemographics,
+            roleTags,
+            interval: 1000,
+            enabled: true,
+          }),
+        {
+          initialProps: { roleTags: [] as VariableRoleTag[] },
+        }
+      );
+
+      // Update roleTags
+      rerender({ roleTags: mockRoleTags });
+
+      // Wait for changes
+      await waitFor(() => {
+        expect(result.current.hasUnsavedChanges).toBe(true);
+      });
+
+      // Trigger auto-save
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      // Check localStorage
+      await waitFor(() => {
+        const stored = localStorageMock.getItem('variable-grouping-backup');
+        expect(stored).toBeTruthy();
+        if (stored) {
+          const data = JSON.parse(stored);
+          expect(data.roleTags).toBeDefined();
+          expect(data.roleTags).toHaveLength(2);
+          expect(data.roleTags[0].role).toBe('control');
+          expect(data.roleTags[1].role).toBe('dependent');
+        }
+      });
+    });
+
+    it('should save validationResult to localStorage', async () => {
+      const { result, rerender } = renderHook(
+        ({ validationResult }) =>
+          useVariableGroupingAutoSave({
+            projectId: mockProjectId,
+            groups: mockGroups,
+            demographics: mockDemographics,
+            validationResult,
+            interval: 1000,
+            enabled: true,
+          }),
+        {
+          initialProps: { validationResult: undefined as AnalysisModelValidation | undefined },
+        }
+      );
+
+      // Update validationResult
+      rerender({ validationResult: mockValidationResult });
+
+      // Wait for changes
+      await waitFor(() => {
+        expect(result.current.hasUnsavedChanges).toBe(true);
+      });
+
+      // Trigger auto-save
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      // Check localStorage
+      await waitFor(() => {
+        const stored = localStorageMock.getItem('variable-grouping-backup');
+        expect(stored).toBeTruthy();
+        if (stored) {
+          const data = JSON.parse(stored);
+          expect(data.validationResult).toBeDefined();
+          expect(data.validationResult.isValid).toBe(true);
+          expect(data.validationResult.analysisTypes).toContain('regression');
+        }
+      });
+    });
+
+    it('should detect changes in roleTags', async () => {
+      const { result, rerender } = renderHook(
+        ({ roleTags }) =>
+          useVariableGroupingAutoSave({
+            projectId: mockProjectId,
+            groups: mockGroups,
+            demographics: mockDemographics,
+            roleTags,
+          }),
+        {
+          initialProps: { roleTags: mockRoleTags },
+        }
+      );
+
+      // Initially no changes
+      expect(result.current.hasUnsavedChanges).toBe(false);
+
+      // Update roleTags
+      const updatedRoleTags = [
+        ...mockRoleTags,
+        {
+          variableId: 'var-3',
+          columnName: 'Income',
+          role: 'independent' as const,
+          isUserAssigned: true,
+        },
+      ];
+
+      rerender({ roleTags: updatedRoleTags });
+
+      // Should detect changes
+      await waitFor(() => {
+        expect(result.current.hasUnsavedChanges).toBe(true);
+      });
+    });
+
+    it('should save both roleTags and validationResult together', async () => {
+      const { result, rerender } = renderHook(
+        ({ roleTags, validationResult }) =>
+          useVariableGroupingAutoSave({
+            projectId: mockProjectId,
+            groups: mockGroups,
+            demographics: mockDemographics,
+            roleTags,
+            validationResult,
+            interval: 1000,
+            enabled: true,
+          }),
+        {
+          initialProps: {
+            roleTags: [] as VariableRoleTag[],
+            validationResult: undefined as AnalysisModelValidation | undefined,
+          },
+        }
+      );
+
+      // Update both
+      rerender({
+        roleTags: mockRoleTags,
+        validationResult: mockValidationResult,
+      });
+
+      // Wait for changes
+      await waitFor(() => {
+        expect(result.current.hasUnsavedChanges).toBe(true);
+      });
+
+      // Trigger auto-save
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      // Check localStorage has both
+      await waitFor(() => {
+        const stored = localStorageMock.getItem('variable-grouping-backup');
+        expect(stored).toBeTruthy();
+        if (stored) {
+          const data = JSON.parse(stored);
+          expect(data.roleTags).toBeDefined();
+          expect(data.roleTags).toHaveLength(2);
+          expect(data.validationResult).toBeDefined();
+          expect(data.validationResult.isValid).toBe(true);
+        }
+      });
+    });
   });
 });

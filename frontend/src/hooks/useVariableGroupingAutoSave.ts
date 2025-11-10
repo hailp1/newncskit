@@ -1,10 +1,12 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { VariableGroup, DemographicVariable } from '@/types/analysis';
+import { VariableGroup, DemographicVariable, VariableRoleTag, AnalysisModelValidation } from '@/types/analysis';
 import { retryWithExponentialBackoff, RetryStatus } from '@/lib/utils';
 
 interface AutoSaveData {
   groups: VariableGroup[];
   demographics: DemographicVariable[];
+  roleTags?: VariableRoleTag[];
+  validationResult?: AnalysisModelValidation;
   projectId: string;
   timestamp: string;
 }
@@ -13,6 +15,8 @@ interface UseVariableGroupingAutoSaveOptions {
   projectId: string;
   groups: VariableGroup[];
   demographics: DemographicVariable[];
+  roleTags?: VariableRoleTag[];
+  validationResult?: AnalysisModelValidation;
   interval?: number; // milliseconds
   onSave?: (data: AutoSaveData) => Promise<void>;
   enabled?: boolean;
@@ -39,13 +43,16 @@ const STORAGE_KEY = 'variable-grouping-backup';
  * - Provides manual save function
  * - Restores from localStorage on mount
  * - Clears localStorage after successful database save
+ * - Saves roleTags and validationResult (Task 11.1: Requirements 8.1, 8.3)
  * 
- * Requirements: 7.1, 7.3, 6.5
+ * Requirements: 7.1, 7.3, 6.5, 8.1, 8.3
  */
 export function useVariableGroupingAutoSave({
   projectId,
   groups,
   demographics,
+  roleTags,
+  validationResult,
   interval = 30000, // 30 seconds
   onSave,
   enabled = true,
@@ -105,11 +112,12 @@ export function useVariableGroupingAutoSave({
 
   /**
    * Check if data has changed
+   * Task 11.1: Include roleTags and validationResult in change detection
    */
   const hasDataChanged = useCallback(() => {
-    const currentData = JSON.stringify({ groups, demographics });
+    const currentData = JSON.stringify({ groups, demographics, roleTags, validationResult });
     return currentData !== previousDataRef.current;
-  }, [groups, demographics]);
+  }, [groups, demographics, roleTags, validationResult]);
 
   /**
    * Perform save operation with retry logic
@@ -131,11 +139,13 @@ export function useVariableGroupingAutoSave({
       projectId,
       groups,
       demographics,
+      roleTags,
+      validationResult,
       timestamp: new Date().toISOString(),
     };
 
     try {
-      // Save to localStorage first (backup)
+      // Save to localStorage first (backup) - Task 11.1: Requirements 8.1, 8.3
       saveToLocalStorage(dataToSave);
 
       // If onSave callback is provided, save to database with retry logic
@@ -165,7 +175,7 @@ export function useVariableGroupingAutoSave({
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
       setSaveError(null);
-      previousDataRef.current = JSON.stringify({ groups, demographics });
+      previousDataRef.current = JSON.stringify({ groups, demographics, roleTags, validationResult });
     } catch (error) {
       const err = error as Error;
       console.error('Auto-save failed after all retries:', err);
@@ -186,6 +196,8 @@ export function useVariableGroupingAutoSave({
     projectId,
     groups,
     demographics,
+    roleTags,
+    validationResult,
     hasDataChanged,
     saveToLocalStorage,
     clearLocalStorage,
@@ -204,17 +216,18 @@ export function useVariableGroupingAutoSave({
    */
   const clearUnsavedChanges = useCallback(() => {
     setHasUnsavedChanges(false);
-    previousDataRef.current = JSON.stringify({ groups, demographics });
-  }, [groups, demographics]);
+    previousDataRef.current = JSON.stringify({ groups, demographics, roleTags, validationResult });
+  }, [groups, demographics, roleTags, validationResult]);
 
   /**
-   * Track changes to groups and demographics
+   * Track changes to groups, demographics, roleTags, and validationResult
+   * Task 11.1: Requirements 8.1, 8.3
    */
   useEffect(() => {
     if (hasDataChanged()) {
       setHasUnsavedChanges(true);
     }
-  }, [groups, demographics, hasDataChanged]);
+  }, [groups, demographics, roleTags, validationResult, hasDataChanged]);
 
   /**
    * Restore from localStorage on mount
@@ -256,7 +269,7 @@ export function useVariableGroupingAutoSave({
    */
   useEffect(() => {
     if (!previousDataRef.current) {
-      previousDataRef.current = JSON.stringify({ groups, demographics });
+      previousDataRef.current = JSON.stringify({ groups, demographics, roleTags, validationResult });
     }
   }, []);
 

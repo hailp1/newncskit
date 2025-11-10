@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { VariableGroupingService } from '@/services/variable-grouping.service';
 import { DemographicService } from '@/services/demographic.service';
+import { RoleSuggestionService } from '@/services/role-suggestion.service';
 
 // In-memory cache for uploaded data (temporary solution)
 // TODO: Replace with proper database storage
@@ -51,6 +52,21 @@ export async function POST(request: NextRequest) {
     // Get demographic suggestions
     const demographicSuggestions = DemographicService.detectDemographics(variables);
 
+    // Generate role suggestions for variables
+    const roleSuggestions = RoleSuggestionService.suggestRoles(variables);
+
+    // Generate latent variable suggestions for groups
+    const groupsForLatent = groupingSuggestions.map(s => ({
+      id: `group-${s.suggestedName}`,
+      name: s.suggestedName,
+      variables: s.variables,
+      projectId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isCustom: false
+    }));
+    const latentSuggestions = RoleSuggestionService.suggestLatentVariables(groupsForLatent);
+
     return NextResponse.json({
       success: true,
       suggestions: groupingSuggestions.map(s => ({
@@ -65,6 +81,8 @@ export async function POST(request: NextRequest) {
         reasons: d.reasons,
         suggestedType: d.type
       })),
+      roleSuggestions: roleSuggestions.filter(r => r.suggestedRole !== 'none'),
+      latentSuggestions: latentSuggestions,
       totalVariables: variables.length,
       suggestedGroups: groupingSuggestions.length,
       suggestedDemographics: demographicSuggestions.length

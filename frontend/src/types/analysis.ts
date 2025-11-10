@@ -203,6 +203,66 @@ export interface VariableGroupSuggestion {
 }
 
 // ============================================================================
+// Variable Role Tagging Types
+// ============================================================================
+
+/**
+ * Enum for variable roles in statistical analysis
+ */
+export type VariableRole = 
+  | 'none'
+  | 'independent'    // IV - predictor variable
+  | 'dependent'      // DV - outcome variable
+  | 'mediator'       // M - explains IV→DV relationship
+  | 'moderator'      // Mod - affects IV→DV strength/direction
+  | 'control'        // Ctrl - held constant
+  | 'latent';        // Latent construct (CFA/SEM)
+
+/**
+ * Role tag assigned to an individual variable
+ */
+export interface VariableRoleTag {
+  variableId: string;
+  columnName: string;
+  role: VariableRole;
+  confidence?: number;  // For suggestions (0-1)
+  reason?: string;      // Why this role was suggested
+  isUserAssigned: boolean;
+}
+
+/**
+ * Role tag assigned to a group of variables
+ */
+export interface GroupRoleTag {
+  groupId: string;
+  groupName: string;
+  role: VariableRole;
+  appliesTo: string[];  // Variable IDs that inherit this role
+}
+
+/**
+ * Smart suggestion for variable role based on semantic analysis
+ */
+export interface RoleSuggestion {
+  variableId: string;
+  columnName: string;
+  suggestedRole: VariableRole;
+  confidence: number;
+  reasons: string[];
+}
+
+/**
+ * Validation result for analysis model configuration
+ */
+export interface AnalysisModelValidation {
+  isValid: boolean;
+  analysisTypes: AnalysisType[];  // Which analyses are valid with current configuration
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
+}
+
+// ============================================================================
 // Demographic Detection Types
 // ============================================================================
 

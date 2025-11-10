@@ -1,17 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   AnalysisVariable, 
   VariableGroup, 
-  VariableGroupSuggestion 
+  VariableGroupSuggestion,
+  VariableRoleTag,
+  RoleSuggestion,
+  AnalysisModelValidation,
+  VariableRole
 } from '@/types/analysis';
 import { VariableGroupingService } from '@/services/variable-grouping.service';
+import { RoleSuggestionService } from '@/services/role-suggestion.service';
+import { RoleValidationService } from '@/services/role-validation.service';
 import { useVariableGroupingAutoSave } from '@/hooks/useVariableGroupingAutoSave';
 import { useToast } from '@/components/ui/toast';
 import SuggestionCard from './SuggestionCard';
 import VariableChip from './VariableChip';
 import UngroupedVariables from './UngroupedVariables';
+import RoleTagSelector from './RoleTagSelector';
+import ModelPreview from './ModelPreview';
 import { 
   Sparkles, 
   Save, 
@@ -30,6 +38,8 @@ interface VariableGroupingPanelProps {
   onGroupsChange: (groups: VariableGroup[]) => void;
   onVariablesChange?: (variables: AnalysisVariable[]) => void;
   onSave: () => void;
+  externalSuggestions?: VariableGroupSuggestion[]; // Task 12: Pass suggestions from parent
+  showSuggestions?: boolean; // Task 12: Control whether to show suggestions
 }
 
 export default function VariableGroupingPanel({
@@ -37,7 +47,9 @@ export default function VariableGroupingPanel({
   initialGroups = [],
   onGroupsChange,
   onVariablesChange,
-  onSave
+  onSave,
+  externalSuggestions,
+  showSuggestions = true
 }: VariableGroupingPanelProps) {
   const [localVariables, setLocalVariables] = useState<AnalysisVariable[]>(variables);
   // Toast notifications
@@ -51,8 +63,19 @@ export default function VariableGroupingPanel({
   const [searchTerm, setSearchTerm] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isDetecting, setIsDetecting] = useState(true);
+  
+  // Role tagging state (Task 6.1: Requirements 10.1, 10.2, 10.3)
+  const [roleTags, setRoleTags] = useState<VariableRoleTag[]>([]);
+  const [roleSuggestions, setRoleSuggestions] = useState<RoleSuggestion[]>([]);
+  const [validationResult, setValidationResult] = useState<AnalysisModelValidation>({
+    isValid: false,
+    analysisTypes: [],
+    errors: [],
+    warnings: [],
+    suggestions: []
+  });
 
-  // Auto-save hook (Task 11: Auto-save functionality)
+  // Auto-save hook (Task 11: Auto-save functionality with roleTags and validationResult)
   const {
     hasUnsavedChanges,
     lastSaved,
@@ -65,7 +88,9 @@ export default function VariableGroupingPanel({
     projectId: variables[0]?.projectId || 'unknown',
     groups,
     demographics: [], // No demographics in this panel
-    interval: 30000, // 30 seconds
+    roleTags, // Task 11.1: Save roleTags to localStorage
+    validationResult, // Task 11.1: Save validationResult to localStorage
+    interval: 30000, // 30 seconds (Task 11.1: Debounced save every 30s)
     enabled: true,
     onSave: async (data) => {
       // Import dynamically to avoid circular dependencies
@@ -79,8 +104,22 @@ export default function VariableGroupingPanel({
   });
 
   // Auto-generate suggestions on mount (Subtask 5.2)
-  // FIXED: Added currentStep dependency to trigger detection when step becomes active
+  // Task 12: Use external suggestions if provided, respect showSuggestions flag
   useEffect(() => {
+    // If external suggestions are provided, use them
+    if (externalSuggestions && externalSuggestions.length > 0) {
+      setSuggestions(externalSuggestions);
+      setIsDetecting(false);
+      return;
+    }
+    
+    // If showSuggestions is false, don't generate suggestions (Task 12: Requirement 5.2)
+    if (!showSuggestions) {
+      setSuggestions([]);
+      setIsDetecting(false);
+      return;
+    }
+    
     // Only run detection if we have variables
     if (variables && variables.length > 0) {
       setIsDetecting(true);
@@ -94,9 +133,72 @@ export default function VariableGroupingPanel({
     } else {
       setIsDetecting(false);
     }
-  }, [variables]); // Detection triggers on variables change or component mount
+  }, [variables, externalSuggestions, showSuggestions]); // Detection triggers on variables change or component mount
 
-  // Restore from localStorage on mount if available (Task 11.2)
+  // Task 16: Debounce timer ref for validation (Requirement 7.5)
+  const validationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Generate role suggestions on mount (Task 6.2: Requirements 12.1, 12.2, 12.3, 12.4)
+  // Task 16: Cache role suggestions in localStorage (Requirement 7.5)
+  useEffect(() => {
+    if (variables.length > 0) {
+      const projectId = variables[0]?.projectId;
+      const cacheKey = `role-suggestions-${projectId}`;
+      
+      // Try to load from cache first
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const cachedSuggestions = JSON.parse(cached);
+          setRoleSuggestions(cachedSuggestions);
+        } catch (e) {
+          // Invalid cache, regenerate
+        }
+      }
+      
+      // Generate fresh suggestions
+      const suggestions = RoleSuggestionService.suggestRoles(variables);
+      setRoleSuggestions(suggestions);
+      
+      // Cache suggestions
+      localStorage.setItem(cacheKey, JSON.stringify(suggestions));
+      
+      // Initialize role tags with 'none' for all variables
+      const initialTags: VariableRoleTag[] = variables.map(v => ({
+        variableId: v.id,
+        columnName: v.columnName,
+        role: 'none',
+        isUserAssigned: false
+      }));
+      setRoleTags(initialTags);
+    }
+  }, [variables]);
+
+  // Task 16: Debounce validation by 300ms (Requirement 7.5)
+  // Validate roles whenever they change (Task 6.3: Requirements 11.1, 11.2, 11.3, 11.4, 11.5)
+  useEffect(() => {
+    if (roleTags.length > 0) {
+      // Clear existing timer
+      if (validationTimerRef.current) {
+        clearTimeout(validationTimerRef.current);
+      }
+      
+      // Set new timer for debounced validation
+      validationTimerRef.current = setTimeout(() => {
+        const validation = RoleValidationService.validateAll(roleTags, groups);
+        setValidationResult(validation);
+      }, 300);
+      
+      // Cleanup on unmount
+      return () => {
+        if (validationTimerRef.current) {
+          clearTimeout(validationTimerRef.current);
+        }
+      };
+    }
+  }, [roleTags, groups]);
+
+  // Restore from localStorage on mount if available (Task 11.2: Requirements 8.2, 8.4, 8.5)
   useEffect(() => {
     const projectId = variables[0]?.projectId;
     if (!projectId) return;
@@ -111,7 +213,18 @@ export default function VariableGroupingPanel({
       );
       if (shouldRestore) {
         setGroups(restored.groups);
-        showSuccess('Restored', 'Groups restored from previous session');
+        
+        // Restore roleTags if available (Task 11.2: Load roleTags from localStorage)
+        if (restored.roleTags && restored.roleTags.length > 0) {
+          setRoleTags(restored.roleTags);
+        }
+        
+        // Restore validationResult if available (Task 11.2: Load cached validation)
+        if (restored.validationResult) {
+          setValidationResult(restored.validationResult);
+        }
+        
+        showSuccess('Restored', 'Groups and role assignments restored from previous session');
       }
     }
   }, [variables, showSuccess]);
@@ -143,18 +256,20 @@ export default function VariableGroupingPanel({
     showSuccess('Updated', `Demographic status toggled for ${columnName}`);
   };
 
-  // Get ungrouped variables
-  const getUngroupedVariables = (): AnalysisVariable[] => {
+  // Task 16: Memoize ungrouped variables calculation (Requirement 7.3)
+  const ungroupedVariables = useMemo(() => {
     const groupedVariableNames = new Set(
       groups.flatMap(g => g.variables || [])
     );
     return variables.filter(v => !groupedVariableNames.has(v.columnName));
-  };
+  }, [variables, groups]);
 
-  // Filter ungrouped variables by search term
-  const filteredUngrouped = getUngroupedVariables().filter(v =>
-    v.columnName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Task 16: Memoize filtered ungrouped variables
+  const filteredUngrouped = useMemo(() => {
+    return ungroupedVariables.filter(v =>
+      v.columnName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [ungroupedVariables, searchTerm]);
 
   // Accept a suggestion
   const acceptSuggestion = (suggestion: VariableGroupSuggestion) => {
@@ -282,6 +397,28 @@ export default function VariableGroupingPanel({
     }));
   };
 
+  // Task 16: Memoize callbacks to prevent unnecessary re-renders
+  // Handle role change for individual variable (Task 6.4: Requirements 10.2, 10.3)
+  const handleRoleChange = useCallback((variableId: string, newRole: VariableRole) => {
+    setRoleTags(prev => prev.map(tag => 
+      tag.variableId === variableId
+        ? { ...tag, role: newRole, isUserAssigned: true }
+        : tag
+    ));
+  }, []);
+
+  // Handle group role change (applies to all variables in group) (Task 6.4: Requirements 10.2, 10.3)
+  const handleGroupRoleChange = useCallback((groupId: string, newRole: VariableRole) => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group || !group.variables) return;
+
+    setRoleTags(prev => prev.map(tag => 
+      group.variables.includes(tag.columnName)
+        ? { ...tag, role: newRole, isUserAssigned: true }
+        : tag
+    ));
+  }, [groups]);
+
   // Handle save (Task 12.3: Success/error feedback)
   const handleSave = async () => {
     try {
@@ -294,6 +431,10 @@ export default function VariableGroupingPanel({
       // Show success message (Requirement 6.1)
       showSuccess('Saved Successfully', `${groups.length} group${groups.length !== 1 ? 's' : ''} saved to database`);
       clearUnsavedChanges();
+      
+      // Task 11.2: Clear cache after successful database save (Requirement 8.5)
+      const { clearLocalStorageBackup } = require('@/hooks/useVariableGroupingAutoSave');
+      clearLocalStorageBackup();
     } catch (error) {
       // Show error message (Requirement 6.1, 7.4)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -441,7 +582,7 @@ export default function VariableGroupingPanel({
               onRemoveVariable={(varName) => removeVariableFromGroup(varName, group.id)}
               onDelete={() => deleteGroup(group.id, group.name)}
               onToggleDemographic={toggleDemographic}
-              ungroupedVariables={getUngroupedVariables()}
+              ungroupedVariables={ungroupedVariables}
               allVariables={localVariables}
             />
           </div>
@@ -457,7 +598,79 @@ export default function VariableGroupingPanel({
         groups={groups}
       />
 
-      {/* Save Button with unsaved changes indicator (Subtask 5.1 & 5.3) */}
+      {/* Role Tagging Section (Task 6.5: Requirements 10.1, 13.1-13.6) */}
+      {groups.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <div className="border-t pt-6">
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">Variable Roles</h3>
+            <p className="text-gray-600 mb-4 text-sm">
+              Assign roles to variables for advanced analyses (Regression, SEM, Mediation)
+            </p>
+
+            {/* Groups with role selectors */}
+            <div className="space-y-4">
+              {groups.map(group => {
+                const groupRoleTag = roleTags.find(t => 
+                  group.variables && group.variables.includes(t.columnName)
+                );
+                const groupSuggestion = roleSuggestions.find(s => 
+                  group.variables && group.variables.includes(s.columnName)
+                );
+
+                return (
+                  <div key={group.id} className="p-4 border border-gray-200 rounded-lg bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900">{group.name}</h4>
+                      <RoleTagSelector
+                        entityId={group.id}
+                        entityName={group.name}
+                        currentRole={groupRoleTag?.role || 'none'}
+                        suggestion={groupSuggestion}
+                        onRoleChange={(role) => handleGroupRoleChange(group.id, role)}
+                      />
+                    </div>
+                    
+                    {/* Individual variables in group */}
+                    <div className="ml-4 space-y-2">
+                      {group.variables?.map(varName => {
+                        const variable = variables.find(v => v.columnName === varName);
+                        if (!variable) return null;
+                        
+                        const roleTag = roleTags.find(t => t.variableId === variable.id);
+                        const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
+                        
+                        return (
+                          <div key={variable.id} className="flex items-center justify-between py-2">
+                            <span className="text-sm text-gray-700">{varName}</span>
+                            <RoleTagSelector
+                              entityId={variable.id}
+                              entityName={varName}
+                              currentRole={roleTag?.role || 'none'}
+                              suggestion={suggestion}
+                              onRoleChange={(role) => handleRoleChange(variable.id, role)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Model Preview (Task 6.6: Requirements 14.1-14.5) */}
+            <div className="mt-6">
+              <ModelPreview
+                roleTags={roleTags}
+                groups={groups}
+                validationResult={validationResult}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Button with unsaved changes indicator and validation (Task 6.7: Requirements 11.4, 11.5) */}
       {hasUnsavedChanges && (
         <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-shadow duration-200">
@@ -469,13 +682,32 @@ export default function VariableGroupingPanel({
                 </div>
                 <button
                   onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
+                  disabled={isSaving || !validationResult.isValid}
+                  className={`
+                    px-4 py-2 rounded-lg flex items-center gap-2 font-medium 
+                    transition-all duration-200 hover:scale-105 active:scale-95
+                    ${validationResult.isValid 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }
+                    ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                  title={!validationResult.isValid ? 'Configure roles to continue' : ''}
                 >
                   <Save className={`h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                  {isSaving 
+                    ? 'Saving...' 
+                    : validationResult.isValid 
+                      ? `Save & Continue (${validationResult.analysisTypes.join(', ')})` 
+                      : 'Configure roles to continue'
+                  }
                 </button>
               </div>
+              {!validationResult.isValid && validationResult.errors.length > 0 && (
+                <div className="text-xs text-red-600 mt-1">
+                  {validationResult.errors[0]}
+                </div>
+              )}
               {lastSaved && (
                 <div className="flex items-center gap-1 text-xs text-gray-500 animate-in fade-in duration-200">
                   <Clock className="h-3 w-3" />
