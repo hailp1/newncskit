@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Footer } from '@/components/layout/footer'
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuthStore } from '@/store/auth'
 import { useNetworkStatus } from '@/hooks/use-network-status'
-import { Wifi, WifiOff, Loader2, UserIcon } from 'lucide-react'
+import { isAdmin } from '@/lib/auth-utils'
+import { Wifi, WifiOff, Loader2, UserIcon, ShieldCheckIcon } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
@@ -15,6 +17,8 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading, initialize } = useAuthStore()
   const { isOnline, isConnected } = useNetworkStatus()
+  const pathname = usePathname()
+  const userIsAdmin = isAdmin(user)
 
   useEffect(() => {
     // Initialize auth store to get user session
@@ -50,12 +54,12 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* Dashboard Header - Simple version without navigation */}
+      {/* Dashboard Header with Navigation */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                   <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,16 +68,75 @@ export default function DashboardLayout({
                 </div>
                 <span className="text-xl font-bold text-gray-900">NCSKIT</span>
               </Link>
+
+              {/* Navigation Menu */}
+              <nav className="hidden md:flex items-center space-x-1">
+                <Link
+                  href="/dashboard"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname === '/dashboard'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/projects"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.startsWith('/projects')
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Projects
+                </Link>
+                <Link
+                  href="/analysis"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.startsWith('/analysis')
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Analysis
+                </Link>
+                <Link
+                  href="/blog"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.startsWith('/blog')
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Blog
+                </Link>
+                
+                {/* Admin Link - Only for admin users */}
+                {userIsAdmin && (
+                  <Link
+                    href="/admin"
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+                      pathname.startsWith('/admin')
+                        ? 'bg-red-100 text-red-700'
+                        : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                    }`}
+                  >
+                    <ShieldCheckIcon className="h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
+              </nav>
             </div>
 
-            {/* User Menu */}
+            {/* User Info */}
             {user && (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 text-sm text-gray-700">
                   <UserIcon className="h-5 w-5 text-gray-400" />
-                  <span>{user.full_name || user.email}</span>
+                  <span className="hidden sm:inline">{user.full_name || user.email}</span>
                   {user.role && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 capitalize">
                       {user.role}
                     </span>
                   )}
