@@ -53,11 +53,61 @@ export default function DashboardLayout({
       <div className="flex">
         <Sidebar />
         <main className="flex-1 lg:ml-64 pt-16">
-          <div className="py-6">
+          <div className="py-6 min-h-[calc(100vh-4rem)]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {children}
             </div>
           </div>
+          
+          {/* Footer */}
+          <footer className="bg-white border-t border-gray-200 mt-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {/* About */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Về NCSKIT</h3>
+                  <p className="text-sm text-gray-600">
+                    Nền tảng phân tích dữ liệu khảo sát miễn phí cho nhà nghiên cứu Việt Nam.
+                  </p>
+                </div>
+                
+                {/* Quick Links */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Liên Kết</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="/blog" className="text-gray-600 hover:text-blue-600">Blog</a></li>
+                    <li><a href="/about" className="text-gray-600 hover:text-blue-600">Giới Thiệu</a></li>
+                    <li><a href="/contact" className="text-gray-600 hover:text-blue-600">Liên Hệ</a></li>
+                  </ul>
+                </div>
+                
+                {/* Resources */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Tài Nguyên</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="/blog" className="text-gray-600 hover:text-blue-600">Hướng Dẫn</a></li>
+                    <li><a href="/blog" className="text-gray-600 hover:text-blue-600">Video Tutorial</a></li>
+                    <li><a href="/blog" className="text-gray-600 hover:text-blue-600">FAQ</a></li>
+                  </ul>
+                </div>
+                
+                {/* Contact */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Liên Hệ</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>Email: support@ncskit.org</li>
+                    <li>Website: app.ncskit.org</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-500 text-center">
+                  © 2024 NCSKIT. Made with ❤️ in Vietnam 🇻🇳
+                </p>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </div>
