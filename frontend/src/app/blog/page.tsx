@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { blogService } from '@/services/blog';
+import { fallbackBlogPosts, fallbackCategories } from '@/data/fallback-blog-posts';
 
 interface BlogPostDisplay {
   id: string;
@@ -100,17 +101,23 @@ export default function BlogPage() {
       
       const categoryNames = ['Tất cả', ...categoriesResponse.map((cat: any) => cat.name)];
       
+      // Nếu không có bài từ database, dùng fallback posts
+      const finalPosts = displayPosts.length > 0 ? displayPosts : fallbackBlogPosts as any;
+      const finalCategories = categoryNames.length > 1 ? categoryNames : fallbackCategories;
+      
       // Update cache
-      cachedPosts = displayPosts;
-      cachedCategories = categoryNames;
+      cachedPosts = finalPosts;
+      cachedCategories = finalCategories;
       cacheTimestamp = now;
       
-      setPosts(displayPosts);
-      setCategories(categoryNames);
+      setPosts(finalPosts);
+      setCategories(finalCategories);
       
     } catch (error) {
       console.error('Error loading blog data:', error);
-      setPosts([]);
+      // Nếu lỗi, dùng fallback posts
+      setPosts(fallbackBlogPosts as any);
+      setCategories(fallbackCategories);
     } finally {
       setIsLoading(false);
     }
