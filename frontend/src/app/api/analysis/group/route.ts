@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       demographics: demographicSuggestions.map(d => ({
         variable: d.variable,
         confidence: d.confidence,
-        reasoning: d.reason,
-        suggestedType: d.suggestedType
+        reasons: d.reasons,
+        suggestedType: d.type
       })),
       totalVariables: variables.length,
       suggestedGroups: groupingSuggestions.length,
