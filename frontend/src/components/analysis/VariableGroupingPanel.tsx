@@ -28,6 +28,7 @@ interface VariableGroupingPanelProps {
   variables: AnalysisVariable[];
   initialGroups?: VariableGroup[];
   onGroupsChange: (groups: VariableGroup[]) => void;
+  onVariablesChange?: (variables: AnalysisVariable[]) => void;
   onSave: () => void;
 }
 
@@ -35,8 +36,10 @@ export default function VariableGroupingPanel({
   variables,
   initialGroups = [],
   onGroupsChange,
+  onVariablesChange,
   onSave
 }: VariableGroupingPanelProps) {
+  const [localVariables, setLocalVariables] = useState<AnalysisVariable[]>(variables);
   // Toast notifications
   const { showError, showSuccess, showWarning } = useToast();
   
@@ -113,10 +116,32 @@ export default function VariableGroupingPanel({
     }
   }, [variables, showSuccess]);
 
+  // Sync variables from props
+  useEffect(() => {
+    setLocalVariables(variables);
+  }, [variables]);
+
   // Notify parent of changes
   useEffect(() => {
     onGroupsChange(groups);
   }, [groups, onGroupsChange]);
+
+  // Notify parent of variable changes
+  useEffect(() => {
+    if (onVariablesChange) {
+      onVariablesChange(localVariables);
+    }
+  }, [localVariables, onVariablesChange]);
+
+  // Toggle demographic status
+  const toggleDemographic = (columnName: string) => {
+    setLocalVariables(prev => prev.map(v => 
+      v.columnName === columnName 
+        ? { ...v, isDemographic: !v.isDemographic }
+        : v
+    ));
+    showSuccess('Updated', `Demographic status toggled for ${columnName}`);
+  };
 
   // Get ungrouped variables
   const getUngroupedVariables = (): AnalysisVariable[] => {
@@ -177,7 +202,7 @@ export default function VariableGroupingPanel({
   };
 
   // Save group name with validation
-  const saveGroupName = (groupId: string) => {
+  const saveGroupName = (groupId: string, description?: string) => {
     const existingNames = groups
       .filter(g => g.id !== groupId)
       .map(g => g.name);
@@ -195,7 +220,7 @@ export default function VariableGroupingPanel({
 
     setGroups(groups.map(g => 
       g.id === groupId 
-        ? { ...g, name: editingGroupName, updatedAt: new Date(), isCustom: true } 
+        ? { ...g, name: editingGroupName, description, updatedAt: new Date(), isCustom: true } 
         : g
     ));
     setEditingGroupId(null);
@@ -409,13 +434,15 @@ export default function VariableGroupingPanel({
               editingName={editingGroupName}
               validationError={validationError}
               onStartEdit={() => startEditingGroup(group)}
-              onEndEdit={() => saveGroupName(group.id)}
+              onEndEdit={(description) => saveGroupName(group.id, description)}
               onCancelEdit={cancelEditing}
               onNameChange={setEditingGroupName}
               onAddVariable={(varName) => addVariableToGroup(varName, group.id)}
               onRemoveVariable={(varName) => removeVariableFromGroup(varName, group.id)}
               onDelete={() => deleteGroup(group.id, group.name)}
+              onToggleDemographic={toggleDemographic}
               ungroupedVariables={getUngroupedVariables()}
+              allVariables={localVariables}
             />
           </div>
         ))}
@@ -472,13 +499,15 @@ interface GroupCardProps {
   editingName: string;
   validationError: string | null;
   onStartEdit: () => void;
-  onEndEdit: () => void;
+  onEndEdit: (description?: string) => void;
   onCancelEdit: () => void;
   onNameChange: (name: string) => void;
   onAddVariable: (varName: string) => void;
   onRemoveVariable: (varName: string) => void;
   onDelete: () => void;
+  onToggleDemographic: (columnName: string) => void;
   ungroupedVariables: AnalysisVariable[];
+  allVariables: AnalysisVariable[];
 }
 
 function GroupCard({
@@ -493,41 +522,63 @@ function GroupCard({
   onAddVariable,
   onRemoveVariable,
   onDelete,
-  ungroupedVariables
+  onToggleDemographic,
+  ungroupedVariables,
+  allVariables
 }: GroupCardProps) {
   const [showAddVariables, setShowAddVariables] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(group.description || '');
 
   return (
     <div className="border rounded-lg p-4 bg-white hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
       {/* Group Header */}
       <div className="flex items-center justify-between mb-3">
         {isEditing ? (
-          <div className="flex-1 mr-2 animate-in slide-in-from-left-2 duration-200">
-            <input
-              type="text"
-              value={editingName}
-              onChange={(e) => onNameChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onEndEdit();
-                if (e.key === 'Escape') onCancelEdit();
-              }}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                validationError ? 'border-red-500 animate-shake' : 'border-gray-300'
-              }`}
-              autoFocus
-            />
-            {validationError && (
-              <p className="text-xs text-red-600 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">{validationError}</p>
-            )}
+          <div className="flex-1 mr-2 animate-in slide-in-from-left-2 duration-200 space-y-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Group Name</label>
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => onNameChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onEndEdit();
+                  if (e.key === 'Escape') onCancelEdit();
+                }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  validationError ? 'border-red-500 animate-shake' : 'border-gray-300'
+                }`}
+                placeholder="Enter group name"
+                autoFocus
+              />
+              {validationError && (
+                <p className="text-xs text-red-600 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">{validationError}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Description (Optional)</label>
+              <input
+                type="text"
+                value={editingDescription}
+                onChange={(e) => setEditingDescription(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="e.g., Customer satisfaction items"
+              />
+            </div>
           </div>
         ) : (
-          <h4
-            className="font-semibold text-lg cursor-pointer hover:text-blue-600 flex items-center gap-2 group transition-colors duration-200"
-            onClick={onStartEdit}
-          >
-            {group.name}
-            <Edit2 className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-          </h4>
+          <div className="flex-1">
+            <h4
+              className="font-semibold text-lg cursor-pointer hover:text-blue-600 flex items-center gap-2 group transition-colors duration-200"
+              onClick={onStartEdit}
+            >
+              {group.name}
+              <Edit2 className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            </h4>
+            {group.description && (
+              <p className="text-sm text-gray-600 mt-1">{group.description}</p>
+            )}
+          </div>
         )}
 
         <div className="flex items-center gap-2">
@@ -537,7 +588,7 @@ function GroupCard({
           {isEditing ? (
             <>
               <button
-                onClick={onEndEdit}
+                onClick={() => onEndEdit(editingDescription)}
                 className="p-1 text-green-600 hover:bg-green-50 rounded"
                 title="Save"
               >
@@ -571,16 +622,34 @@ function GroupCard({
         </div>
       </div>
 
-      {/* Variables List */}
-      <div className="flex flex-wrap gap-2 mb-3 group/variables">
+      {/* Variables List with Demographic Toggle */}
+      <div className="space-y-2 mb-3">
         {group.variables && group.variables.length > 0 ? (
-          group.variables.map(varName => (
-            <VariableChip
-              key={varName}
-              name={varName}
-              onRemove={() => onRemoveVariable(varName)}
-            />
-          ))
+          <div className="space-y-1">
+            {group.variables.map(varName => {
+              const variable = allVariables.find(v => v.columnName === varName);
+              if (!variable) return null;
+              
+              return (
+                <div key={varName} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <VariableChip
+                    name={varName}
+                    onRemove={() => onRemoveVariable(varName)}
+                  />
+                  <div className="flex-1"></div>
+                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={variable.isDemographic}
+                      onChange={() => onToggleDemographic(varName)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-medium">Demographic</span>
+                  </label>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="w-full text-center py-4 text-sm text-gray-500 border-2 border-dashed border-gray-200 rounded">
             No variables in this group yet
