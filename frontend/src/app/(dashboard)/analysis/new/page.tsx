@@ -43,8 +43,17 @@ export default function NewAnalysisPage() {
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const handleUploadComplete = async (uploadedProjectId: string, preview: any[]) => {
+  const handleUploadComplete = async (uploadedProjectId: string, preview: any[], uploadHealthReport?: DataHealthReport) => {
     setProjectId(uploadedProjectId);
+    
+    // If health report is provided from upload, use it directly
+    if (uploadHealthReport) {
+      setHealthReport(uploadHealthReport);
+      setCurrentStep('health');
+      return;
+    }
+
+    // Otherwise, fetch health report separately
     setLoading(true);
     setError(null);
 

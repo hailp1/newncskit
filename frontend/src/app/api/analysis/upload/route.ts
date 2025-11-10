@@ -7,6 +7,7 @@ import {
   logRequest,
   getCorsHeaders,
 } from '@/lib/api-middleware';
+import { DataHealthService } from '@/services/data-health.service';
 
 // Handle OPTIONS for CORS preflight
 export async function OPTIONS() {
@@ -72,6 +73,13 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Upload] ${correlationId}: Parsed ${csvHeaders.length} headers`);
 
+    // Parse all data for health check
+    const allRows = lines.map(line => {
+      return line
+        .split(delimiter)
+        .map(v => v.trim().replace(/^["']|["']$/g, ''));
+    });
+
     // Parse first few rows for preview
     const previewRows = lines.slice(1, Math.min(6, lines.length)).map(line => {
       const values = line
@@ -88,6 +96,17 @@ export async function POST(request: NextRequest) {
     // Generate project ID
     const projectId = `project-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
+    // Perform health check
+    let healthReport;
+    try {
+      healthReport = DataHealthService.performHealthCheck(allRows);
+      console.log(`[Upload] ${correlationId}: Health check completed`);
+    } catch (healthError) {
+      console.error(`[Upload] ${correlationId}: Health check failed:`, healthError);
+      // Continue without health report if it fails
+      healthReport = null;
+    }
+
     const responseData = {
       project: {
         id: projectId,
@@ -97,6 +116,7 @@ export async function POST(request: NextRequest) {
       },
       preview: previewRows,
       headers: csvHeaders,
+      healthReport,
     };
 
     console.log(`[Upload] ${correlationId}: Success - Project ${projectId} created`);
