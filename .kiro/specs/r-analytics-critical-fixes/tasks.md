@@ -137,6 +137,7 @@
     - Check for zero variance before calculating z-scores
     - Return empty list with warning if sd = 0
     - Map outlier indices back to original dataset positions
+
     - Handle NA values correctly
     - Return indices, values, and z_scores
     - _Requirements: 4.3, 7.1, 7.2, 7.3, 7.4, 7.5_
@@ -153,6 +154,7 @@
     - Create `validate_sample_size()` function
     - Check minimum requirements for different tests
     - Shapiro-Wilk: n >= 3
+
     - Kolmogorov-Smirnov: n >= 2
     - Return validation result with error message
     - _Requirements: 5.1, 5.2, 5.4_
@@ -170,9 +172,11 @@
     - Update `perform_efa()` in factor-analysis.R
 
 
+
     - Require n >= p * 3 (3 times number of variables)
     - Return error with required sample size
     - _Requirements: 5.3, 5.5_
+
 
 - [ ] 6. Implement factor type conversion
   - [ ] 6.1 Add factor conversion to ANOVA
