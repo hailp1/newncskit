@@ -15,40 +15,40 @@ import {
 
 const features = [
   {
-    name: 'Project Management',
-    description: 'Track research projects through all phases from planning to publication',
-    icon: BeakerIcon,
-    href: '/projects',
-  },
-  {
-    name: 'Smart Editor',
-    description: 'AI-powered writing assistant with academic formatting and suggestions',
-    icon: DocumentTextIcon,
-    href: '/editor',
-  },
-  {
-    name: 'Reference Manager',
-    description: 'Organize and manage research references with advanced search capabilities',
-    icon: BookOpenIcon,
-    href: '/references',
-  },
-  {
-    name: 'Topic Suggestions',
-    description: 'AI-generated research topic recommendations based on current trends',
-    icon: AcademicCapIcon,
-    href: '/topics',
-  },
-  {
-    name: 'Journal Matcher',
-    description: 'Find the perfect Q1/Q2 journals for your research papers',
-    icon: SparklesIcon,
-    href: '/journals',
-  },
-  {
-    name: 'Analytics Dashboard',
-    description: 'Track productivity and research progress with detailed insights',
+    name: 'Phân Tích Dữ Liệu Khảo Sát',
+    description: 'Upload CSV và phân tích dữ liệu khảo sát với các phương pháp thống kê tiên tiến: Cronbach Alpha, EFA, CFA, SEM',
     icon: ChartBarIcon,
-    href: '/analytics',
+    href: '/analysis/new',
+  },
+  {
+    name: 'Kiểm Định Độ Tin Cậy',
+    description: 'Tự động tính Cronbach Alpha, kiểm tra độ tin cậy thang đo và đề xuất loại bỏ biến không phù hợp',
+    icon: CheckCircleIcon,
+    href: '/analysis/new',
+  },
+  {
+    name: 'Phân Tích Nhân Tố',
+    description: 'Thực hiện EFA (Exploratory Factor Analysis) và CFA (Confirmatory Factor Analysis) một cách dễ dàng',
+    icon: BeakerIcon,
+    href: '/analysis/new',
+  },
+  {
+    name: 'Mô Hình Cấu Trúc (SEM)',
+    description: 'Xây dựng và kiểm định mô hình cấu trúc tuyến tính (Structural Equation Modeling) chuyên nghiệp',
+    icon: AcademicCapIcon,
+    href: '/analysis/new',
+  },
+  {
+    name: 'Hồi Quy & Tương Quan',
+    description: 'Phân tích hồi quy tuyến tính, tương quan Pearson, và các kiểm định thống kê cơ bản',
+    icon: SparklesIcon,
+    href: '/analysis/new',
+  },
+  {
+    name: 'Báo Cáo Tự Động',
+    description: 'Tạo báo cáo phân tích chuyên nghiệp với biểu đồ, bảng số liệu và giải thích kết quả',
+    icon: DocumentTextIcon,
+    href: '/analysis/new',
   },
 ]
 

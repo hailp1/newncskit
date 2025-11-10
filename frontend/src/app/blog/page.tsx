@@ -52,7 +52,7 @@ export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const POSTS_PER_PAGE = 10;
+  const POSTS_PER_PAGE = 6; // Giảm từ 10 xuống 6 để load nhanh hơn
 
   useEffect(() => {
     loadBlogData();
@@ -71,9 +71,9 @@ export default function BlogPage() {
         return;
       }
       
-      // Load data in parallel
+      // Load data in parallel - Giảm limit để load nhanh hơn
       const [postsResponse, categoriesResponse] = await Promise.all([
-        blogService.getPublishedPosts({ page: 0, limit: 50 }),
+        blogService.getPublishedPosts({ page: 0, limit: 20 }), // Giảm từ 50 xuống 20
         blogService.getCategories()
       ]);
       
@@ -178,15 +178,15 @@ export default function BlogPage() {
   if (isLoading) {
     return (
       <PageLayout>
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
           <div className="max-w-7xl mx-auto px-6 py-16">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded mb-4 max-w-md mx-auto"></div>
               <div className="h-4 bg-gray-200 rounded mb-2 max-w-2xl mx-auto"></div>
               <div className="h-4 bg-gray-200 rounded mb-8 max-w-xl mx-auto"></div>
               <div className="grid md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-64 bg-gray-200 rounded"></div>
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-48 bg-gray-200 rounded"></div>
                 ))}
               </div>
             </div>
