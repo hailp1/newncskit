@@ -7,7 +7,7 @@
 -- ============================================================================
 
 -- Step 1: Check if table exists and what columns it has
-DO $
+DO $$
 DECLARE
   table_exists BOOLEAN;
   has_project_id BOOLEAN;
@@ -129,10 +129,10 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'Table exists but has neither project_id nor analysis_project_id column!';
   END IF;
-END $;
+END $$;
 
 -- Step 2: Verify the fix
-DO $
+DO $$
 BEGIN
   RAISE NOTICE '';
   RAISE NOTICE '=== VERIFICATION ===';
@@ -140,5 +140,5 @@ BEGIN
   RAISE NOTICE 'SELECT column_name, data_type FROM information_schema.columns';
   RAISE NOTICE 'WHERE table_name = ''analysis_variables'' AND column_name LIKE ''%project%'';';
   RAISE NOTICE '';
-END $;
+END $$;
 
