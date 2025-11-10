@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { data: dbVariables, error: variablesError } = await supabase
       .from('analysis_variables')
       .select('*')
-      .eq('analysis_project_id', projectId)
+      .eq('project_id', projectId)
       .order('created_at');
 
     if (variablesError) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Convert database variables to AnalysisVariable format
     const variables = (dbVariables || []).map((v: any) => ({
       id: v.id,
-      projectId: v.analysis_project_id,
+      projectId: v.project_id,
       columnName: v.column_name,
       displayName: v.display_name,
       dataType: v.data_type || 'numeric',

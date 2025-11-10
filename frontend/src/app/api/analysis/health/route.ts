@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const { data: variables } = await supabase
       .from('analysis_variables')
       .select('*')
-      .eq('analysis_project_id', projectId);
+      .eq('project_id', projectId);
 
     return NextResponse.json({
       success: true,

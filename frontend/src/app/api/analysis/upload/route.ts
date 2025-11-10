@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     // Create variables in database
     const variables = csvHeaders.map((header) => ({
-      analysis_project_id: project.id,
+      project_id: project.id,  // Column name is 'project_id' not 'analysis_project_id'
       column_name: header,
       display_name: header,
       data_type: 'numeric', // Will be detected properly later
