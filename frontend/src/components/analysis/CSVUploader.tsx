@@ -111,6 +111,9 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
         method: 'POST',
         body: formData,
         signal: controller.signal,
+        headers: {
+          'X-Correlation-ID': `upload-${Date.now()}`,
+        },
       });
       
       clearTimeout(timeoutId);
@@ -135,35 +138,31 @@ export default function CSVUploader({ onUploadComplete, onError }: CSVUploaderPr
       }
 
       // Parse JSON response
-      const responseText = await response.text();
-      console.log('[CSVUploader] Response text:', responseText.substring(0, 200));
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('[CSVUploader] JSON parse error:', parseError);
-        console.error('[CSVUploader] Response text:', responseText);
-        throw new Error('Failed to parse server response');
-      }
+      const data = await response.json();
+      console.log('[CSVUploader] Response data:', data);
 
-      if (!response.ok) {
-        console.error('[CSVUploader] Upload failed:', data);
+      // Check for new response format with success field
+      if (data.success === false) {
+        console.error('[CSVUploader] Upload failed:', data.error);
+        console.error('[CSVUploader] Correlation ID:', data.correlationId);
         throw new Error(data.error || `Upload failed with status ${response.status}`);
       }
 
-      console.log('[CSVUploader] Upload successful:', data);
+      // Extract data from new format (data.data) or use old format
+      const projectData = data.success ? data.data : data;
+
+      console.log('[CSVUploader] Upload successful:', projectData);
       setProgress(100);
 
       // Validate response data
-      if (!data.project || !data.project.id) {
+      if (!projectData.project || !projectData.project.id) {
         throw new Error('Invalid response: missing project ID');
       }
 
       // Wait a bit to show 100% before completing
       setTimeout(() => {
         console.log('[CSVUploader] Calling onUploadComplete');
-        onUploadComplete(data.project.id, data.preview || []);
+        onUploadComplete(projectData.project.id, projectData.preview || []);
       }, 500);
 
     } catch (err) {
