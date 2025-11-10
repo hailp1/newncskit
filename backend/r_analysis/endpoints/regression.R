@@ -1,213 +1,183 @@
-# Regression Analysis Endpoints
-# Functions for linear, logistic, and multilevel regression
+# Regression Analysis Helper Functions
+# Safe implementations with validation
 
-library(lme4)
 library(car)
-library(broom)
 
-#' Perform Linear Regression
-#' @param data Data frame
-#' @param formula Regression formula
-#' @param robust Use robust standard errors
-perform_linear_regression <- function(data, formula, robust = FALSE) {
-  # Fit linear model
-  model <- lm(formula, data = data)
+# Safe linear regression with validation
+perform_linear_regression <- function(data, dependent, independent) {
+  # Validate sample size
+  n <- nrow(data)
+  min_n <- length(independent) + 2
   
-  # Model summary
-  model_summary <- summary(model)
-  
-  # ANOVA
-  anova_result <- anova(model)
-  
-  # Diagnostics
-  diagnostics <- list(
-    residuals = residuals(model),
-    fitted_values = fitted(model),
-    standardized_residuals = rstandard(model),
-    cooks_distance = cooks.distance(model),
-    leverage = hatvalues(model)
-  )
-  
-  # VIF for multicollinearity (if multiple predictors)
-  vif_values <- NULL
-  if (length(coefficients(model)) > 2) {
-    tryCatch({
-      vif_values <- vif(model)
-    }, error = function(e) {
-      vif_values <- NULL
-    })
+  if (n < min_n) {
+    return(list(
+      success = FALSE,
+      error = paste0("Insufficient sample size. Need at least ", min_n, " observations, got ", n),
+      required_n = min_n,
+      actual_n = n
+    ))
   }
   
-  # Durbin-Watson test for autocorrelation
-  dw_test <- durbinWatsonTest(model)
+  # Convert factors if needed
+  for (var in independent) {
+    if (is.character(data[[var]])) {
+      data[[var]] <- as.factor(data[[var]])
+      cat("[Regression] Converted", var, "to factor\n")
+    }
+  }
   
-  # Breusch-Pagan test for heteroscedasticity
-  bp_test <- tryCatch({
-    ncvTest(model)
-  }, error = function(e) {
-    list(ChiSquare = NA, Df = NA, p = NA)
-  })
+  # Build formula
+  formula_str <- paste(dependent, "~", paste(independent, collapse = " + "))
+  formula_obj <- as.formula(formula_str)
   
-  results <- list(
-    coefficients = tidy(model),
-    model_summary = list(
-      r_squared = model_summary$r.squared,
-      adj_r_squared = model_summary$adj.r.squared,
-      f_statistic = model_summary$fstatistic[1],
-      f_p_value = pf(model_summary$fstatistic[1], 
-                     model_summary$fstatistic[2], 
-                     model_summary$fstatistic[3], 
-                     lower.tail = FALSE),
-      residual_se = model_summary$sigma,
-      df = model_summary$df
-    ),
-    anova = anova_result,
-    diagnostics = diagnostics,
-    assumptions = list(
+  # Fit model
+  tryCatch({
+    model <- lm(formula_obj, data = data)
+    
+    # Extract results
+    summary_obj <- summary(model)
+    
+    # VIF for multicollinearity (if multiple predictors)
+    vif_values <- NULL
+    if (length(independent) > 1) {
+      tryCatch({
+        vif_values <- vif(model)
+      }, error = function(e) {
+        cat("[Regression] Could not calculate VIF:", e$message, "\n")
+      })
+    }
+    
+    results <- list(
+      success = TRUE,
+      coefficients = as.data.frame(coef(summary_obj)),
+      r_squared = summary_obj$r.squared,
+      adj_r_squared = summary_obj$adj.r.squared,
+      f_statistic = summary_obj$fstatistic,
+      residuals = residuals(model),
+      fitted = fitted(model),
       vif = vif_values,
-      durbin_watson = list(
-        statistic = dw_test$dw,
-        p_value = dw_test$p
-      ),
-      breusch_pagan = list(
-        chi_square = bp_test$ChiSquare,
-        p_value = bp_test$p
-      )
-    ),
-    formula = deparse(formula),
-    n_observations = nrow(model$model)
-  )
-  
-  return(results)
-}
-
-#' Perform Logistic Regression
-#' @param data Data frame
-#' @param formula Regression formula
-perform_logistic_regression <- function(data, formula) {
-  # Fit logistic model
-  model <- glm(formula, data = data, family = binomial())
-  
-  # Model summary
-  model_summary <- summary(model)
-  
-  # Odds ratios
-  odds_ratios <- exp(coefficients(model))
-  odds_ratios_ci <- exp(confint(model))
-  
-  # Hosmer-Lemeshow test
-  hl_test <- tryCatch({
-    library(ResourceSelection)
-    hoslem.test(model$y, fitted(model))
+      formula = formula_str,
+      n = n
+    )
+    
+    return(results)
+    
   }, error = function(e) {
-    list(statistic = NA, p.value = NA)
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
   })
-  
-  # Pseudo R-squared measures
-  null_deviance <- model$null.deviance
-  residual_deviance <- model$deviance
-  
-  mcfadden_r2 <- 1 - (residual_deviance / null_deviance)
-  cox_snell_r2 <- 1 - exp((residual_deviance - null_deviance) / nrow(data))
-  nagelkerke_r2 <- cox_snell_r2 / (1 - exp(-null_deviance / nrow(data)))
-  
-  # Classification table
-  predicted_probs <- fitted(model)
-  predicted_class <- ifelse(predicted_probs > 0.5, 1, 0)
-  actual_class <- model$y
-  
-  confusion_matrix <- table(Predicted = predicted_class, Actual = actual_class)
-  accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
-  
-  results <- list(
-    coefficients = tidy(model),
-    odds_ratios = data.frame(
-      term = names(odds_ratios),
-      odds_ratio = odds_ratios,
-      ci_lower = odds_ratios_ci[,1],
-      ci_upper = odds_ratios_ci[,2]
-    ),
-    model_fit = list(
-      aic = AIC(model),
-      bic = BIC(model),
-      log_likelihood = logLik(model)[1],
-      deviance = residual_deviance,
-      null_deviance = null_deviance,
-      df_residual = model$df.residual
-    ),
-    pseudo_r_squared = list(
-      mcfadden = mcfadden_r2,
-      cox_snell = cox_snell_r2,
-      nagelkerke = nagelkerke_r2
-    ),
-    classification = list(
-      confusion_matrix = confusion_matrix,
-      accuracy = accuracy,
-      sensitivity = confusion_matrix[2,2] / sum(confusion_matrix[,2]),
-      specificity = confusion_matrix[1,1] / sum(confusion_matrix[,1])
-    ),
-    hosmer_lemeshow = list(
-      statistic = hl_test$statistic,
-      p_value = hl_test$p.value
-    ),
-    formula = deparse(formula),
-    n_observations = nrow(model$model)
-  )
-  
-  return(results)
 }
 
-#' Perform Multilevel/Hierarchical Linear Modeling
-#' @param data Data frame
-#' @param formula Mixed effects formula
-#' @param group_var Grouping variable
-perform_multilevel_regression <- function(data, formula, group_var) {
-  # Fit multilevel model
-  model <- lmer(formula, data = data)
+# ANOVA with factor conversion
+perform_anova <- function(data, dependent, independent) {
+  # Validate sample size
+  n <- nrow(data)
+  if (n < 3) {
+    return(list(
+      success = FALSE,
+      error = "Insufficient sample size for ANOVA (n < 3)"
+    ))
+  }
   
-  # Model summary
-  model_summary <- summary(model)
+  # Convert grouping variables to factors
+  for (var in independent) {
+    if (!is.factor(data[[var]])) {
+      data[[var]] <- as.factor(data[[var]])
+      cat("[ANOVA] Converted", var, "to factor\n")
+    }
+  }
   
-  # Random effects
-  random_effects <- VarCorr(model)
+  # Build formula
+  formula_str <- paste(dependent, "~", paste(independent, collapse = " * "))
+  formula_obj <- as.formula(formula_str)
   
-  # Fixed effects
-  fixed_effects <- fixef(model)
+  # Fit ANOVA model
+  tryCatch({
+    anova_model <- aov(formula_obj, data = data)
+    anova_summary <- summary(anova_model)
+    
+    # Effect sizes
+    eta_squared <- tryCatch({
+      etaSquared(anova_model)
+    }, error = function(e) NULL)
+    
+    results <- list(
+      success = TRUE,
+      anova_table = anova_summary,
+      effect_sizes = eta_squared,
+      formula = formula_str,
+      n = n
+    )
+    
+    return(results)
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
+}
+
+# T-test with factor conversion
+perform_ttest <- function(data, dependent, independent) {
+  # Validate sample size
+  n <- nrow(data)
+  if (n < 2) {
+    return(list(
+      success = FALSE,
+      error = "Insufficient sample size for t-test (n < 2)"
+    ))
+  }
   
-  # ICC calculation
-  var_components <- as.data.frame(random_effects)
-  between_var <- var_components$vcov[var_components$grp == group_var]
-  within_var <- var_components$vcov[var_components$grp == "Residual"]
-  icc <- between_var / (between_var + within_var)
+  # Convert grouping variable to factor
+  if (!is.factor(data[[independent]])) {
+    data[[independent]] <- as.factor(data[[independent]])
+    cat("[T-test] Converted", independent, "to factor\n")
+  }
   
-  # Model comparison with null model
-  null_formula <- update(formula, . ~ 1 + (1 | !!sym(group_var)))
-  null_model <- lmer(null_formula, data = data)
+  # Check number of groups
+  groups <- levels(data[[independent]])
+  if (length(groups) != 2) {
+    return(list(
+      success = FALSE,
+      error = paste0("T-test requires exactly 2 groups, found ", length(groups))
+    ))
+  }
   
-  model_comparison <- anova(null_model, model)
-  
-  results <- list(
-    fixed_effects = data.frame(
-      term = names(fixed_effects),
-      estimate = fixed_effects,
-      std_error = model_summary$coefficients[,"Std. Error"],
-      t_value = model_summary$coefficients[,"t value"]
-    ),
-    random_effects = random_effects,
-    variance_components = var_components,
-    icc = icc,
-    model_fit = list(
-      aic = AIC(model),
-      bic = BIC(model),
-      log_likelihood = logLik(model)[1],
-      deviance = deviance(model)
-    ),
-    model_comparison = model_comparison,
-    formula = deparse(formula),
-    group_variable = group_var,
-    n_observations = nrow(data),
-    n_groups = length(unique(data[[group_var]]))
-  )
-  
-  return(results)
+  # Perform t-test
+  tryCatch({
+    t_result <- t.test(data[[dependent]] ~ data[[independent]])
+    
+    # Effect size (Cohen's d)
+    group1 <- data[data[[independent]] == groups[1], dependent]
+    group2 <- data[data[[independent]] == groups[2], dependent]
+    
+    cohens_d <- (mean(group1, na.rm = TRUE) - mean(group2, na.rm = TRUE)) / 
+                sqrt(((length(group1) - 1) * var(group1, na.rm = TRUE) + 
+                      (length(group2) - 1) * var(group2, na.rm = TRUE)) / 
+                     (length(group1) + length(group2) - 2))
+    
+    results <- list(
+      success = TRUE,
+      t_statistic = t_result$statistic,
+      df = t_result$parameter,
+      p_value = t_result$p.value,
+      confidence_interval = t_result$conf.int,
+      mean_difference = diff(t_result$estimate),
+      cohens_d = cohens_d,
+      groups = groups,
+      n = n
+    )
+    
+    return(results)
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
 }

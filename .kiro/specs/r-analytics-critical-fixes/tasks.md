@@ -57,6 +57,7 @@
     - Create `cleanup_expired()` function
     - Iterate through all stored data
 
+
     - Remove entries where TTL has expired
 
     - Log number of removed entries
@@ -79,12 +80,16 @@
     - Handle OPTIONS preflight requests
     - _Requirements: 3.1, 3.2, 3.5_
   
+
+
+
   - [ ] 3.2 Create authentication filter
     - Add @filter auth to analysis_server.R
     - Skip authentication for /health endpoint
     - Check X-API-Key header in requests
     - Validate against ANALYTICS_API_KEY environment variable
     - Return 401 for invalid or missing API keys
+
     - _Requirements: 3.3, 3.4_
   
   - [ ] 3.3 Create error handler filter
@@ -94,6 +99,7 @@
     - Log errors with endpoint and timestamp
     - _Requirements: 9.1, 9.2, 9.3_
 
+
 - [ ] 4. Add safe helper functions for edge cases
   - [ ] 4.1 Create safe z-score calculation
     - Update `calculate_descriptive_stats()` in descriptive-stats.R
@@ -102,6 +108,7 @@
     - Calculate z-scores only when sd > 0
     - _Requirements: 4.1, 4.4_
   
+
   - [ ] 4.2 Create safe normality test
     - Create `test_normality_safe()` function
     - Check sample size >= 3

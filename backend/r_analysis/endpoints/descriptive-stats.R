@@ -1,91 +1,209 @@
-# Descriptive Statistics Endpoints
-# Functions for basic descriptive analysis
+# Descriptive Statistics Helper Functions
+# Safe implementations with edge case handling
 
-#' Calculate descriptive statistics
-#' @param data Data frame
-#' @param variables Vector of variable names
-calculate_descriptive_stats <- function(data, variables = NULL) {
-  if (is.null(variables)) {
-    variables <- names(data)
-  }
-  
-  # Select only numeric variables
-  numeric_vars <- variables[sapply(data[variables], is.numeric)]
-  categorical_vars <- variables[sapply(data[variables], function(x) is.factor(x) || is.character(x))]
-  
+library(psych)
+
+# Safe descriptive statistics with edge case handling
+calculate_descriptive_stats <- function(data, variables) {
   results <- list()
   
-  # Numeric variables
-  if (length(numeric_vars) > 0) {
-    numeric_stats <- data[numeric_vars] %>%
-      summarise_all(list(
-        mean = ~mean(., na.rm = TRUE),
-        median = ~median(., na.rm = TRUE),
-        sd = ~sd(., na.rm = TRUE),
-        min = ~min(., na.rm = TRUE),
-        max = ~max(., na.rm = TRUE),
-        q25 = ~quantile(., 0.25, na.rm = TRUE),
-        q75 = ~quantile(., 0.75, na.rm = TRUE),
-        missing = ~sum(is.na(.)),
-        n = ~sum(!is.na(.))
-      ))
-    
-    results$numeric <- numeric_stats
-  }
-  
-  # Categorical variables
-  if (length(categorical_vars) > 0) {
-    categorical_stats <- list()
-    for (var in categorical_vars) {
-      freq_table <- table(data[[var]], useNA = "ifany")
-      categorical_stats[[var]] <- list(
-        frequencies = as.list(freq_table),
-        missing = sum(is.na(data[[var]])),
-        unique_values = length(unique(data[[var]][!is.na(data[[var]])]))
+  for (var in variables) {
+    # Check if variable exists
+    if (!var %in% names(data)) {
+      results[[var]] <- list(
+        success = FALSE,
+        error = "Variable not found"
       )
+      next
     }
-    results$categorical <- categorical_stats
+    
+    x <- data[[var]]
+    
+    # Remove NA
+    x_clean <- x[!is.na(x)]
+    
+    # Check sample size
+    if (length(x_clean) < 1) {
+      results[[var]] <- list(
+        success = FALSE,
+        error = "No valid observations"
+      )
+      next
+    }
+    
+    # Calculate basic stats
+    stats <- list(
+      n = length(x_clean),
+      mean = mean(x_clean),
+      median = median(x_clean),
+      sd = sd(x_clean),
+      min = min(x_clean),
+      max = max(x_clean)
+    )
+    
+    # Check for zero variance
+    if (is.na(stats$sd) || stats$sd == 0) {
+      stats$warning <- "Zero variance detected"
+      stats$z_scores <- rep(NA, length(x_clean))
+    } else {
+      # Calculate z-scores safely
+      stats$z_scores <- (x_clean - stats$mean) / stats$sd
+    }
+    
+    # Normality test (safe)
+    stats$normality <- test_normality_safe(x_clean)
+    
+    # Outlier detection (safe)
+    stats$outliers <- detect_outliers_safe(x, x_clean)
+    
+    results[[var]] <- list(
+      success = TRUE,
+      data = stats
+    )
   }
   
   return(results)
 }
 
-#' Generate correlation matrix
-#' @param data Data frame
-#' @param variables Vector of variable names
-#' @param method Correlation method ("pearson", "spearman", "kendall")
-calculate_correlation_matrix <- function(data, variables = NULL, method = "pearson") {
-  if (is.null(variables)) {
-    variables <- names(data)[sapply(data, is.numeric)]
+# Safe normality test
+test_normality_safe <- function(x_clean) {
+  # Check sample size
+  if (length(x_clean) < 3) {
+    return(list(
+      test = "insufficient_data",
+      p_value = NA,
+      message = "Sample size < 3",
+      normal = NA
+    ))
   }
   
-  # Select only numeric variables
-  numeric_data <- data[variables][sapply(data[variables], is.numeric)]
-  
-  if (ncol(numeric_data) < 2) {
-    stop("Need at least 2 numeric variables for correlation analysis")
+  # Check for constant values
+  if (length(unique(x_clean)) == 1) {
+    return(list(
+      test = "constant_variable",
+      p_value = NA,
+      message = "All values are identical",
+      normal = NA
+    ))
   }
   
-  # Calculate correlation matrix
-  cor_matrix <- cor(numeric_data, use = "complete.obs", method = method)
+  # Check sd
+  sd_val <- sd(x_clean)
+  if (is.na(sd_val) || sd_val == 0) {
+    return(list(
+      test = "zero_variance",
+      p_value = NA,
+      message = "Standard deviation is zero",
+      normal = NA
+    ))
+  }
   
-  # Calculate p-values
-  cor_test_results <- list()
-  n_vars <- ncol(numeric_data)
-  p_matrix <- matrix(NA, n_vars, n_vars)
-  colnames(p_matrix) <- rownames(p_matrix) <- colnames(numeric_data)
+  # Run Shapiro-Wilk test
+  tryCatch({
+    result <- shapiro.test(x_clean)
+    return(list(
+      test = "shapiro_wilk",
+      statistic = result$statistic,
+      p_value = result$p.value,
+      normal = result$p.value > 0.05,
+      message = if (result$p.value > 0.05) "Data appears normally distributed" else "Data may not be normally distributed"
+    ))
+  }, error = function(e) {
+    return(list(
+      test = "error",
+      p_value = NA,
+      error = e$message,
+      normal = NA
+    ))
+  })
+}
+
+# Safe outlier detection with correct index mapping
+detect_outliers_safe <- function(x_original, x_clean) {
+  # Check for zero variance
+  sd_val <- sd(x_clean)
+  if (is.na(sd_val) || sd_val == 0) {
+    return(list(
+      indices = integer(0),
+      values = numeric(0),
+      z_scores = numeric(0),
+      warning = "Zero variance - no outliers detected"
+    ))
+  }
   
-  for (i in 1:(n_vars-1)) {
-    for (j in (i+1):n_vars) {
-      test_result <- cor.test(numeric_data[,i], numeric_data[,j], method = method)
-      p_matrix[i,j] <- p_matrix[j,i] <- test_result$p.value
+  # Calculate z-scores
+  z_scores <- (x_clean - mean(x_clean)) / sd_val
+  
+  # Find outliers (|z| > 3)
+  outlier_positions <- which(abs(z_scores) > 3)
+  
+  if (length(outlier_positions) == 0) {
+    return(list(
+      indices = integer(0),
+      values = numeric(0),
+      z_scores = numeric(0),
+      count = 0
+    ))
+  }
+  
+  # Map back to original indices
+  valid_indices <- which(!is.na(x_original))
+  outlier_indices <- valid_indices[outlier_positions]
+  
+  return(list(
+    indices = outlier_indices,
+    values = x_original[outlier_indices],
+    z_scores = z_scores[outlier_positions],
+    count = length(outlier_indices)
+  ))
+}
+
+# Safe correlation analysis
+calculate_correlation_safe <- function(data, variables) {
+  # Check for zero variance variables
+  zero_var_vars <- c()
+  valid_vars <- c()
+  
+  for (var in variables) {
+    if (var %in% names(data)) {
+      x <- data[[var]]
+      x_clean <- x[!is.na(x)]
+      
+      if (length(x_clean) > 0) {
+        sd_val <- sd(x_clean)
+        if (is.na(sd_val) || sd_val == 0) {
+          zero_var_vars <- c(zero_var_vars, var)
+          cat("[Correlation] Warning: Variable", var, "has zero variance, excluding\n")
+        } else {
+          valid_vars <- c(valid_vars, var)
+        }
+      }
     }
   }
   
-  return(list(
-    correlation_matrix = cor_matrix,
-    p_values = p_matrix,
-    method = method,
-    n_observations = nrow(numeric_data)
-  ))
+  if (length(valid_vars) < 2) {
+    return(list(
+      success = FALSE,
+      error = "Need at least 2 variables with non-zero variance",
+      excluded_variables = zero_var_vars
+    ))
+  }
+  
+  # Calculate correlation matrix
+  tryCatch({
+    cor_data <- data[, valid_vars, drop = FALSE]
+    cor_matrix <- cor(cor_data, use = "pairwise.complete.obs")
+    
+    return(list(
+      success = TRUE,
+      correlation_matrix = cor_matrix,
+      variables_used = valid_vars,
+      excluded_variables = zero_var_vars
+    ))
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
 }

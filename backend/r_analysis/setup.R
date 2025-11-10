@@ -5,6 +5,7 @@
 required_packages <- c(
   "plumber",        # API framework
   "jsonlite",       # JSON handling
+  "later",          # Scheduled execution
   "readr",          # Data reading
   "dplyr",          # Data manipulation
   "psych",          # Psychological statistics

@@ -1,141 +1,171 @@
-# Factor Analysis Endpoints
-# Functions for exploratory and confirmatory factor analysis
+# Factor Analysis Helper Functions
+# EFA and CFA with configurable bootstrap
 
 library(psych)
 library(lavaan)
 library(GPArotation)
 
-#' Perform Exploratory Factor Analysis (EFA)
-#' @param data Data frame
-#' @param variables Vector of variable names
-#' @param n_factors Number of factors (if NULL, will determine optimal)
-#' @param rotation Rotation method ("varimax", "promax", "oblimin")
+# EFA with sample size validation
 perform_efa <- function(data, variables, n_factors = NULL, rotation = "varimax") {
-  # Select variables
-  analysis_data <- data[variables]
+  # Validate sample size
+  n <- nrow(data)
+  p <- length(variables)
+  min_n <- p * 3
   
-  # Remove missing values
-  analysis_data <- na.omit(analysis_data)
-  
-  if (nrow(analysis_data) < 50) {
-    stop("Insufficient sample size for factor analysis (minimum 50 cases)")
+  if (n < min_n) {
+    return(list(
+      success = FALSE,
+      error = paste0("Insufficient sample size. Need at least ", min_n, " observations for ", p, " variables (3:1 ratio)"),
+      required_n = min_n,
+      actual_n = n
+    ))
   }
   
-  # Kaiser-Meyer-Olkin test
-  kmo_result <- KMO(analysis_data)
+  # Extract data
+  efa_data <- data[, variables, drop = FALSE]
+  efa_data <- na.omit(efa_data)
   
-  # Bartlett's test of sphericity
-  bartlett_result <- cortest.bartlett(analysis_data)
-  
-  # Determine optimal number of factors if not specified
-  if (is.null(n_factors)) {
-    # Parallel analysis
-    pa_result <- fa.parallel(analysis_data, plot = FALSE)
-    n_factors <- pa_result$nfact
-  }
-  
-  # Perform EFA
-  efa_result <- fa(analysis_data, 
-                   nfactors = n_factors, 
-                   rotate = rotation, 
-                   fm = "ml")  # Maximum likelihood
-  
-  # Extract results
-  results <- list(
-    loadings = unclass(efa_result$loadings),
-    communalities = efa_result$communality,
-    eigenvalues = efa_result$values,
-    variance_explained = efa_result$Vaccounted,
-    fit_indices = list(
-      chi_square = efa_result$STATISTIC,
-      df = efa_result$dof,
-      p_value = efa_result$PVAL,
-      rmsea = efa_result$RMSEA[1],
-      tli = efa_result$TLI,
-      bic = efa_result$BIC
-    ),
-    kmo = list(
-      overall = kmo_result$MSA,
-      individual = kmo_result$MSAi
-    ),
-    bartlett = list(
-      chi_square = bartlett_result$chisq,
-      df = bartlett_result$df,
-      p_value = bartlett_result$p.value
-    ),
-    n_factors = n_factors,
-    rotation = rotation,
-    n_observations = nrow(analysis_data)
-  )
-  
-  return(results)
-}
-
-#' Perform Confirmatory Factor Analysis (CFA)
-#' @param data Data frame
-#' @param model_syntax Lavaan model syntax
-perform_cfa <- function(data, model_syntax) {
-  # Fit CFA model
-  cfa_fit <- cfa(model_syntax, data = data, estimator = "ML")
-  
-  # Extract fit indices
-  fit_measures <- fitMeasures(cfa_fit, c("chisq", "df", "pvalue", "cfi", "tli", 
-                                         "rmsea", "rmsea.ci.lower", "rmsea.ci.upper",
-                                         "srmr", "aic", "bic"))
-  
-  # Parameter estimates
-  param_estimates <- parameterEstimates(cfa_fit, standardized = TRUE)
-  
-  # Factor loadings
-  loadings <- param_estimates[param_estimates$op == "=~", ]
-  
-  # Reliability analysis
-  reliability_results <- list()
-  
-  # Extract factor structure for reliability
-  factor_items <- split(loadings$rhs, loadings$lhs)
-  
-  for (factor_name in names(factor_items)) {
-    items <- factor_items[[factor_name]]
-    if (length(items) > 1) {
-      alpha_result <- alpha(data[items])
-      reliability_results[[factor_name]] <- list(
-        cronbach_alpha = alpha_result$total$raw_alpha,
-        composite_reliability = calculate_composite_reliability(loadings[loadings$lhs == factor_name, ])
-      )
+  # Check for zero variance
+  zero_var_vars <- c()
+  for (var in variables) {
+    sd_val <- sd(efa_data[[var]], na.rm = TRUE)
+    if (is.na(sd_val) || sd_val == 0) {
+      zero_var_vars <- c(zero_var_vars, var)
     }
   }
   
-  results <- list(
-    fit = list(
-      chisq = fit_measures["chisq"],
-      df = fit_measures["df"],
-      pvalue = fit_measures["pvalue"],
-      cfi = fit_measures["cfi"],
-      tli = fit_measures["tli"],
-      rmsea = fit_measures["rmsea"],
-      rmsea_ci_lower = fit_measures["rmsea.ci.lower"],
-      rmsea_ci_upper = fit_measures["rmsea.ci.upper"],
-      srmr = fit_measures["srmr"],
-      aic = fit_measures["aic"],
-      bic = fit_measures["bic"]
-    ),
-    loadings = loadings,
-    parameter_estimates = param_estimates,
-    reliability = reliability_results,
-    model_syntax = model_syntax,
-    n_observations = nrow(data)
-  )
+  if (length(zero_var_vars) > 0) {
+    return(list(
+      success = FALSE,
+      error = "Variables with zero variance detected",
+      variables = zero_var_vars
+    ))
+  }
   
-  return(results)
+  # Perform EFA
+  tryCatch({
+    fa_result <- fa(efa_data, nfactors = n_factors, rotate = rotation)
+    
+    results <- list(
+      success = TRUE,
+      loadings = as.matrix(fa_result$loadings),
+      communalities = fa_result$communality,
+      variance_explained = fa_result$Vaccounted,
+      fit_indices = list(
+        rms = fa_result$rms,
+        tli = fa_result$TLI,
+        rmsea = fa_result$RMSEA
+      ),
+      n_factors = n_factors,
+      rotation = rotation,
+      n = nrow(efa_data)
+    )
+    
+    return(results)
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
 }
 
-#' Calculate composite reliability
-calculate_composite_reliability <- function(loadings) {
-  std_loadings <- loadings$std.all
-  sum_loadings_sq <- sum(std_loadings^2)
-  sum_error_var <- sum(1 - std_loadings^2)
+# CFA with configurable bootstrap
+perform_cfa <- function(data, model_syntax, bootstrap = FALSE, bootstrap_samples = 1000) {
+  # Validate bootstrap samples
+  if (bootstrap && bootstrap_samples > 2000) {
+    cat("[CFA] Warning: High bootstrap samples (", bootstrap_samples, ") may take several minutes\n")
+  }
   
-  cr <- sum_loadings_sq / (sum_loadings_sq + sum_error_var)
-  return(cr)
+  if (bootstrap && bootstrap_samples > 5000) {
+    return(list(
+      success = FALSE,
+      error = "Bootstrap samples exceeds maximum of 5000"
+    ))
+  }
+  
+  # Validate sample size
+  n <- nrow(data)
+  if (n < 50) {
+    cat("[CFA] Warning: Small sample size (n =", n, ") may affect model fit\n")
+  }
+  
+  # Fit CFA model
+  tryCatch({
+    if (bootstrap) {
+      fit <- cfa(model_syntax, data = data, se = "bootstrap", bootstrap = bootstrap_samples)
+    } else {
+      fit <- cfa(model_syntax, data = data)
+    }
+    
+    # Extract fit indices
+    fit_measures <- fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "tli", "rmsea", "srmr"))
+    
+    # Parameter estimates
+    param_estimates <- parameterEstimates(fit, standardized = TRUE)
+    
+    results <- list(
+      success = TRUE,
+      fit_indices = as.list(fit_measures),
+      parameter_estimates = param_estimates,
+      bootstrap_used = bootstrap,
+      bootstrap_samples = if (bootstrap) bootstrap_samples else 0,
+      n = n
+    )
+    
+    return(results)
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
+}
+
+# Reliability analysis (Cronbach's Alpha)
+calculate_reliability <- function(data, items) {
+  # Validate sample size
+  n <- nrow(data)
+  if (n < 2) {
+    return(list(
+      success = FALSE,
+      error = "Insufficient sample size for reliability analysis (n < 2)"
+    ))
+  }
+  
+  # Extract items
+  scale_data <- data[, items, drop = FALSE]
+  scale_data <- na.omit(scale_data)
+  
+  if (ncol(scale_data) < 2) {
+    return(list(
+      success = FALSE,
+      error = "Need at least 2 items for reliability analysis"
+    ))
+  }
+  
+  # Calculate Cronbach's alpha
+  tryCatch({
+    alpha_result <- alpha(scale_data)
+    
+    results <- list(
+      success = TRUE,
+      cronbach_alpha = alpha_result$total$raw_alpha,
+      standardized_alpha = alpha_result$total$std.alpha,
+      n_items = ncol(scale_data),
+      n_cases = nrow(scale_data),
+      item_statistics = alpha_result$item.stats,
+      alpha_if_deleted = alpha_result$alpha.drop
+    )
+    
+    return(results)
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE,
+      error = e$message
+    ))
+  })
 }
