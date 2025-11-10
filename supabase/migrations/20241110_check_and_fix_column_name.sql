@@ -8,25 +8,47 @@
 
 -- Check if analysis_project_id column exists and rename it to project_id
 DO $$
+DECLARE
+  v_column_name TEXT;
 BEGIN
-  -- Check if analysis_project_id exists
-  IF EXISTS (
-    SELECT 1 
-    FROM information_schema.columns 
-    WHERE table_schema = 'public' 
+  -- First, find what column actually exists for the project reference
+  SELECT column_name INTO v_column_name
+  FROM information_schema.columns 
+  WHERE table_schema = 'public' 
     AND table_name = 'analysis_variables' 
-    AND column_name = 'analysis_project_id'
-  ) THEN
-    -- Rename the column
+    AND column_name IN ('project_id', 'analysis_project_id')
+  LIMIT 1;
+  
+  IF v_column_name IS NULL THEN
+    RAISE NOTICE 'No project reference column found! Checking all columns...';
+    
+    -- Show all columns for debugging
+    FOR v_column_name IN 
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+        AND table_name = 'analysis_variables'
+      ORDER BY ordinal_position
+    LOOP
+      RAISE NOTICE 'Found column: %', v_column_name;
+    END LOOP;
+    
+    RAISE EXCEPTION 'Cannot find project reference column in analysis_variables table';
+  END IF;
+  
+  RAISE NOTICE 'Found project reference column: %', v_column_name;
+  
+  -- If it's analysis_project_id, rename it
+  IF v_column_name = 'analysis_project_id' THEN
     ALTER TABLE analysis_variables 
     RENAME COLUMN analysis_project_id TO project_id;
     
     RAISE NOTICE 'Renamed analysis_project_id to project_id';
-  ELSE
-    RAISE NOTICE 'Column analysis_project_id does not exist, no action needed';
+  ELSIF v_column_name = 'project_id' THEN
+    RAISE NOTICE 'Column already named project_id - no action needed';
   END IF;
   
-  -- Verify project_id exists
+  -- Final verification
   IF EXISTS (
     SELECT 1 
     FROM information_schema.columns 
@@ -34,7 +56,7 @@ BEGIN
     AND table_name = 'analysis_variables' 
     AND column_name = 'project_id'
   ) THEN
-    RAISE NOTICE 'Column project_id exists - OK';
+    RAISE NOTICE '✓ Column project_id exists - OK';
   ELSE
     RAISE EXCEPTION 'Column project_id does not exist after migration!';
   END IF;
