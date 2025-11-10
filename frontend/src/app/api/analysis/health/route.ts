@@ -30,20 +30,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load CSV file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('analysis-csv-files')
-      .download((project as any).csv_file_path);
+    // Load CSV file from storage or inline data
+    let fileContent: string;
+    const csvFilePath = (project as any).csv_file_path;
+    
+    if (csvFilePath.startsWith('inline:')) {
+      // CSV stored inline in database
+      fileContent = csvFilePath.substring(7); // Remove 'inline:' prefix
+      console.log('[Health] Loading CSV from inline storage');
+    } else {
+      // CSV stored in Supabase Storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('analysis-csv-files')
+        .download(csvFilePath);
 
-    if (downloadError || !fileData) {
-      return NextResponse.json(
-        { error: 'Failed to load CSV file' },
-        { status: 500 }
-      );
+      if (downloadError || !fileData) {
+        return NextResponse.json(
+          { error: 'Failed to load CSV file from storage' },
+          { status: 500 }
+        );
+      }
+
+      fileContent = await fileData.text();
+      console.log('[Health] Loading CSV from Supabase Storage');
     }
-
-    // Parse CSV
-    const fileContent = await fileData.text();
     const parsed = Papa.parse(fileContent, {
       header: true,
       dynamicTyping: true,

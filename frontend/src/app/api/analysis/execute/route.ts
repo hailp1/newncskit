@@ -52,17 +52,27 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', projectId);
 
-    // Load CSV file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('analysis-csv-files')
-      .download((project as any).csv_file_path);
+    // Load CSV file from storage or inline data
+    let fileContent: string;
+    const csvFilePath = (project as any).csv_file_path;
+    
+    if (csvFilePath.startsWith('inline:')) {
+      // CSV stored inline in database
+      fileContent = csvFilePath.substring(7); // Remove 'inline:' prefix
+      console.log('[Execute] Loading CSV from inline storage');
+    } else {
+      // CSV stored in Supabase Storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('analysis-csv-files')
+        .download(csvFilePath);
 
-    if (downloadError || !fileData) {
-      throw new Error('Failed to download CSV file');
+      if (downloadError || !fileData) {
+        throw new Error('Failed to download CSV file from storage');
+      }
+
+      fileContent = await fileData.text();
+      console.log('[Execute] Loading CSV from Supabase Storage');
     }
-
-    // Parse CSV
-    const fileContent = await fileData.text();
     const parsed = Papa.parse(fileContent, {
       header: true,
       dynamicTyping: true,

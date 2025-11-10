@@ -114,25 +114,33 @@ export async function POST(request: NextRequest) {
       healthReport = null;
     }
 
-    // Upload CSV file to Supabase Storage
+    // Try to upload CSV file to Supabase Storage
     const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from('analysis-csv-files')
-      .upload(fileName, file, {
-        contentType: 'text/csv',
-        upsert: false,
-      });
+    let csvFilePath = fileName;
+    let storageUploadSuccess = false;
+    
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('analysis-csv-files')
+        .upload(fileName, file, {
+          contentType: 'text/csv',
+          upsert: false,
+        });
 
-    if (uploadError) {
-      console.error(`[Upload] ${correlationId}: Storage upload failed:`, uploadError);
-      return createErrorResponse(
-        'Failed to upload file to storage',
-        500,
-        correlationId
-      );
+      if (uploadError) {
+        console.warn(`[Upload] ${correlationId}: Storage upload failed (bucket may not exist):`, uploadError);
+        console.log(`[Upload] ${correlationId}: Will store CSV content in database instead`);
+        // Store CSV content in database as fallback
+        csvFilePath = `inline:${text.substring(0, 1000000)}`; // Store up to 1MB inline
+      } else {
+        storageUploadSuccess = true;
+        console.log(`[Upload] ${correlationId}: File uploaded to storage: ${fileName}`);
+      }
+    } catch (storageError) {
+      console.warn(`[Upload] ${correlationId}: Storage error:`, storageError);
+      console.log(`[Upload] ${correlationId}: Will store CSV content in database instead`);
+      csvFilePath = `inline:${text.substring(0, 1000000)}`;
     }
-
-    console.log(`[Upload] ${correlationId}: File uploaded to storage: ${fileName}`);
 
     // Create project in database
     const { data: project, error: projectError } = await (supabase
@@ -140,8 +148,8 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: session.user.id,
         name: name || file.name.replace('.csv', ''),
-        description: `Uploaded on ${new Date().toLocaleDateString()}`,
-        csv_file_path: fileName,
+        description: `Uploaded on ${new Date().toLocaleDateString()}${storageUploadSuccess ? '' : ' (CSV stored inline)'}`,
+        csv_file_path: csvFilePath,
         row_count: lines.length - 1,
         column_count: csvHeaders.length,
         status: 'uploaded',
