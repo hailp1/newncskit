@@ -27,6 +27,23 @@ const ModelPreview = memo(function ModelPreview({
   groups, 
   validationResult 
 }: ModelPreviewProps) {
+  // Check if any roles are assigned (not 'none')
+  const assignedRoles = useMemo(() => {
+    return roleTags.filter(t => t.role !== 'none');
+  }, [roleTags]);
+
+  // Early return if no roles assigned
+  if (roleTags.length === 0 || assignedRoles.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-2">Analysis Model Preview</h3>
+        <p className="text-sm text-gray-600">
+          Assign roles to variables above to preview your analysis model
+        </p>
+      </div>
+    );
+  }
+
   // Task 16: Memoize model preview diagram (Requirement 7.4)
   const mermaidDiagram = useMemo(() => {
     return generateMermaidDiagram(roleTags, groups);
@@ -46,9 +63,13 @@ const ModelPreview = memo(function ModelPreview({
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-red-600">
+          <div className="flex items-center gap-2 text-amber-600">
             <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Model configuration incomplete</span>
+            <span className="font-medium">
+              {assignedRoles.length > 0 
+                ? 'Configure more roles to enable analysis' 
+                : 'Assign roles to variables to begin'}
+            </span>
           </div>
         )}
       </div>

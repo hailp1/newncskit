@@ -293,6 +293,22 @@ export default function VariableGroupingPanel({
     setSuggestions(suggestions.filter(s => s.suggestedName !== suggestion.suggestedName));
   };
 
+  // Accept all suggestions at once
+  const acceptAllSuggestions = () => {
+    const newGroups = suggestions.map((suggestion, idx) => ({
+      id: `temp-${Date.now()}-${idx}`,
+      name: suggestion.suggestedName,
+      variables: suggestion.variables,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isCustom: false,
+    }));
+
+    setGroups([...groups, ...newGroups]);
+    setSuggestions([]);
+    showSuccess('All Accepted', `${newGroups.length} groups created from suggestions`);
+  };
+
   // Create new group
   const createNewGroup = () => {
     const newGroup: VariableGroup = {
@@ -517,10 +533,21 @@ export default function VariableGroupingPanel({
         </div>
       ) : suggestions.length > 0 ? (
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 animate-in fade-in slide-in-from-top-4 duration-500">
-          <h3 className="flex items-center gap-2 font-semibold mb-3 text-gray-900">
-            <Sparkles className="h-5 w-5 text-blue-600 animate-pulse" />
-            Suggested Groups ({suggestions.length})
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+              <Sparkles className="h-5 w-5 text-blue-600 animate-pulse" />
+              Suggested Groups ({suggestions.length})
+            </h3>
+            {suggestions.length > 1 && (
+              <button
+                onClick={acceptAllSuggestions}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+              >
+                <Check className="h-4 w-4" />
+                Accept All
+              </button>
+            )}
+          </div>
           <p className="text-sm text-gray-600 mb-4">
             We found these grouping patterns in your variables. Accept or reject each suggestion.
           </p>
@@ -599,7 +626,7 @@ export default function VariableGroupingPanel({
       />
 
       {/* Role Tagging Section (Task 6.5: Requirements 10.1, 13.1-13.6) */}
-      {groups.length > 0 && (
+      {variables.length > 0 && (
         <div className="mt-8 space-y-4">
           <div className="border-t pt-6">
             <h3 className="text-xl font-semibold mb-2 text-gray-900">Variable Roles</h3>
@@ -608,55 +635,88 @@ export default function VariableGroupingPanel({
             </p>
 
             {/* Groups with role selectors */}
-            <div className="space-y-4">
-              {groups.map(group => {
-                const groupRoleTag = roleTags.find(t => 
-                  group.variables && group.variables.includes(t.columnName)
-                );
-                const groupSuggestion = roleSuggestions.find(s => 
-                  group.variables && group.variables.includes(s.columnName)
-                );
+            {groups.length > 0 && (
+              <div className="space-y-4 mb-6">
+                <h4 className="font-medium text-gray-700">Grouped Variables</h4>
+                <div className="space-y-4">
+                {groups.map(group => {
+                  const groupRoleTag = roleTags.find(t => 
+                    group.variables && group.variables.includes(t.columnName)
+                  );
+                  const groupSuggestion = roleSuggestions.find(s => 
+                    group.variables && group.variables.includes(s.columnName)
+                  );
 
-                return (
-                  <div key={group.id} className="p-4 border border-gray-200 rounded-lg bg-white">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">{group.name}</h4>
-                      <RoleTagSelector
-                        entityId={group.id}
-                        entityName={group.name}
-                        currentRole={groupRoleTag?.role || 'none'}
-                        suggestion={groupSuggestion}
-                        onRoleChange={(role) => handleGroupRoleChange(group.id, role)}
-                      />
+                  return (
+                    <div key={group.id} className="p-4 border border-gray-200 rounded-lg bg-white">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-gray-900">{group.name}</h4>
+                        <RoleTagSelector
+                          entityId={group.id}
+                          entityName={group.name}
+                          currentRole={groupRoleTag?.role || 'none'}
+                          suggestion={groupSuggestion}
+                          onRoleChange={(role) => handleGroupRoleChange(group.id, role)}
+                        />
+                      </div>
+                      
+                      {/* Individual variables in group */}
+                      <div className="ml-4 space-y-2">
+                        {group.variables?.map(varName => {
+                          const variable = variables.find(v => v.columnName === varName);
+                          if (!variable) return null;
+                          
+                          const roleTag = roleTags.find(t => t.variableId === variable.id);
+                          const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
+                          
+                          return (
+                            <div key={variable.id} className="flex items-center justify-between py-2">
+                              <span className="text-sm text-gray-700">{varName}</span>
+                              <RoleTagSelector
+                                entityId={variable.id}
+                                entityName={varName}
+                                currentRole={roleTag?.role || 'none'}
+                                suggestion={suggestion}
+                                onRoleChange={(role) => handleRoleChange(variable.id, role)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    
-                    {/* Individual variables in group */}
-                    <div className="ml-4 space-y-2">
-                      {group.variables?.map(varName => {
-                        const variable = variables.find(v => v.columnName === varName);
-                        if (!variable) return null;
-                        
-                        const roleTag = roleTags.find(t => t.variableId === variable.id);
-                        const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
-                        
-                        return (
-                          <div key={variable.id} className="flex items-center justify-between py-2">
-                            <span className="text-sm text-gray-700">{varName}</span>
-                            <RoleTagSelector
-                              entityId={variable.id}
-                              entityName={varName}
-                              currentRole={roleTag?.role || 'none'}
-                              suggestion={suggestion}
-                              onRoleChange={(role) => handleRoleChange(variable.id, role)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
+                  );
+                })}
+                </div>
+              </div>
+            )}
+
+            {/* Ungrouped Variables with role selectors */}
+            {ungroupedVariables.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-700">Ungrouped Variables</h4>
+                <div className="p-4 border border-gray-200 rounded-lg bg-white">
+                  <div className="space-y-2">
+                    {ungroupedVariables.map(variable => {
+                      const roleTag = roleTags.find(t => t.variableId === variable.id);
+                      const suggestion = roleSuggestions.find(s => s.variableId === variable.id);
+                      
+                      return (
+                        <div key={variable.id} className="flex items-center justify-between py-2">
+                          <span className="text-sm text-gray-700">{variable.columnName}</span>
+                          <RoleTagSelector
+                            entityId={variable.id}
+                            entityName={variable.columnName}
+                            currentRole={roleTag?.role || 'none'}
+                            suggestion={suggestion}
+                            onRoleChange={(role) => handleRoleChange(variable.id, role)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </div>
+            )}
 
             {/* Model Preview (Task 6.6: Requirements 14.1-14.5) */}
             <div className="mt-6">
