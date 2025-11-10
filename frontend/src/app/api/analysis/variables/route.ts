@@ -1,17 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  generateCorrelationId,
+  logRequest,
+} from '@/lib/api-middleware';
+import { getSupabaseClient } from '../lib/supabase';
+import { toApiError } from '../lib/errors';
 
 export async function GET(request: NextRequest) {
+  const correlationId = generateCorrelationId();
+
   try {
-    const supabase = await createClient();
+    logRequest(request, correlationId);
+
+    const supabase = await getSupabaseClient(correlationId);
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
     // Load variables from database
@@ -25,9 +33,10 @@ export async function GET(request: NextRequest) {
     if (variablesError) {
       console.error('[Variables] Database error:', variablesError);
       console.error('[Variables] Error details:', JSON.stringify(variablesError, null, 2));
-      return NextResponse.json(
-        { error: `Failed to load variables: ${variablesError.message || 'Unknown error'}` },
-        { status: 500 }
+      return createErrorResponse(
+        `Failed to load variables: ${variablesError.message || 'Unknown error'}`,
+        500,
+        correlationId
       );
     }
 
@@ -48,16 +57,11 @@ export async function GET(request: NextRequest) {
       createdAt: v.created_at
     }));
 
-    return NextResponse.json({
-      success: true,
-      variables,
-    });
+    return createSuccessResponse({ variables }, correlationId);
 
   } catch (error) {
-    console.error('Load variables error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to load variables' },
-      { status: 500 }
-    );
+    const apiError = toApiError(error, 'Failed to load variables');
+    console.error(`[Variables] ${correlationId}: Error`, apiError, { cause: apiError.cause });
+    return createErrorResponse(apiError, apiError.status, correlationId);
   }
 }

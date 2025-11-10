@@ -1,19 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  generateCorrelationId,
+  logRequest,
+} from '@/lib/api-middleware';
 import { DataHealthService } from '@/services/data-health.service';
-import Papa from 'papaparse';
+import { downloadCsvFile } from '../lib/storage';
+import { parseCsvWithPapa } from '../lib/parser';
+import { getSupabaseClient } from '../lib/supabase';
+import { toApiError } from '../lib/errors';
 
 export async function POST(request: NextRequest) {
+  const correlationId = generateCorrelationId();
+
   try {
-    const supabase = await createClient();
+    logRequest(request, correlationId);
+
+    const supabase = await getSupabaseClient(correlationId);
     const body = await request.json();
     const { projectId } = body;
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
     // Load project from database
@@ -24,72 +33,41 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Project not found', 404, correlationId);
     }
 
     // Load CSV file from storage or inline data
-    let fileContent: string;
-    const csvFilePath = (project as any).csv_file_path;
-    
-    if (csvFilePath.startsWith('inline:')) {
-      // CSV stored inline in database
-      fileContent = csvFilePath.substring(7); // Remove 'inline:' prefix
-      console.log('[Health] Loading CSV from inline storage');
-    } else {
-      // CSV stored in Supabase Storage
-      const { data: fileData, error: downloadError } = await supabase.storage
-        .from('analysis-csv-files')
-        .download(csvFilePath);
-
-      if (downloadError || !fileData) {
-        return NextResponse.json(
-          { error: 'Failed to load CSV file from storage' },
-          { status: 500 }
-        );
-      }
-
-      fileContent = await fileData.text();
-      console.log('[Health] Loading CSV from Supabase Storage');
-    }
-    const parsed = Papa.parse(fileContent, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
+    const fileContent = await downloadCsvFile(supabase, {
+      path: (project as any).csv_file_path,
+      correlationId,
     });
 
-    if (parsed.errors.length > 0) {
-      return NextResponse.json(
-        { error: 'CSV parsing failed' },
-        { status: 500 }
-      );
-    }
+    const { parsed, allRows } = parseCsvWithPapa(fileContent, correlationId);
 
     // Perform health check
-    const healthReport = DataHealthService.performHealthCheck([
-      Object.keys(parsed.data[0] || {}),
-      ...parsed.data.map((row: any) => Object.values(row))
-    ]);
+    const healthReport = DataHealthService.performHealthCheck(allRows);
 
     // Load variables
-    const { data: variables } = await supabase
+    const { data: variables, error: variablesError } = await supabase
       .from('analysis_variables')
       .select('*')
       .eq('project_id', projectId);
 
-    return NextResponse.json({
-      success: true,
-      healthReport,
-      variables: variables || [],
-    });
+    if (variablesError) {
+      throw new Error(variablesError.message);
+    }
+
+    return createSuccessResponse(
+      {
+        healthReport,
+        variables: variables || [],
+      },
+      correlationId
+    );
 
   } catch (error) {
-    console.error('Health check error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Health check failed' },
-      { status: 500 }
-    );
+    const apiError = toApiError(error, 'Health check failed');
+    console.error(`[Health] ${correlationId}: Error`, apiError, { cause: apiError.cause });
+    return createErrorResponse(apiError, apiError.status, correlationId);
   }
 }

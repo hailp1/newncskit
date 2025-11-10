@@ -1,5 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  generateCorrelationId,
+  logRequest,
+} from '@/lib/api-middleware';
+import { getSupabaseClient } from '../../lib/supabase';
+import { toApiError } from '../../lib/errors';
 
 /**
  * GET /api/analysis/groups/load?projectId={projectId}
@@ -8,26 +15,24 @@ import { createClient } from '@/lib/supabase/server';
  * Used to determine if a project is existing (has saved groups) or new
  */
 export async function GET(request: NextRequest) {
+  const correlationId = generateCorrelationId();
+
   try {
-    const supabase = await createClient();
+    logRequest(request, correlationId);
+
+    const supabase = await getSupabaseClient(correlationId);
 
     // Check authentication
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized', 401, correlationId);
     }
 
     const searchParams = request.nextUrl.searchParams;
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
     // Get project to verify ownership
@@ -39,32 +44,26 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Project not found', 404, correlationId);
     }
 
     // Get saved variable groups
     const { data: groups, error: groupsError } = await supabase
       .from('variable_groups')
       .select('*')
-      .eq('analysis_project_id', projectId)
+      .eq('project_id', projectId)
       .order('created_at', { ascending: true });
 
     if (groupsError) {
       console.error('Error loading groups:', groupsError);
-      return NextResponse.json(
-        { error: 'Failed to load groups' },
-        { status: 500 }
-      );
+      return createErrorResponse('Failed to load groups', 500, correlationId);
     }
 
     // Get demographics
     const { data: demographics, error: demographicsError } = await supabase
       .from('analysis_variables')
       .select('*')
-      .eq('analysis_project_id', projectId)
+      .eq('project_id', projectId)
       .eq('is_demographic', true);
 
     if (demographicsError) {
@@ -79,27 +78,27 @@ export async function GET(request: NextRequest) {
     // Type assertion for project data
     const projectData = project as any;
 
-    return NextResponse.json({
-      success: true,
-      project: {
-        id: projectData.id,
-        name: projectData.name,
-        status: projectData.status,
-        createdAt: projectData.created_at,
-        updatedAt: projectData.updated_at,
+    return createSuccessResponse(
+      {
+        project: {
+          id: projectData.id,
+          name: projectData.name,
+          status: projectData.status,
+          createdAt: projectData.created_at,
+          updatedAt: projectData.updated_at,
+        },
+        groups: groups || [],
+        demographics: demographics || [],
+        isExistingProject,
+        hasGroups,
+        hasDemographics,
       },
-      groups: groups || [],
-      demographics: demographics || [],
-      isExistingProject,
-      hasGroups,
-      hasDemographics,
-    });
+      correlationId
+    );
 
   } catch (error) {
-    console.error('Load groups error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Load failed' },
-      { status: 500 }
-    );
+    const apiError = toApiError(error, 'Load failed');
+    console.error(`[Groups Load] ${correlationId}: Error`, apiError, { cause: apiError.cause });
+    return createErrorResponse(apiError, apiError.status, correlationId);
   }
 }

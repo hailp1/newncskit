@@ -1,31 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  generateCorrelationId,
+  logRequest,
+} from '@/lib/api-middleware';
 import { AnalysisType } from '@/types/analysis';
 import { AnalysisService } from '@/services/analysis.service';
-import Papa from 'papaparse';
+import { getSupabaseClient, AnalysisSupabaseClient } from '../lib/supabase';
+import { downloadCsvFile } from '../lib/storage';
+import { parseCsvWithPapa } from '../lib/parser';
+import { ApiError, toApiError } from '../lib/errors';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+  const correlationId = generateCorrelationId();
+  let supabase: AnalysisSupabaseClient | null = null;
+  let projectId: string | null = null;
+
   try {
-    const supabase = await createClient();
+    logRequest(request, correlationId);
+
+    supabase = await getSupabaseClient(correlationId);
 
     // Check authentication
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized', 401, correlationId);
     }
 
-    const { projectId, analysisTypes } = await request.json();
+    const body = await request.json();
+    projectId = body.projectId;
+    const analysisTypes: AnalysisType[] = body.analysisTypes || [];
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
     // Verify project ownership
@@ -37,15 +46,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Project not found', 404, correlationId);
     }
 
     // Update project status to analyzing
-    await (supabase
-      .from('analysis_projects') as any)
+    await supabase
+      .from('analysis_projects')
       .update({
         status: 'analyzing',
         updated_at: new Date().toISOString(),
@@ -53,44 +59,27 @@ export async function POST(request: NextRequest) {
       .eq('id', projectId);
 
     // Load CSV file from storage or inline data
-    let fileContent: string;
-    const csvFilePath = (project as any).csv_file_path;
-    
-    if (csvFilePath.startsWith('inline:')) {
-      // CSV stored inline in database
-      fileContent = csvFilePath.substring(7); // Remove 'inline:' prefix
-      console.log('[Execute] Loading CSV from inline storage');
-    } else {
-      // CSV stored in Supabase Storage
-      const { data: fileData, error: downloadError } = await supabase.storage
-        .from('analysis-csv-files')
-        .download(csvFilePath);
-
-      if (downloadError || !fileData) {
-        throw new Error('Failed to download CSV file from storage');
-      }
-
-      fileContent = await fileData.text();
-      console.log('[Execute] Loading CSV from Supabase Storage');
-    }
-    const parsed = Papa.parse(fileContent, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
+    const fileContent = await downloadCsvFile(supabase, {
+      path: (project as any).csv_file_path,
+      correlationId,
     });
-
-    if (parsed.errors.length > 0) {
-      throw new Error('CSV parsing failed');
-    }
+    const { parsed } = parseCsvWithPapa(fileContent, correlationId);
 
     // Load variables
-    const { data: variables } = await supabase
+    const { data: variables, error: variablesError } = await supabase
       .from('analysis_variables')
       .select('*')
-      .eq('analysis_project_id', projectId);
+      .eq('project_id', projectId);
+
+    if (variablesError) {
+      throw new ApiError(variablesError.message ?? 'Failed to load variables', {
+        status: 500,
+        details: { correlationId, projectId },
+      });
+    }
 
     // Load variable groups
-    const { data: groups } = await supabase
+    const { data: groups, error: groupsError } = await supabase
       .from('variable_groups')
       .select(`
         *,
@@ -98,23 +87,44 @@ export async function POST(request: NextRequest) {
       `)
       .eq('project_id', projectId);
 
+    if (groupsError) {
+      throw new ApiError(groupsError.message ?? 'Failed to load variable groups', {
+        status: 500,
+        details: { correlationId, projectId },
+      });
+    }
+
     // Load demographics
-    const { data: demographics } = await supabase
+    const { data: demographics, error: demographicsError } = await supabase
       .from('analysis_variables')
       .select(`
         *,
         ranks:demographic_ranks(*),
         categories:ordinal_categories(*)
       `)
-      .eq('analysis_project_id', projectId)
+      .eq('project_id', projectId)
       .eq('is_demographic', true);
 
+    if (demographicsError) {
+      throw new ApiError(demographicsError.message ?? 'Failed to load demographics', {
+        status: 500,
+        details: { correlationId, projectId },
+      });
+    }
+
     // Load analysis configurations
-    const { data: configs } = await supabase
+    const { data: configs, error: configsError } = await supabase
       .from('analysis_configurations')
       .select('*')
       .eq('project_id', projectId)
       .in('analysis_type', analysisTypes);
+
+    if (configsError) {
+      throw new ApiError(configsError.message ?? 'Failed to load analysis configurations', {
+        status: 500,
+        details: { correlationId, projectId },
+      });
+    }
 
     // Check R service health
     const isRServiceHealthy = await AnalysisService.checkRServiceHealth();
@@ -187,8 +197,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Save results to database
-    const { error: resultsError } = await (supabase
-      .from('analysis_results') as any)
+    const { error: resultsError } = await supabase
+      .from('analysis_results')
       .insert(results);
 
     if (resultsError) {
@@ -196,8 +206,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update project status to completed
-    await (supabase
-      .from('analysis_projects') as any)
+    await supabase
+      .from('analysis_projects')
       .update({
         status: 'completed',
         updated_at: new Date().toISOString(),
@@ -206,37 +216,36 @@ export async function POST(request: NextRequest) {
 
     const totalTime = Date.now() - startTime;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Analyses executed successfully',
-      jobId: `job-${Date.now()}`,
-      executionTime: totalTime,
-      resultsCount: results.length,
-      rServiceAvailable: isRServiceHealthy,
-    });
+    return createSuccessResponse(
+      {
+        message: 'Analyses executed successfully',
+        jobId: `job-${Date.now()}`,
+        executionTime: totalTime,
+        resultsCount: results.length,
+        rServiceAvailable: isRServiceHealthy,
+      },
+      correlationId
+    );
 
   } catch (error) {
-    console.error('Execute analysis error:', error);
+    const apiError = toApiError(error, 'Analysis execution failed');
+    console.error(`[Execute] ${correlationId}: Error`, apiError, { cause: apiError.cause });
     
     // Update project status to error
-    try {
-      const supabase = await createClient();
-      const { projectId } = await request.json();
-      
-      await (supabase
-        .from('analysis_projects') as any)
-        .update({
-          status: 'error',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', projectId);
-    } catch (updateError) {
-      console.error('Error updating project status:', updateError);
+    if (supabase && projectId) {
+      try {
+        await supabase
+          .from('analysis_projects')
+          .update({
+            status: 'error',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', projectId);
+      } catch (updateError) {
+        console.error('Error updating project status:', updateError);
+      }
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error: ' + (error as Error).message },
-      { status: 500 }
-    );
+    return createErrorResponse(apiError, apiError.status, correlationId);
   }
 }

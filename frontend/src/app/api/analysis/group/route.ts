@@ -1,20 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { VariableGroupingService } from '@/services/variable-grouping.service';
 import { DemographicService } from '@/services/demographic.service';
 import { RoleSuggestionService } from '@/services/role-suggestion.service';
-import { createClient } from '@/lib/supabase/server';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  generateCorrelationId,
+  logRequest,
+} from '@/lib/api-middleware';
+import { getSupabaseClient } from '../lib/supabase';
+import { toApiError } from '../lib/errors';
 
 export async function POST(request: NextRequest) {
+  const correlationId = generateCorrelationId();
+
   try {
-    const supabase = await createClient();
+    logRequest(request, correlationId);
+
+    const supabase = await getSupabaseClient(correlationId);
     const body = await request.json();
     const { projectId } = body;
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
     // Load project from database
@@ -25,10 +33,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Project not found', 404, correlationId);
     }
 
     // Load variables from database
@@ -42,9 +47,10 @@ export async function POST(request: NextRequest) {
     if (variablesError) {
       console.error('[Group] Database error:', variablesError);
       console.error('[Group] Error details:', JSON.stringify(variablesError, null, 2));
-      return NextResponse.json(
-        { error: `Failed to load variables: ${variablesError.message || 'Unknown error'}` },
-        { status: 500 }
+      return createErrorResponse(
+        `Failed to load variables: ${variablesError.message || 'Unknown error'}`,
+        500,
+        correlationId
       );
     }
 
@@ -64,10 +70,7 @@ export async function POST(request: NextRequest) {
     }));
 
     if (variables.length === 0) {
-      return NextResponse.json(
-        { error: 'No variables found for project' },
-        { status: 404 }
-      );
+      return createErrorResponse('No variables found for project', 404, correlationId);
     }
 
     // Get grouping suggestions using the service
@@ -91,32 +94,32 @@ export async function POST(request: NextRequest) {
     }));
     const latentSuggestions = RoleSuggestionService.suggestLatentVariables(groupsForLatent);
 
-    return NextResponse.json({
-      success: true,
-      suggestions: groupingSuggestions.map(s => ({
-        groupName: s.suggestedName,
-        variables: s.variables,
-        confidence: s.confidence,
-        reasoning: s.reason
-      })),
-      demographics: demographicSuggestions.map(d => ({
-        variable: d.variable,
-        confidence: d.confidence,
-        reasons: d.reasons,
-        suggestedType: d.type
-      })),
-      roleSuggestions: roleSuggestions.filter(r => r.suggestedRole !== 'none'),
-      latentSuggestions: latentSuggestions,
-      totalVariables: variables.length,
-      suggestedGroups: groupingSuggestions.length,
-      suggestedDemographics: demographicSuggestions.length
-    });
+    return createSuccessResponse(
+      {
+        suggestions: groupingSuggestions.map(s => ({
+          groupName: s.suggestedName,
+          variables: s.variables,
+          confidence: s.confidence,
+          reasoning: s.reason
+        })),
+        demographics: demographicSuggestions.map(d => ({
+          variable: d.variable,
+          confidence: d.confidence,
+          reasons: d.reasons,
+          suggestedType: d.type
+        })),
+        roleSuggestions: roleSuggestions.filter(r => r.suggestedRole !== 'none'),
+        latentSuggestions,
+        totalVariables: variables.length,
+        suggestedGroups: groupingSuggestions.length,
+        suggestedDemographics: demographicSuggestions.length
+      },
+      correlationId
+    );
 
   } catch (error) {
-    console.error('Grouping error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Grouping failed' },
-      { status: 500 }
-    );
+    const apiError = toApiError(error, 'Grouping failed');
+    console.error(`[Group] ${correlationId}: Error`, apiError, { cause: apiError.cause });
+    return createErrorResponse(apiError, apiError.status, correlationId);
   }
 }
