@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Load variables from database
+    console.log('[Variables] Loading for project:', projectId);
     const { data: dbVariables, error: variablesError } = await supabase
       .from('analysis_variables')
       .select('*')
@@ -22,11 +23,15 @@ export async function GET(request: NextRequest) {
       .order('display_order');
 
     if (variablesError) {
+      console.error('[Variables] Database error:', variablesError);
+      console.error('[Variables] Error details:', JSON.stringify(variablesError, null, 2));
       return NextResponse.json(
-        { error: 'Failed to load variables' },
+        { error: `Failed to load variables: ${variablesError.message || 'Unknown error'}` },
         { status: 500 }
       );
     }
+
+    console.log('[Variables] Loaded', dbVariables?.length || 0, 'variables');
 
     // Convert database variables to AnalysisVariable format
     const variables = (dbVariables || []).map((v: any) => ({
