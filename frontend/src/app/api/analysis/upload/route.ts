@@ -184,18 +184,33 @@ export async function POST(request: NextRequest) {
       display_name: header,
       data_type: 'numeric', // Will be detected properly later
       is_demographic: false,
+      missing_count: 0,
+      unique_count: 0,
     }));
 
-    const { error: variablesError } = await (supabase
+    console.log(`[Upload] ${correlationId}: Inserting ${variables.length} variables`);
+    const { data: insertedVariables, error: variablesError } = await (supabase
       .from('analysis_variables') as any)
-      .insert(variables);
+      .insert(variables)
+      .select();
 
     if (variablesError) {
       console.error(`[Upload] ${correlationId}: Variables creation failed:`, variablesError);
-      // Don't fail the upload, variables can be created later
-    } else {
-      console.log(`[Upload] ${correlationId}: Created ${variables.length} variables`);
+      console.error(`[Upload] ${correlationId}: Variables error details:`, JSON.stringify(variablesError, null, 2));
+      console.error(`[Upload] ${correlationId}: Sample variable:`, variables[0]);
+      
+      // This is critical - without variables, the project is unusable
+      // Try to delete the project and fail the upload
+      await supabase.from('analysis_projects').delete().eq('id', project.id);
+      
+      return createErrorResponse(
+        `Failed to create variables: ${variablesError?.message || 'Unknown error'}. Please try again.`,
+        500,
+        correlationId
+      );
     }
+
+    console.log(`[Upload] ${correlationId}: Created ${insertedVariables?.length || 0} variables successfully`);
 
     const responseData = {
       project: {
