@@ -6,7 +6,37 @@ export const fallbackBlogPosts = [
     id: 'fallback-0',
     title: 'NCSKIT: Nền Tảng Phân Tích Dữ Liệu Khảo Sát Miễn Phí Cho Nhà Nghiên Cứu Việt Nam',
     excerpt: 'Giới thiệu NCSKIT - công cụ phân tích dữ liệu khảo sát trực tuyến, miễn phí, hỗ trợ tiếng Việt. Từ Cronbach Alpha đến SEM, tất cả trong một nền tảng!',
-    content: '',
+    content: `# NCSKIT: Nền Tảng Phân Tích Dữ Liệu Miễn Phí
+
+**NCSKIT** là nền tảng phân tích dữ liệu khảo sát trực tuyến, 100% miễn phí, được thiết kế cho nhà nghiên cứu Việt Nam.
+
+## Tính Năng Chính
+
+✅ **Cronbach's Alpha** - Kiểm tra độ tin cậy thang đo  
+✅ **EFA/CFA** - Phân tích nhân tố  
+✅ **SEM** - Mô hình cấu trúc tuyến tính  
+✅ **Regression** - Phân tích hồi quy  
+✅ **ANOVA/T-test** - So sánh nhóm  
+
+## Tại Sao Chọn NCSKIT?
+
+- **Miễn phí hoàn toàn** - Không giới hạn
+- **Giao diện tiếng Việt** - Dễ hiểu
+- **Không cần cài đặt** - Chạy trên browser
+- **Tự động hóa** - Upload CSV là có kết quả
+- **Báo cáo chuyên nghiệp** - Sẵn sàng cho luận văn
+
+## So Sánh Với SPSS/AMOS
+
+| Tiêu chí | NCSKIT | SPSS | AMOS |
+|----------|--------|------|------|
+| Giá | Miễn phí | ~$100/tháng | ~$150/tháng |
+| Tiếng Việt | ✅ | ❌ | ❌ |
+| Dễ dùng | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+
+Truy cập **NCSKIT** tại: https://app.ncskit.org
+
+#NCSKIT #PhânTíchDữLiệu #NghiênCứuKhoaHọc #MiễnPhí`,
     author: {
       name: 'NCSKIT Team',
       avatar: undefined
@@ -23,7 +53,44 @@ export const fallbackBlogPosts = [
     id: 'fallback-1',
     title: 'Cronbach\'s Alpha: "Thước Đo Độ Tin Cậy" Của Bảng Hỏi',
     excerpt: 'Cronbach\'s Alpha là gì? Tại sao nó quan trọng trong nghiên cứu? Hướng dẫn chi tiết với ví dụ thực tế, dễ hiểu cho người mới bắt đầu.',
-    content: '',
+    content: `# Cronbach's Alpha: Thước Đo Độ Tin Cậy
+
+## Cronbach's Alpha Là Gì?
+
+**Cronbach's Alpha** (α) là chỉ số đo độ tin cậy của thang đo, cho biết các câu hỏi có "nhất quán" với nhau không.
+
+**Giá trị:**
+- α ≥ 0.9: Xuất sắc 🌟
+- 0.8 ≤ α < 0.9: Tốt ✅
+- 0.7 ≤ α < 0.8: Chấp nhận được
+- α < 0.7: Cần cải thiện
+
+## Ví Dụ Thực Tế
+
+Đo "Sự hài lòng công việc" với 5 câu hỏi:
+1. Tôi thích công việc (1-5)
+2. Tôi muốn làm lâu dài (1-5)
+3. Tôi cảm thấy hạnh phúc (1-5)
+4. Tôi thích món phở gần công ty (1-5) ❌
+5. Tôi tự hào về công việc (1-5)
+
+Câu 4 "lạc quẻ" → Làm giảm α!
+
+## Cách Tính Với NCSKIT
+
+1. Upload CSV vào **NCSKIT**
+2. Chọn "Reliability Analysis"
+3. Chọn các biến trong thang đo
+4. Click "Run" → Có kết quả α ngay!
+
+**NCSKIT** tự động:
+- Tính Cronbach's Alpha
+- Hiển thị Item-Total Correlation
+- Đề xuất xóa item nào để tăng α
+
+Dùng **NCSKIT** miễn phí tại: https://app.ncskit.org
+
+#CronbachAlpha #ĐộTinCậy #NCSKIT #SPSS`,
     author: {
       name: 'NCSKIT Team',
       avatar: undefined
@@ -40,7 +107,53 @@ export const fallbackBlogPosts = [
     id: 'fallback-2',
     title: 'Phân Tích Hồi Quy: "Bói Toán" Khoa Học Hay Là Gì?',
     excerpt: 'Phân tích hồi quy là gì? Làm sao dự đoán tương lai từ dữ liệu? Hướng dẫn từ A-Z với ví dụ thực tế, không cần biết toán phức tạp!',
-    content: '',
+    content: `# Phân Tích Hồi Quy: Dự Đoán Khoa Học
+
+## Hồi Quy Là Gì?
+
+**Regression Analysis** = Tìm mối quan hệ giữa biến độc lập (X) và biến phụ thuộc (Y) để dự đoán.
+
+**Công thức đơn giản:**
+\`\`\`
+Y = a + bX
+\`\`\`
+
+## Ví Dụ Thực Tế
+
+### Dự Đoán Giá Nhà
+\`\`\`
+Giá nhà = 500 + (50 × Diện tích)
+\`\`\`
+- Nhà 100m² = 500 + 50×100 = 5,500 triệu
+
+### Dự Đoán Lương
+\`\`\`
+Lương = 10 + (2 × Kinh nghiệm) + (3 × Học vấn)
+\`\`\`
+- 5 năm, Thạc sĩ = 10 + 2×5 + 3×2 = 26 triệu
+
+## Các Loại Hồi Quy
+
+1. **Simple Linear** - 1 biến độc lập
+2. **Multiple Linear** - Nhiều biến
+3. **Logistic** - Dự đoán Yes/No
+
+## Chạy Hồi Quy Với NCSKIT
+
+1. Upload CSV vào **NCSKIT**
+2. Chọn "Regression Analysis"
+3. Chọn biến phụ thuộc (Y)
+4. Chọn biến độc lập (X1, X2...)
+5. Click "Run" → Có phương trình!
+
+**NCSKIT** tự động:
+- Tính R², p-value
+- Hiển thị phương trình
+- Giải thích kết quả
+
+Phân tích miễn phí tại: https://app.ncskit.org
+
+#HồiQuy #Regression #NCSKIT #DựĐoán`,
     author: {
       name: 'NCSKIT Team',
       avatar: undefined
