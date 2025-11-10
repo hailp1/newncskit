@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
         name: name || file.name.replace('.csv', ''),
         description: `Uploaded on ${new Date().toLocaleDateString()}${storageUploadSuccess ? '' : ' (CSV stored inline)'}`,
         csv_file_path: csvFilePath,
+        csv_file_size: file.size,
         row_count: lines.length - 1,
         column_count: csvHeaders.length,
         status: 'uploaded',
