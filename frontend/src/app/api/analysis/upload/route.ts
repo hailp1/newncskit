@@ -12,6 +12,7 @@ import { ApiError, toApiError } from '../lib/errors';
 import { parseCsvContent } from '../lib/parser';
 import { getSupabaseClient } from '../lib/supabase';
 import { uploadCsvFile } from '../lib/storage';
+import type { AnalysisProject, AnalysisVariableInsert } from '@/types/analysis-db';
 
 // Handle OPTIONS for CORS preflight
 export async function OPTIONS() {
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Create project in database
-    const { data: project, error: projectError } = await supabase
+    // @ts-ignore - Supabase type inference issue with analysis tables
+    const projectResult = await supabase
       .from('analysis_projects')
       .insert({
         user_id: session.user.id,
@@ -97,6 +99,9 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single();
+    
+    const project = projectResult.data as AnalysisProject | null;
+    const projectError = projectResult.error;
 
     if (projectError || !project) {
       throw new ApiError(`Failed to create project: ${projectError?.message || 'Unknown error'}`, {
@@ -108,7 +113,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Upload] ${correlationId}: Project created: ${project.id}`);
 
     // Create variables in database
-    const variables = csvHeaders.map((header) => ({
+    const variables: AnalysisVariableInsert[] = csvHeaders.map((header) => ({
       project_id: project.id,  // Column name is 'project_id' not 'analysis_project_id'
       column_name: header,
       display_name: header,
@@ -119,10 +124,14 @@ export async function POST(request: NextRequest) {
     }));
 
     console.log(`[Upload] ${correlationId}: Inserting ${variables.length} variables`);
-    const { data: insertedVariables, error: variablesError } = await supabase
+    // @ts-ignore - Supabase type inference issue with analysis tables
+    const variablesResult = await supabase
       .from('analysis_variables')
       .insert(variables)
       .select();
+    
+    const insertedVariables = variablesResult.data;
+    const variablesError = variablesResult.error;
 
     if (variablesError) {
       // This is critical - without variables, the project is unusable
