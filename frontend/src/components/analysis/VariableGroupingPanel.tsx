@@ -774,30 +774,26 @@ export default function VariableGroupingPanel({
                 </div>
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || !validationResult.isValid}
+                  disabled={isSaving}
                   className={`
                     px-4 py-2 rounded-lg flex items-center gap-2 font-medium 
                     transition-all duration-200 hover:scale-105 active:scale-95
-                    ${validationResult.isValid 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }
+                    bg-blue-600 text-white hover:bg-blue-700
                     ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
-                  title={!validationResult.isValid ? 'Configure roles to continue' : ''}
                 >
                   <Save className={`h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
                   {isSaving 
                     ? 'Saving...' 
                     : validationResult.isValid 
                       ? `Save & Continue (${validationResult.analysisTypes.join(', ')})` 
-                      : 'Configure roles to continue'
+                      : 'Save & Continue'
                   }
                 </button>
               </div>
-              {!validationResult.isValid && validationResult.errors.length > 0 && (
-                <div className="text-xs text-red-600 mt-1">
-                  {validationResult.errors[0]}
+              {validationResult.errors.length > 0 && (
+                <div className="text-xs text-amber-600 mt-1">
+                  Note: {validationResult.errors[0]}
                 </div>
               )}
               {lastSaved && (
