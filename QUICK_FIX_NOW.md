@@ -12,52 +12,43 @@
 Go to: https://supabase.com/dashboard/project/YOUR_PROJECT/sql
 
 ### 2. Copy This SQL
-Open file: `supabase/migrations/20241110_hotfix_analysis_variables_column.sql`
+Open file: `supabase/migrations/SIMPLE_COLUMN_FIX.sql`
 
 Or copy from here:
 ```sql
--- Check and fix column name
-DO $
+-- Check if we need to rename the column
+DO $$
 DECLARE
-  table_exists BOOLEAN;
-  has_project_id BOOLEAN;
-  has_analysis_project_id BOOLEAN;
+  has_wrong_name BOOLEAN;
 BEGIN
-  -- Check if table exists
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
-    AND table_name = 'analysis_variables'
-  ) INTO table_exists;
-
-  IF NOT table_exists THEN
-    RAISE NOTICE 'Creating table...';
-    -- [Full CREATE TABLE statement from migration file]
-    RETURN;
-  END IF;
-
-  -- Check columns
+  -- Check if column has wrong name
   SELECT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'analysis_variables' 
-    AND column_name = 'project_id'
-  ) INTO has_project_id;
-
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'analysis_variables' 
+    WHERE table_schema = 'public'
+    AND table_name = 'analysis_variables' 
     AND column_name = 'analysis_project_id'
-  ) INTO has_analysis_project_id;
+  ) INTO has_wrong_name;
 
-  -- Fix if needed
-  IF has_analysis_project_id AND NOT has_project_id THEN
+  -- Rename if needed
+  IF has_wrong_name THEN
+    RAISE NOTICE 'Found analysis_project_id - renaming to project_id...';
     ALTER TABLE analysis_variables 
     RENAME COLUMN analysis_project_id TO project_id;
-    RAISE NOTICE 'Fixed: Renamed to project_id';
-  ELSIF has_project_id THEN
-    RAISE NOTICE 'OK: project_id exists';
+    RAISE NOTICE '✓ Column renamed successfully!';
+  ELSE
+    RAISE NOTICE '✓ Column name is already correct (project_id)';
   END IF;
-END $;
+END $$;
+
+-- Verify the result
+SELECT 
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns 
+WHERE table_schema = 'public'
+AND table_name = 'analysis_variables' 
+AND column_name = 'project_id';
 ```
 
 ### 3. Run It
