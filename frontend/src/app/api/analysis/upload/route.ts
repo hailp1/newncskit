@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
 
     // Create project in database
     // @ts-ignore - Supabase type inference issue with analysis tables
-    const projectResult = await supabase
-      .from('analysis_projects')
+    const projectResult = await (supabase
+      .from('analysis_projects') as any)
       .insert({
         user_id: session.user.id,
         name: name || file.name.replace('.csv', ''),
@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Upload] ${correlationId}: Inserting ${variables.length} variables`);
     // @ts-ignore - Supabase type inference issue with analysis tables
-    const variablesResult = await supabase
-      .from('analysis_variables')
+    const variablesResult = await (supabase
+      .from('analysis_variables') as any)
       .insert(variables)
       .select();
     

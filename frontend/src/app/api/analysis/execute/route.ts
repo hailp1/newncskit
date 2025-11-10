@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
 
     // Update project status to analyzing
     // @ts-ignore - Supabase type inference issue with analysis tables
-    await supabase
-      .from('analysis_projects')
+    await (supabase
+      .from('analysis_projects') as any)
       .update({
         status: 'analyzing' as const,
         updated_at: new Date().toISOString(),
@@ -199,9 +199,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Save results to database
-    // @ts-ignore - Supabase type inference issue with analysis tables
-    const { error: resultsError } = await supabase
-      .from('analysis_results')
+    const { error: resultsError } = await (supabase
+      .from('analysis_results') as any)
       .insert(results as AnalysisResultInsert[]);
 
     if (resultsError) {
@@ -209,9 +208,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update project status to completed
-    // @ts-ignore - Supabase type inference issue with analysis tables
-    await supabase
-      .from('analysis_projects')
+    await (supabase
+      .from('analysis_projects') as any)
       .update({
         status: 'completed' as const,
         updated_at: new Date().toISOString(),
@@ -238,9 +236,8 @@ export async function POST(request: NextRequest) {
     // Update project status to error
     if (supabase && projectId) {
       try {
-        // @ts-ignore - Supabase type inference issue with analysis tables
-        await supabase
-          .from('analysis_projects')
+        await (supabase
+          .from('analysis_projects') as any)
           .update({
             status: 'error' as const,
             updated_at: new Date().toISOString(),
