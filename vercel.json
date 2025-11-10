@@ -4,12 +4,6 @@
   "devCommand": "cd frontend && npm run dev",
   "installCommand": "cd frontend && npm install",
   "outputDirectory": "frontend/.next",
-  "functions": {
-    "frontend/src/app/api/**/*.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
