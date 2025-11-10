@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
 import { ApiError } from './errors';
 
-export type AnalysisSupabaseClient = SupabaseClient<Database>;
+// Re-export the client type for convenience
+export type AnalysisSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Create a Supabase server client with consistent error handling.

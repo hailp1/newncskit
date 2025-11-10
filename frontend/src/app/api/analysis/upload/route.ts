@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       project_id: project.id,  // Column name is 'project_id' not 'analysis_project_id'
       column_name: header,
       display_name: header,
-      data_type: 'numeric', // Will be detected properly later
+      data_type: 'numeric' as const, // Will be detected properly later
       is_demographic: false,
       missing_count: 0,
       unique_count: 0,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       project: {
         id: project.id,
         name: project.name,
-        rowCount: lines.length - 1,
+        rowCount: allRows.length,
         columnCount: csvHeaders.length,
       },
       preview: previewRows,
