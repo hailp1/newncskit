@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const { data: groups, error: groupsError } = await supabase
       .from('variable_groups')
       .select('*')
-      .eq('project_id', projectId)
+      .eq('analysis_project_id', projectId)
       .order('created_at', { ascending: true });
 
     if (groupsError) {
@@ -62,9 +62,10 @@ export async function GET(request: NextRequest) {
 
     // Get demographics
     const { data: demographics, error: demographicsError } = await supabase
-      .from('demographic_variables')
+      .from('analysis_variables')
       .select('*')
-      .eq('project_id', projectId);
+      .eq('analysis_project_id', projectId)
+      .eq('is_demographic', true);
 
     if (demographicsError) {
       console.error('Error loading demographics:', demographicsError);

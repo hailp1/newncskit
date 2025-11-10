@@ -5,7 +5,8 @@
 
 
 
-  - [ ] 1.1 Update analysis_server.R to source helper files
+  - [x] 1.1 Update analysis_server.R to source helper files
+
     - Add source() calls at the top of `backend/r_analysis/analysis_server.R`
     - Source `endpoints/descriptive-stats.R`
     - Source `endpoints/regression.R`
@@ -17,6 +18,7 @@
 
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
   
+
   - [ ] 1.2 Verify helper functions are loaded
     - Create verification function to check if required functions exist
     - List required functions: calculate_descriptive_stats, perform_linear_regression, perform_efa, perform_sem
@@ -24,6 +26,7 @@
 
     - Stop server initialization if critical functions are missing
     - _Requirements: 1.3, 1.4_
+
   
   - [ ] 1.3 Add health check endpoint
     - Create GET /health endpoint in analysis_server.R
@@ -52,6 +55,7 @@
     - Log retrieval attempts
     - _Requirements: 2.1, 2.3_
 
+
   
   - [ ] 2.3 Implement cleanup function
     - Create `cleanup_expired()` function
@@ -60,6 +64,7 @@
 
     - Remove entries where TTL has expired
 
+
     - Log number of removed entries
     - _Requirements: 2.4, 10.5_
   
@@ -67,6 +72,7 @@
     - Use later::later() to schedule cleanup every 300 seconds
     - Ensure cleanup runs in background
     - Add reschedule logic after each cleanup
+
 
     - _Requirements: 2.4_
 
@@ -79,6 +85,7 @@
     - Set CORS headers only for allowed origins
     - Handle OPTIONS preflight requests
     - _Requirements: 3.1, 3.2, 3.5_
+
   
 
 
@@ -87,6 +94,7 @@
   - [ ] 3.2 Create authentication filter
     - Add @filter auth to analysis_server.R
     - Skip authentication for /health endpoint
+
     - Check X-API-Key header in requests
     - Validate against ANALYTICS_API_KEY environment variable
     - Return 401 for invalid or missing API keys
@@ -95,13 +103,15 @@
   
   - [ ] 3.3 Create error handler filter
     - Add @filter error-handler to wrap all endpoints
+
     - Use tryCatch to catch all errors
     - Return 500 status with error message
     - Log errors with endpoint and timestamp
     - _Requirements: 9.1, 9.2, 9.3_
 
 
-- [ ] 4. Add safe helper functions for edge cases
+- [x] 4. Add safe helper functions for edge cases
+
   - [ ] 4.1 Create safe z-score calculation
     - Update `calculate_descriptive_stats()` in descriptive-stats.R
     - Check for zero or NA standard deviation
@@ -110,7 +120,8 @@
     - _Requirements: 4.1, 4.4_
   
 
-  - [ ] 4.2 Create safe normality test
+  - [x] 4.2 Create safe normality test
+
     - Create `test_normality_safe()` function
     - Check sample size >= 3
     - Check for constant variables (unique values = 1)
@@ -119,6 +130,7 @@
     - Run Shapiro-Wilk test only when valid
     - Wrap in tryCatch for error handling
     - _Requirements: 4.2, 5.1_
+
   
   - [ ] 4.3 Create safe outlier detection
     - Create `detect_outliers_safe()` function
@@ -133,6 +145,7 @@
     - Check for zero variance variables before correlation
     - Exclude zero variance variables with warning
     - Log excluded variables
+
     - _Requirements: 4.5_
 
 - [ ] 5. Add sample size validation
@@ -147,6 +160,7 @@
   - [ ] 5.2 Add validation to regression
     - Update `perform_linear_regression()` in regression.R
     - Calculate minimum n = number of predictors + 2
+
     - Validate sample size before fitting model
     - Return HTTP 400 with descriptive error if insufficient
     - Include required sample size in error message
@@ -154,6 +168,8 @@
   
   - [ ] 5.3 Add validation to factor analysis
     - Update `perform_efa()` in factor-analysis.R
+
+
     - Require n >= p * 3 (3 times number of variables)
     - Return error with required sample size
     - _Requirements: 5.3, 5.5_
