@@ -36,11 +36,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* ============================================
           HEADER SECTION - Fixed at top
           ============================================ */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
         {/* Network Status Bar */}
         {!isOnline && (
           <div className="bg-red-600 text-white text-center py-2 text-sm">
@@ -142,24 +142,22 @@ export default function DashboardLayout({
       {/* ============================================
           CONTENT SECTION - Sidebar + Main Content
           ============================================ */}
-      <div className="flex flex-1 bg-gray-50">
-        {/* Sidebar */}
+      <div className="flex pt-16 min-h-screen">
+        {/* Sidebar - Fixed */}
         <Sidebar />
         
         {/* Main Content Area */}
-        <main className="flex-1 lg:ml-64">
-          <div className="py-6 px-4 sm:px-6 lg:px-8">
+        <main className="flex-1 lg:ml-64 flex flex-col">
+          <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
           </div>
+          
+          {/* Footer - Inside main content area */}
+          <Footer />
         </main>
       </div>
-
-      {/* ============================================
-          FOOTER SECTION - Fixed at bottom
-          ============================================ */}
-      <Footer />
     </div>
   )
 }
