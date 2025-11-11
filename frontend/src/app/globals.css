@@ -1,5 +1,34 @@
 @import "tailwindcss";
 
+/* Tailwind v4 Responsive Breakpoints */
+@theme {
+  /* Breakpoints matching design system */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;  /* Tablet */
+  --breakpoint-lg: 1024px; /* Desktop */
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* Touch-friendly spacing */
+  --spacing-touch: 44px; /* Minimum touch target */
+  
+  /* Responsive font sizes */
+  --text-xs-mobile: 0.75rem;
+  --text-sm-mobile: 0.875rem;
+  --text-base-mobile: 0.875rem;
+  --text-lg-mobile: 1rem;
+  
+  --text-xs-tablet: 0.75rem;
+  --text-sm-tablet: 0.875rem;
+  --text-base-tablet: 1rem;
+  --text-lg-tablet: 1.125rem;
+  
+  --text-xs-desktop: 0.875rem;
+  --text-sm-desktop: 1rem;
+  --text-base-desktop: 1.125rem;
+  --text-lg-desktop: 1.25rem;
+}
+
 /* NCSKIT Custom CSS Variables */
 :root {
   /* Base Colors */
@@ -282,4 +311,122 @@ button {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+
+/* Responsive Utility Classes */
+
+/* Touch-friendly minimum sizes */
+.touch-target {
+  min-width: var(--spacing-touch);
+  min-height: var(--spacing-touch);
+}
+
+/* Responsive containers */
+.container-responsive {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+.section-responsive {
+  @apply py-8 md:py-12 lg:py-16;
+}
+
+/* Responsive text sizes */
+.text-responsive-sm {
+  font-size: var(--text-sm-mobile);
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: var(--text-sm-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-sm {
+    font-size: var(--text-sm-desktop);
+  }
+}
+
+.text-responsive-base {
+  font-size: var(--text-base-mobile);
+}
+
+@media (min-width: 768px) {
+  .text-responsive-base {
+    font-size: var(--text-base-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-base {
+    font-size: var(--text-base-desktop);
+  }
+}
+
+/* Smooth transitions for responsive changes */
+.transition-responsive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hide/show based on breakpoint */
+.mobile-only {
+  @apply block md:hidden;
+}
+
+.tablet-only {
+  @apply hidden md:block lg:hidden;
+}
+
+.desktop-only {
+  @apply hidden lg:block;
+}
+
+.mobile-tablet {
+  @apply block lg:hidden;
+}
+
+.tablet-desktop {
+  @apply hidden md:block;
+}
+
+/* Responsive grid helpers */
+.grid-responsive {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8;
+}
+
+.grid-responsive-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6;
+}
+
+.grid-responsive-4 {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8;
+}
+
+/* Safe area support for notched devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
