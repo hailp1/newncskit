@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
+import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import {
   HomeIcon,
   BeakerIcon,
@@ -18,6 +20,10 @@ import {
   FolderIcon,
   KeyIcon,
   PhotoIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ArrowPathIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -73,7 +79,9 @@ import { isAdmin as checkIsAdmin } from '@/lib/auth-utils'
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, logout } = useAuthStore()
+  const { user, logout, updateUser } = useAuthStore()
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   const isAdmin = checkIsAdmin(user)
 
@@ -83,6 +91,20 @@ export function Sidebar() {
       window.location.href = '/auth/login'
     } catch (error) {
       console.error('Logout error:', error)
+    }
+  }
+
+  const handleRefreshProfile = async () => {
+    setIsRefreshing(true)
+    try {
+      const freshUserData = await forceRefreshAuth()
+      if (freshUserData) {
+        updateUser(freshUserData)
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -180,16 +202,19 @@ export function Sidebar() {
 
         {/* User Menu - Fixed at bottom */}
         <div className="flex-shrink-0 border-t border-gray-200 bg-white">
-          <div className="px-3 py-4 space-y-2">
-            {/* User Info */}
+          <div className="px-3 py-4">
+            {/* User Info - Clickable to toggle menu */}
             {user && (
-              <div className="flex items-center px-2 py-2 text-sm">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="w-full flex items-center px-2 py-2 text-sm hover:bg-gray-50 rounded-md transition-colors"
+              >
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
                     {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                   </div>
                 </div>
-                <div className="ml-3 flex-1 min-w-0">
+                <div className="ml-3 flex-1 min-w-0 text-left">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {user.full_name || 'User'}
                   </p>
@@ -197,67 +222,111 @@ export function Sidebar() {
                     {user.email}
                   </p>
                 </div>
-              </div>
+                {isUserMenuOpen ? (
+                  <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
             )}
 
-            {/* User Actions */}
-            <div className="space-y-1">
-              <Link
-                href="/profile"
-                className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  pathname === '/profile'
-                    ? "bg-blue-100 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                )}
-              >
-                <UserIcon
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && user && (
+              <div className="mt-2 space-y-1 border-t border-gray-200 pt-2">
+                <Link
+                  href="/profile"
                   className={cn(
-                    "mr-3 flex-shrink-0 h-5 w-5",
-                    pathname === '/profile' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                    pathname === '/profile'
+                      ? "bg-blue-100 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
-                />
-                Quản lý tài khoản
-              </Link>
-
-              <Link
-                href="/settings"
-                className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                  pathname === '/settings'
-                    ? "bg-blue-100 text-blue-900"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                )}
-              >
-                <CogIcon
-                  className={cn(
-                    "mr-3 flex-shrink-0 h-5 w-5",
-                    pathname === '/settings' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
-                  )}
-                />
-                Cài đặt
-              </Link>
-
-              <button
-                onClick={handleLogout}
-                className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
-              >
-                <svg
-                  className="mr-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-red-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  <UserIcon
+                    className={cn(
+                      "mr-3 flex-shrink-0 h-5 w-5",
+                      pathname === '/profile' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                    )}
                   />
-                </svg>
-                Đăng xuất
-              </button>
-            </div>
+                  Quản lý tài khoản
+                </Link>
+
+                <Link
+                  href="/settings"
+                  className={cn(
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                    pathname === '/settings'
+                      ? "bg-blue-100 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <CogIcon
+                    className={cn(
+                      "mr-3 flex-shrink-0 h-5 w-5",
+                      pathname === '/settings' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                    )}
+                  />
+                  Cài đặt
+                </Link>
+
+                {/* Refresh Profile Button */}
+                <button
+                  onClick={handleRefreshProfile}
+                  disabled={isRefreshing}
+                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+                >
+                  <ArrowPathIcon
+                    className={cn(
+                      "mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500",
+                      isRefreshing && "animate-spin"
+                    )}
+                  />
+                  Làm mới thông tin
+                </button>
+
+                {/* Admin Settings - Only for admins */}
+                {isAdmin && (
+                  <Link
+                    href="/admin/settings"
+                    className={cn(
+                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                      pathname === '/admin/settings'
+                        ? "bg-red-100 text-red-900"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    )}
+                  >
+                    <ShieldCheckIcon
+                      className={cn(
+                        "mr-3 flex-shrink-0 h-5 w-5",
+                        pathname === '/admin/settings' ? "text-red-500" : "text-gray-400 group-hover:text-gray-500"
+                      )}
+                    />
+                    Cài đặt Admin
+                  </Link>
+                )}
+
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <svg
+                    className="mr-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
