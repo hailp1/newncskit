@@ -15,14 +15,12 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, isLoading, initialize } = useAuthStore()
+  const { user, isLoading } = useAuthStore()
   const { isOnline } = useNetworkStatus()
   const pathname = usePathname()
   const userIsAdmin = isAdmin(user)
 
-  useEffect(() => {
-    initialize()
-  }, [initialize])
+  // Auth is already initialized in root layout - no need to initialize again
 
   if (isLoading) {
     return (

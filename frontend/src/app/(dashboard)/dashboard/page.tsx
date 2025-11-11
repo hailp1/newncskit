@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
+import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton'
 import {
   PlusIcon,
   BeakerIcon,
@@ -18,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, logout, updateUser } = useAuthStore()
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -211,5 +211,13 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   )
 }

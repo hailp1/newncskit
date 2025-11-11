@@ -64,38 +64,42 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         try {
-          set({ isLoading: true, error: null })
           const supabase = createClient()
           
-          // Get current session
+          // Get current session (fast, uses cache)
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
           if (sessionError) throw sessionError
 
           if (session) {
-            // Fetch user profile with role from public.profiles table
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single()
-
-            // Merge session user with profile data
-            const enrichedUser: User = {
-              ...session.user,
-              role: (userProfile as any)?.role ?? null,
-              full_name: (userProfile as any)?.full_name ?? null,
-              avatar_url: (userProfile as any)?.avatar_url ?? null,
-              status: (userProfile as any)?.status ?? 'active',
-              last_login_at: (userProfile as any)?.last_login_at ?? null,
-            }
-
+            // Set session immediately for fast UI update
             set({
-              user: enrichedUser,
+              user: session.user as User,
               session,
               isAuthenticated: true,
               isLoading: false,
             })
+
+            // Lazy load profile data in background (non-blocking)
+            Promise.resolve(
+              supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single()
+            ).then(({ data: userProfile }) => {
+              if (userProfile) {
+                const enrichedUser: User = {
+                  ...session.user,
+                  role: (userProfile as any)?.role ?? null,
+                  full_name: (userProfile as any)?.full_name ?? null,
+                  avatar_url: (userProfile as any)?.avatar_url ?? null,
+                  status: (userProfile as any)?.status ?? 'active',
+                  last_login_at: (userProfile as any)?.last_login_at ?? null,
+                }
+                set({ user: enrichedUser })
+              }
+            }).catch(err => console.error('Profile load error:', err))
           } else {
             set({
               user: null,
@@ -300,11 +304,21 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        // Only persist user and session
-        user: state.user,
-        session: state.session,
+        // Only persist minimal essential data
         isAuthenticated: state.isAuthenticated,
+        // Session is managed by Supabase, no need to persist
       }),
+      // Use sessionStorage for better performance
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name)
+          return str ? JSON.parse(str) : null
+        },
+        setItem: (name, value) => {
+          sessionStorage.setItem(name, JSON.stringify(value))
+        },
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
     }
   )
 )
