@@ -9,20 +9,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: true, // Enable ETags for better caching
   
-  // Performance optimizations
-  swcMinify: true, // Use SWC for faster minification
-  
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
   
   // Skip type checking during build for faster deployment
