@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import { useAuthModal } from '@/hooks/use-auth-modal'
 import { preloadAuthModal } from '@/components/auth/lazy-auth-modal'
+import { forceRefreshAuth } from '@/lib/force-refresh-auth'
+import { isAdmin as checkIsAdmin } from '@/lib/auth-utils'
 import { Button } from '@/components/ui/button'
 import {
   Bars3Icon,
@@ -20,6 +22,8 @@ import {
   SparklesIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  ArrowPathIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -42,13 +46,29 @@ const publicNavigation = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const { user, isAuthenticated, logout, updateUser } = useAuthStore()
   const { openLogin, openRegister } = useAuthModal()
   const pathname = usePathname()
+  const isAdmin = checkIsAdmin(user)
 
   const handleLogout = async () => {
     await logout()
     setUserMenuOpen(false)
+  }
+
+  const handleRefreshProfile = async () => {
+    setIsRefreshing(true)
+    try {
+      const freshUserData = await forceRefreshAuth()
+      if (freshUserData) {
+        updateUser(freshUserData)
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   return (
@@ -126,11 +146,11 @@ export function Header() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+                  <div className="absolute right-0 mt-2 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                      <p className="text-xs text-blue-600 capitalize">{user.role}</p>
+                      <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      <p className="text-xs text-blue-600 capitalize mt-1">{user.role || 'user'}</p>
                     </div>
                     <Link
                       href="/profile"
@@ -138,7 +158,7 @@ export function Header() {
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <UserIcon className="mr-3 h-4 w-4" />
-                      Profile
+                      Quản lý tài khoản
                     </Link>
                     <Link
                       href="/settings"
@@ -146,24 +166,44 @@ export function Header() {
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <Cog6ToothIcon className="mr-3 h-4 w-4" />
-                      Settings
+                      Cài đặt
                     </Link>
-                    {user.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Cog6ToothIcon className="mr-3 h-4 w-4" />
-                        Admin Panel
-                      </Link>
+                    <button
+                      onClick={handleRefreshProfile}
+                      disabled={isRefreshing}
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      <ArrowPathIcon className={`mr-3 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Làm mới thông tin
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          href="/admin"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <ShieldCheckIcon className="mr-3 h-4 w-4" />
+                          Admin Panel
+                        </Link>
+                        <Link
+                          href="/admin/settings"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Cog6ToothIcon className="mr-3 h-4 w-4" />
+                          Cài đặt Admin
+                        </Link>
+                      </>
                     )}
+                    <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
                       <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
-                      Sign out
+                      Đăng xuất
                     </button>
                   </div>
                 )}

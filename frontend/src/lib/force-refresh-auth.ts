@@ -9,8 +9,17 @@ export async function forceRefreshAuth() {
   try {
     const supabase = createClient()
     
-    // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 5000)
+    )
+    
+    // Get current session with timeout
+    const sessionPromise = supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await Promise.race([
+      sessionPromise,
+      timeoutPromise
+    ]) as any
     
     if (sessionError) {
       console.error('Session error:', sessionError)
@@ -22,19 +31,22 @@ export async function forceRefreshAuth() {
       return null
     }
 
-    // Fetch fresh profile data from database
-    const { data: userProfile, error: profileError } = await supabase
+    // Fetch fresh profile data from database with timeout
+    const profilePromise = supabase
       .from('profiles')
-      .select('*')
+      .select('role, full_name, avatar_url, subscription_type, is_active')
       .eq('id', session.user.id)
       .single()
+      
+    const { data: userProfile, error: profileError } = await Promise.race([
+      profilePromise,
+      timeoutPromise
+    ]) as any
 
     if (profileError) {
       console.error('Profile fetch error:', profileError)
       return null
     }
-
-    console.log('Fresh profile data:', userProfile)
 
     if (!userProfile) {
       console.error('No profile found')
@@ -48,7 +60,7 @@ export async function forceRefreshAuth() {
       role: profile.role ?? null,
       full_name: profile.full_name ?? null,
       avatar_url: profile.avatar_url ?? null,
-      status: profile.status ?? 'active',
+      status: 'active',
       subscription_type: profile.subscription_type ?? 'free',
       is_active: profile.is_active ?? true,
     }
