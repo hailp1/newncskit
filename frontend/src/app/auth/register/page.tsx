@@ -30,7 +30,6 @@ function RegisterForm() {
       <AuthForm
         mode="register"
         onSuccess={handleSuccess}
-        redirectTo={redirectTo}
       />
       
       {/* Terms and Privacy Link */}

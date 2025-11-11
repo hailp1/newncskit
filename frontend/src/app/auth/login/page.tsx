@@ -30,7 +30,6 @@ function LoginForm() {
       <AuthForm
         mode="login"
         onSuccess={handleSuccess}
-        redirectTo={redirectTo}
       />
       
       {/* Forgot Password Link */}
