@@ -366,7 +366,8 @@
 ific issues
   - _Requirements: All_
 
-- [-] 15. Final polish and documentation
+- [x] 15. Final polish and documentation
+
 
 
 
@@ -381,7 +382,8 @@ ific issues
   - _Requirements: All_
 
 
-- [ ] 15.2 Update documentation
+- [x] 15.2 Update documentation
+
 
   - Document new component APIs
   - Add usage examples for AuthModal
