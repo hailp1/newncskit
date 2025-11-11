@@ -48,7 +48,7 @@ function BlogPageContent() {
 
   const loadStats = async () => {
     try {
-      // Load only stats, not full posts
+      // Load only stats, not full posts - Already optimized with Promise.all
       const [publishedRes, draftRes] = await Promise.all([
         blogService.getPosts({ status: 'published', limit: 1 }),
         blogService.getPosts({ status: 'draft', limit: 1 })

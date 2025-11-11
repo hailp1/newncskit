@@ -63,7 +63,8 @@ export default function AdminPermissions() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'audit') {
+    // Only load audit logs when tab is active (lazy loading)
+    if (activeTab === 'audit' && auditLogs.length === 0) {
       loadAuditLogs();
     }
   }, [activeTab]);
@@ -104,17 +105,16 @@ export default function AdminPermissions() {
 
   const loadRolePermissions = async () => {
     try {
-      // Load permissions for all roles
-      const roleData: RolePermissionData[] = [];
-      
-      for (const role of roles) {
+      // Load permissions for all roles IN PARALLEL (not sequential)
+      const rolePromises = roles.map(async (role) => {
         const permissions = await permissionService.getRolePermissions(role.value);
-        roleData.push({
+        return {
           role: role.value,
           permissions
-        });
-      }
+        };
+      });
       
+      const roleData = await Promise.all(rolePromises);
       setRolePermissions(roleData);
     } catch (err) {
       console.error('Error loading role permissions:', err);
