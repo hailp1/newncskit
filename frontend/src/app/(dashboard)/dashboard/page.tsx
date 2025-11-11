@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
+import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import {
   PlusIcon,
   BeakerIcon,
@@ -13,11 +14,31 @@ import {
   ChartBarIcon,
   UserIcon,
   SparklesIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 export default function DashboardPage() {
-  const { user, logout } = useAuthStore()
+  const { user, logout, updateUser } = useAuthStore()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefreshAuth = async () => {
+    setIsRefreshing(true)
+    try {
+      const freshUserData = await forceRefreshAuth()
+      if (freshUserData) {
+        updateUser(freshUserData)
+        alert('Profile refreshed successfully!')
+      } else {
+        alert('Failed to refresh profile')
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+      alert('Error refreshing profile')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   // No need for auth checking here since the layout handles it
   // The layout ensures user is authenticated before rendering this component
@@ -114,7 +135,16 @@ export default function DashboardPage() {
                 <p className="font-medium">{user.role || 'Guest'}</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t">
+            <div className="mt-4 pt-4 border-t flex gap-2">
+              <Button 
+                onClick={handleRefreshAuth} 
+                variant="outline" 
+                size="sm"
+                disabled={isRefreshing}
+              >
+                <ArrowPathIcon className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh Profile
+              </Button>
               <Button onClick={logout} variant="outline" size="sm">
                 Logout
               </Button>
