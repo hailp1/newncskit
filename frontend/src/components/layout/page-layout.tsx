@@ -18,10 +18,12 @@ export default function PageLayout({
   showFooter = true 
 }: PageLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {showHeader && <Header />}
-      <main className={`flex-1 ${className}`}>
-        {children}
+      <main className={`flex-1 pt-20 ${className}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {children}
+        </div>
       </main>
       {showFooter && <Footer />}
     </div>

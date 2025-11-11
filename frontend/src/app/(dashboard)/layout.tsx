@@ -140,12 +140,14 @@ export default function DashboardLayout({
       {/* ============================================
           CONTENT SECTION - Sidebar + Main Content
           ============================================ */}
-      <div className="flex pt-16 min-h-screen">
-        {/* Sidebar - Fixed */}
-        <Sidebar />
+      <div className="flex min-h-screen">
+        {/* Sidebar - Fixed on desktop, hidden on mobile */}
+        <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:bottom-0 lg:z-40 lg:overflow-y-auto bg-white border-r border-gray-200">
+          <Sidebar />
+        </aside>
         
         {/* Main Content Area */}
-        <main className="flex-1 lg:ml-64 flex flex-col">
+        <main className="flex-1 lg:ml-64 flex flex-col pt-16">
           <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
               {children}
