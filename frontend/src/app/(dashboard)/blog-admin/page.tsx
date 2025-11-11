@@ -13,6 +13,12 @@ function BlogPageContent() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const postsPerPage = 10; // Giảm từ 50 xuống 10
+  
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -20,27 +26,57 @@ function BlogPageContent() {
     totalViews: 0
   });
 
+  // Load stats separately (lighter query)
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load posts when page or debounced search changes
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [currentPage, debouncedSearch]);
+
+  const loadStats = async () => {
+    try {
+      // Load only stats, not full posts
+      const [publishedRes, draftRes] = await Promise.all([
+        blogService.getPosts({ status: 'published', limit: 1 }),
+        blogService.getPosts({ status: 'draft', limit: 1 })
+      ]);
+      
+      setStats({
+        total: publishedRes.count + draftRes.count,
+        published: publishedRes.count,
+        draft: draftRes.count,
+        totalViews: 0 // Calculate separately if needed
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   const loadPosts = async () => {
     try {
       setIsLoading(true);
-      const response = await blogService.getPosts({ limit: 50 });
-      setPosts(response.results);
-      
-      // Calculate stats
-      const published = response.results.filter(post => post.status === 'published').length;
-      const draft = response.results.filter(post => post.status === 'draft').length;
-      const totalViews = response.results.reduce((sum, post) => sum + post.view_count, 0);
-      
-      setStats({
-        total: response.results.length,
-        published,
-        draft,
-        totalViews
+      const response = await blogService.getPosts({ 
+        page: currentPage,
+        limit: postsPerPage,
+        search: debouncedSearch || undefined
       });
+      
+      setPosts(response.results);
+      setTotalCount(response.count);
+      setTotalPages(Math.ceil(response.count / postsPerPage));
     } catch (error) {
       console.error('Error loading posts:', error);
     } finally {
@@ -48,10 +84,8 @@ function BlogPageContent() {
     }
   };
 
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Search is now handled by API, no need to filter client-side
+  const filteredPosts = posts;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -141,17 +175,22 @@ function BlogPageContent() {
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search with debounce */}
       <Card>
         <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Tìm kiếm bài viết..."
+              placeholder="Tìm kiếm bài viết... (tự động tìm sau 0.5s)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+            {searchQuery && searchQuery !== debouncedSearch && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -246,6 +285,58 @@ function BlogPageContent() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && filteredPosts.length > 0 && totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t pt-4">
+              <div className="text-sm text-gray-600">
+                Hiển thị {((currentPage - 1) * postsPerPage) + 1} - {Math.min(currentPage * postsPerPage, totalCount)} trong tổng số {totalCount} bài viết
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Trước
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        size="sm"
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Sau
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
