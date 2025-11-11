@@ -7,7 +7,23 @@ const nextConfig: NextConfig = {
   // Vercel deployment optimization
   compress: true,
   poweredByHeader: false,
-  generateEtags: false,
+  generateEtags: true, // Enable ETags for better caching
+  
+  // Performance optimizations
+  swcMinify: true, // Use SWC for faster minification
+  
+  // Experimental features for better performance
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
   
   // Skip type checking during build for faster deployment
   typescript: {
@@ -59,6 +75,12 @@ const nextConfig: NextConfig = {
       }
     ],
     formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60, // Cache images for 60 seconds
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
   // Environment variables
@@ -83,7 +105,7 @@ const nextConfig: NextConfig = {
     ]
   },
   
-  // Headers for security and CORS
+  // Headers for security, CORS, and caching
   async headers() {
     return [
       {
@@ -100,6 +122,30 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+        ],
+      },
+      // Cache static assets
+      {
+        source: '/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache images
+      {
+        source: '/_next/image/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

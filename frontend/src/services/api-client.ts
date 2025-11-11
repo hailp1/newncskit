@@ -10,8 +10,11 @@ interface APIClientConfig {
 class ApiClient {
   private client: AxiosInstance;
   private config: APIClientConfig;
+  private cache: Map<string, { data: any; timestamp: number }>;
+  private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
+    this.cache = new Map();
     // Use backend URL for API calls, fallback to localhost for development
     const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL || 
                       process.env.BACKEND_API_URL || 
@@ -138,12 +141,62 @@ class ApiClient {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  private getCacheKey(url: string, config?: AxiosRequestConfig): string {
+    return `${url}:${JSON.stringify(config?.params || {})}`;
+  }
+
+  private getFromCache(key: string): any | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  private setCache(key: string, data: any): void {
+    this.cache.set(key, { data, timestamp: Date.now() });
+    
+    // Clean old cache entries (keep max 100 items)
+    if (this.cache.size > 100) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+  }
+
+  async get<T = any>(url: string, config?: AxiosRequestConfig & { skipCache?: boolean }): Promise<AxiosResponse<T>> {
     try {
-      return await this.client.get<T>(url, config);
+      // Check cache for GET requests (unless skipCache is true)
+      if (!config?.skipCache) {
+        const cacheKey = this.getCacheKey(url, config);
+        const cachedData = this.getFromCache(cacheKey);
+        if (cachedData) {
+          return { data: cachedData, status: 200, statusText: 'OK (cached)', headers: {}, config: {} as any };
+        }
+      }
+
+      const response = await this.client.get<T>(url, config);
+      
+      // Cache successful GET responses
+      if (!config?.skipCache && response.status === 200) {
+        const cacheKey = this.getCacheKey(url, config);
+        this.setCache(cacheKey, response.data);
+      }
+      
+      return response;
     } catch (error) {
       console.error('GET request failed:', url, error);
       throw error;
+    }
+  }
+
+  // Clear cache for specific URL or all cache
+  clearCache(url?: string): void {
+    if (url) {
+      const keysToDelete = Array.from(this.cache.keys()).filter(key => key.startsWith(url));
+      keysToDelete.forEach(key => this.cache.delete(key));
+    } else {
+      this.cache.clear();
     }
   }
 
