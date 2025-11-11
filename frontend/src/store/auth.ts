@@ -73,9 +73,9 @@ export const useAuthStore = create<AuthState>()(
           if (sessionError) throw sessionError
 
           if (session) {
-            // Fetch user profile with role from public.users table
+            // Fetch user profile with role from public.profiles table
             const { data: userProfile } = await supabase
-              .from('users')
+              .from('profiles')
               .select('role, full_name, avatar_url, status, last_login_at')
               .eq('id', session.user.id)
               .single()
@@ -110,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
             if (session) {
               // Fetch user profile when auth state changes
               const { data: userProfile } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('role, full_name, avatar_url, status, last_login_at')
                 .eq('id', session.user.id)
                 .single()
@@ -155,7 +155,7 @@ export const useAuthStore = create<AuthState>()(
           // Fetch user profile with role
           const supabase = createClient()
           const { data: userProfile } = await supabase
-            .from('users')
+            .from('profiles')
             .select('role, full_name, avatar_url, status, last_login_at')
             .eq('id', result.user.id)
             .single()
