@@ -1,4 +1,4 @@
-# Implementation Plan - Responsive Design
+bv  # Implementation Plan - Responsive Design
 
 ## Overview
 Implementation tasks để chuẩn hóa responsive design toàn bộ website NCSKIT cho mobile, tablet, và desktop.

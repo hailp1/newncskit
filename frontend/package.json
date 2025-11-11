@@ -13,6 +13,8 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next",
     "postbuild": "next-sitemap",
+    "analyze": "node scripts/analyze-bundle.js",
+    "build:analyze": "npm run build && npm run analyze",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
