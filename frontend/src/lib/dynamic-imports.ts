@@ -14,7 +14,7 @@ export function createLazyComponent<P = {}>(
   LoadingComponent?: ComponentType
 ) {
   return dynamic(importFn, {
-    loading: LoadingComponent ? () => React.createElement(LoadingComponent) : undefined,
+    loading: LoadingComponent ? () => <LoadingComponent /> : undefined,
     ssr: false,
   })
 }

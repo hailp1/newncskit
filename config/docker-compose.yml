@@ -12,7 +12,7 @@ services:
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./frontend/database:/docker-entrypoint-initdb.d
+      - ../frontend/database:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
   # R Analysis Server
   r-analysis:
     build:
-      context: ./backend/r_analysis
+      context: ../backend/r_analysis
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -48,7 +48,7 @@ services:
   # Django Backend
   django-backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile
     ports:
       - "8001:8000"
@@ -90,3 +90,4 @@ volumes:
 networks:
   default:
     name: ncskit-network
+    external: true
