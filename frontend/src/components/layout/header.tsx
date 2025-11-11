@@ -8,7 +8,9 @@ import { useAuthModal } from '@/hooks/use-auth-modal'
 import { preloadAuthModal } from '@/components/auth/lazy-auth-modal'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import { isAdmin as checkIsAdmin } from '@/lib/auth-utils'
+import { useViewport } from '@/hooks/use-viewport'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   Bars3Icon,
   XMarkIcon,
@@ -49,6 +51,7 @@ export function Header() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { user, isAuthenticated, logout, updateUser } = useAuthStore()
   const { openLogin, openRegister } = useAuthModal()
+  const { isMobile, isTablet, isDesktop } = useViewport()
   const pathname = usePathname()
   const isAdmin = checkIsAdmin(user)
 
@@ -72,38 +75,51 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="flex h-16 items-center justify-between">
+    <header className={cn(
+      'bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50',
+      'h-14 md:h-16' // Responsive height
+    )}>
+      <nav className={cn(
+        'mx-auto max-w-7xl',
+        'px-4 md:px-6 lg:px-8' // Responsive padding
+      )} aria-label="Top">
+        <div className="flex h-full items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                 <BeakerIcon className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">NCSKIT</span>
+              <span className={cn(
+                'font-bold text-gray-900',
+                isMobile ? 'text-lg' : 'text-xl' // Responsive font size
+              )}>NCSKIT</span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-6">
+          {/* Tablet/Desktop Navigation */}
+          <div className={cn(
+            'hidden md:flex md:items-center',
+            isTablet ? 'md:space-x-4' : 'md:space-x-6' // Responsive spacing
+          )}>
             {isAuthenticated ? (
               // Authenticated Navigation
               <>
-                {navigation.map((item) => {
+                {navigation.slice(0, isTablet ? 4 : navigation.length).map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={cn(
+                        'flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                         isActive
                           ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
+                      )}
                     >
                       <item.icon className="h-4 w-4" />
-                      <span>{item.name}</span>
+                      {isDesktop && <span>{item.name}</span>}
                     </Link>
                   )
                 })}
@@ -111,17 +127,18 @@ export function Header() {
             ) : (
               // Public Navigation
               <>
-                {publicNavigation.map((item) => {
+                {publicNavigation.slice(0, isTablet ? 2 : publicNavigation.length).map((item) => {
                   const isActive = pathname === item.href
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={cn(
+                        'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                         isActive
                           ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
+                      )}
                     >
                       {item.name}
                     </Link>
@@ -132,13 +149,19 @@ export function Header() {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-4">
+          <div className={cn(
+            'flex items-center',
+            isMobile ? 'space-x-2' : 'space-x-4' // Responsive spacing
+          )}>
             {isAuthenticated && user ? (
               // User Menu
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-2 rounded-full bg-gray-50 p-2 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={cn(
+                    'flex items-center space-x-2 rounded-full bg-gray-50 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500',
+                    isMobile ? 'p-1.5 touch-target' : 'p-2' // Touch-friendly on mobile
+                  )}
                 >
                   <UserIcon className="h-5 w-5 text-gray-600" />
                   <span className="hidden sm:block text-gray-700">{user.full_name}</span>
@@ -146,34 +169,59 @@ export function Header() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                  <div className={cn(
+                    'absolute right-0 mt-2 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50',
+                    isMobile ? 'w-64 max-w-[calc(100vw-2rem)]' : 'w-56' // Responsive width
+                  )}>
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                      <p className="text-xs text-blue-600 capitalize mt-1">{user.role || 'user'}</p>
+                      <p className={cn(
+                        'font-medium text-gray-900 truncate',
+                        isMobile ? 'text-base' : 'text-sm'
+                      )}>{user.full_name || 'User'}</p>
+                      <p className={cn(
+                        'text-gray-500 truncate',
+                        isMobile ? 'text-sm' : 'text-xs'
+                      )}>{user.email}</p>
+                      <p className={cn(
+                        'text-blue-600 capitalize mt-1',
+                        isMobile ? 'text-sm' : 'text-xs'
+                      )}>{user.role || 'user'}</p>
                     </div>
                     <Link
                       href="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className={cn(
+                        'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
+                        isMobile ? 'text-base touch-target' : 'text-sm'
+                      )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <UserIcon className="mr-3 h-4 w-4" />
+                      <UserIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
                       Quản lý tài khoản
                     </Link>
                     <Link
                       href="/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className={cn(
+                        'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
+                        isMobile ? 'text-base touch-target' : 'text-sm'
+                      )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <Cog6ToothIcon className="mr-3 h-4 w-4" />
+                      <Cog6ToothIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
                       Cài đặt
                     </Link>
                     <button
                       onClick={handleRefreshProfile}
                       disabled={isRefreshing}
-                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                      className={cn(
+                        'flex w-full items-center px-4 py-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50',
+                        isMobile ? 'text-base touch-target' : 'text-sm'
+                      )}
                     >
-                      <ArrowPathIcon className={`mr-3 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <ArrowPathIcon className={cn(
+                        'mr-3',
+                        isMobile ? 'h-5 w-5' : 'h-4 w-4',
+                        isRefreshing && 'animate-spin'
+                      )} />
                       Làm mới thông tin
                     </button>
                     {isAdmin && (
@@ -216,7 +264,8 @@ export function Header() {
                   onMouseEnter={preloadAuthModal}
                   onFocus={preloadAuthModal}
                   variant="outline" 
-                  size="sm"
+                  size={isMobile ? 'sm' : 'default'}
+                  className={isMobile ? 'touch-target' : ''}
                 >
                   Login
                 </Button>
@@ -224,7 +273,8 @@ export function Header() {
                   onClick={openRegister}
                   onMouseEnter={preloadAuthModal}
                   onFocus={preloadAuthModal}
-                  size="sm"
+                  size={isMobile ? 'sm' : 'default'}
+                  className={isMobile ? 'touch-target' : ''}
                 >
                   Sign Up
                 </Button>
@@ -234,8 +284,9 @@ export function Header() {
             {/* Mobile menu button */}
             <button
               type="button"
-              className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 touch-target"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
                 <XMarkIcon className="h-6 w-6" />

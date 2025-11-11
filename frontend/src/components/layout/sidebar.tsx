@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
+import { useViewport } from '@/hooks/use-viewport'
+import { useSidebar } from './responsive-layout'
 import {
   HomeIcon,
   BeakerIcon,
@@ -24,6 +26,7 @@ import {
   ChevronUpIcon,
   ArrowPathIcon,
   ShieldCheckIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -82,8 +85,18 @@ export function Sidebar() {
   const { user, logout, updateUser } = useAuthStore()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const { isMobile, isTablet, isDesktop } = useViewport()
+  
+  // Try to get sidebar context (may not exist on all pages)
+  let sidebarContext = null
+  try {
+    sidebarContext = useSidebar()
+  } catch {
+    // Sidebar context not available
+  }
   
   const isAdmin = checkIsAdmin(user)
+  const isCollapsed = isTablet && sidebarContext && !sidebarContext.isOpen
 
   const handleLogout = async () => {
     try {
@@ -109,9 +122,28 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:bottom-0 lg:z-40">
-      <div className="flex-1 flex flex-col bg-white border-r border-gray-200 h-full">
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+    <div className={cn(
+      'flex flex-col bg-white h-full',
+      isMobile && 'w-full'
+    )}>
+      {/* Mobile: Close button */}
+      {isMobile && sidebarContext && (
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+          <button
+            onClick={() => sidebarContext.toggle(false)}
+            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 touch-target"
+            aria-label="Close menu"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+      )}
+
+      <nav className={cn(
+        'flex-1 overflow-y-auto space-y-1',
+        isMobile ? 'px-4 py-4' : 'px-3 py-6'
+      )}>
             {navigation.map((item) => {
               const isActive = pathname === item.href || 
                 (item.href !== '/dashboard' && pathname.startsWith(item.href))
@@ -126,48 +158,66 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   {...linkProps}
+                  onClick={() => {
+                    if (isMobile && sidebarContext) {
+                      sidebarContext.toggle(false)
+                    }
+                  }}
                   className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md relative",
+                    "group flex items-center px-2 py-2 font-medium rounded-md relative transition-colors",
+                    isMobile ? 'text-base touch-target' : 'text-sm',
                     isActive
                       ? "bg-blue-100 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    isCollapsed && "justify-center"
                   )}
                   title={item.description || item.name}
                 >
                   <item.icon
                     className={cn(
-                      "mr-3 flex-shrink-0 h-5 w-5",
+                      "flex-shrink-0",
+                      isMobile ? 'h-6 w-6' : 'h-5 w-5',
+                      isCollapsed ? 'mr-0' : 'mr-3',
                       isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
                     )}
                   />
-                  <div className="flex-1">
-                    <div>{item.name}</div>
-                    {item.description && (
-                      <div className="text-xs text-gray-500 mt-0.5 leading-tight">
-                        {item.description}
-                      </div>
-                    )}
-                  </div>
-                  {/* Enhanced workflow indicators */}
-                  {item.name === 'Projects' && (
-                    <div className="ml-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  {!isCollapsed && (
+                    <div className="flex-1">
+                      <div>{item.name}</div>
+                      {item.description && !isMobile && (
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight">
+                          {item.description}
+                        </div>
+                      )}
                     </div>
                   )}
-                  {item.name === 'Survey Campaigns' && (
-                    <div className="ml-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    </div>
+                  {!isCollapsed && (
+                    <>
+                      {/* Enhanced workflow indicators */}
+                      {item.name === 'Projects' && (
+                        <div className="ml-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        </div>
+                      )}
+                      {item.name === 'Survey Campaigns' && (
+                        <div className="ml-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </LinkComponent>
               )
             })}
             
           {/* Admin Section */}
-          {isAdmin && (
+          {isAdmin && !isCollapsed && (
             <div className="pt-6 mt-6 border-t border-gray-200">
               <div className="px-2 pb-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <h3 className={cn(
+                  'font-semibold text-gray-500 uppercase tracking-wider',
+                  isMobile ? 'text-sm' : 'text-xs'
+                )}>
                   Administration
                 </h3>
               </div>
@@ -179,8 +229,14 @@ export function Sidebar() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={() => {
+                      if (isMobile && sidebarContext) {
+                        sidebarContext.toggle(false)
+                      }
+                    }}
                     className={cn(
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                      "group flex items-center px-2 py-2 font-medium rounded-md transition-colors",
+                      isMobile ? 'text-base touch-target' : 'text-sm',
                       isActive
                         ? "bg-red-100 text-red-900"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -188,7 +244,8 @@ export function Sidebar() {
                   >
                     <item.icon
                       className={cn(
-                        "mr-3 flex-shrink-0 h-5 w-5",
+                        "mr-3 flex-shrink-0",
+                        isMobile ? 'h-6 w-6' : 'h-5 w-5',
                         isActive ? "text-red-500" : "text-gray-400 group-hover:text-gray-500"
                       )}
                     />
@@ -201,135 +258,181 @@ export function Sidebar() {
         </nav>
 
         {/* User Menu - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-gray-200 bg-white">
-          <div className="px-3 py-4">
-            {/* User Info - Clickable to toggle menu */}
-            {user && (
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="w-full flex items-center px-2 py-2 text-sm hover:bg-gray-50 rounded-md transition-colors"
-              >
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
-                    {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
-                  </div>
-                </div>
-                <div className="ml-3 flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {user.email}
-                  </p>
-                </div>
-                {isUserMenuOpen ? (
-                  <ChevronUpIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <ChevronDownIcon className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
-            )}
-
-            {/* Dropdown Menu */}
-            {isUserMenuOpen && user && (
-              <div className="mt-2 space-y-1 border-t border-gray-200 pt-2">
-                <Link
-                  href="/profile"
-                  className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                    pathname === '/profile'
-                      ? "bg-blue-100 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <UserIcon
-                    className={cn(
-                      "mr-3 flex-shrink-0 h-5 w-5",
-                      pathname === '/profile' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
-                    )}
-                  />
-                  Quản lý tài khoản
-                </Link>
-
-                <Link
-                  href="/settings"
-                  className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                    pathname === '/settings'
-                      ? "bg-blue-100 text-blue-900"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <CogIcon
-                    className={cn(
-                      "mr-3 flex-shrink-0 h-5 w-5",
-                      pathname === '/settings' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
-                    )}
-                  />
-                  Cài đặt
-                </Link>
-
-                {/* Refresh Profile Button */}
+        {!isCollapsed && (
+          <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+            <div className={cn(
+              isMobile ? 'px-4 py-4' : 'px-3 py-4'
+            )}>
+              {/* User Info - Clickable to toggle menu */}
+              {user && (
                 <button
-                  onClick={handleRefreshProfile}
-                  disabled={isRefreshing}
-                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className={cn(
+                    'w-full flex items-center px-2 py-2 hover:bg-gray-50 rounded-md transition-colors',
+                    isMobile ? 'text-base touch-target' : 'text-sm'
+                  )}
                 >
-                  <ArrowPathIcon
-                    className={cn(
-                      "mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500",
-                      isRefreshing && "animate-spin"
-                    )}
-                  />
-                  Làm mới thông tin
+                  <div className="flex-shrink-0">
+                    <div className={cn(
+                      'rounded-full bg-blue-600 flex items-center justify-center text-white font-medium',
+                      isMobile ? 'h-10 w-10' : 'h-8 w-8'
+                    )}>
+                      {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <div className="ml-3 flex-1 min-w-0 text-left">
+                    <p className={cn(
+                      'font-medium text-gray-900 truncate',
+                      isMobile ? 'text-base' : 'text-sm'
+                    )}>
+                      {user.full_name || 'User'}
+                    </p>
+                    <p className={cn(
+                      'text-gray-500 truncate',
+                      isMobile ? 'text-sm' : 'text-xs'
+                    )}>
+                      {user.email}
+                    </p>
+                  </div>
+                  {isUserMenuOpen ? (
+                    <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                  )}
                 </button>
+              )}
 
-                {/* Admin Settings - Only for admins */}
-                {isAdmin && (
+              {/* Dropdown Menu */}
+              {isUserMenuOpen && user && (
+                <div className="mt-2 space-y-1 border-t border-gray-200 pt-2">
                   <Link
-                    href="/admin/settings"
+                    href="/profile"
+                    onClick={() => {
+                      if (isMobile && sidebarContext) {
+                        sidebarContext.toggle(false)
+                      }
+                    }}
                     className={cn(
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-                      pathname === '/admin/settings'
-                        ? "bg-red-100 text-red-900"
+                      "group flex items-center px-2 py-2 font-medium rounded-md transition-colors",
+                      isMobile ? 'text-base touch-target' : 'text-sm',
+                      pathname === '/profile'
+                        ? "bg-blue-100 text-blue-900"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     )}
                   >
-                    <ShieldCheckIcon
+                    <UserIcon
                       className={cn(
-                        "mr-3 flex-shrink-0 h-5 w-5",
-                        pathname === '/admin/settings' ? "text-red-500" : "text-gray-400 group-hover:text-gray-500"
+                        "mr-3 flex-shrink-0",
+                        isMobile ? 'h-6 w-6' : 'h-5 w-5',
+                        pathname === '/profile' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
                       )}
                     />
-                    Cài đặt Admin
+                    Quản lý tài khoản
                   </Link>
-                )}
 
-                {/* Logout Button */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  <svg
-                    className="mr-3 flex-shrink-0 h-5 w-5 text-red-400 group-hover:text-red-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                  <Link
+                    href="/settings"
+                    onClick={() => {
+                      if (isMobile && sidebarContext) {
+                        sidebarContext.toggle(false)
+                      }
+                    }}
+                    className={cn(
+                      "group flex items-center px-2 py-2 font-medium rounded-md transition-colors",
+                      isMobile ? 'text-base touch-target' : 'text-sm',
+                      pathname === '/settings'
+                        ? "bg-blue-100 text-blue-900"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    )}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    <CogIcon
+                      className={cn(
+                        "mr-3 flex-shrink-0",
+                        isMobile ? 'h-6 w-6' : 'h-5 w-5',
+                        pathname === '/settings' ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                      )}
                     />
-                  </svg>
-                  Đăng xuất
-                </button>
-              </div>
-            )}
+                    Cài đặt
+                  </Link>
+
+                  {/* Refresh Profile Button */}
+                  <button
+                    onClick={handleRefreshProfile}
+                    disabled={isRefreshing}
+                    className={cn(
+                      'w-full group flex items-center px-2 py-2 font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 transition-colors',
+                      isMobile ? 'text-base touch-target' : 'text-sm'
+                    )}
+                  >
+                    <ArrowPathIcon
+                      className={cn(
+                        "mr-3 flex-shrink-0 text-gray-400 group-hover:text-gray-500",
+                        isMobile ? 'h-6 w-6' : 'h-5 w-5',
+                        isRefreshing && "animate-spin"
+                      )}
+                    />
+                    Làm mới thông tin
+                  </button>
+
+                  {/* Admin Settings - Only for admins */}
+                  {isAdmin && (
+                    <Link
+                      href="/admin/settings"
+                      onClick={() => {
+                        if (isMobile && sidebarContext) {
+                          sidebarContext.toggle(false)
+                        }
+                      }}
+                      className={cn(
+                        "group flex items-center px-2 py-2 font-medium rounded-md transition-colors",
+                        isMobile ? 'text-base touch-target' : 'text-sm',
+                        pathname === '/admin/settings'
+                          ? "bg-red-100 text-red-900"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      )}
+                    >
+                      <ShieldCheckIcon
+                        className={cn(
+                          "mr-3 flex-shrink-0",
+                          isMobile ? 'h-6 w-6' : 'h-5 w-5',
+                          pathname === '/admin/settings' ? "text-red-500" : "text-gray-400 group-hover:text-gray-500"
+                        )}
+                      />
+                      Cài đặt Admin
+                    </Link>
+                  )}
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className={cn(
+                      'w-full group flex items-center px-2 py-2 font-medium rounded-md text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors',
+                      isMobile ? 'text-base touch-target' : 'text-sm'
+                    )}
+                  >
+                    <svg
+                      className={cn(
+                        'mr-3 flex-shrink-0 text-red-400 group-hover:text-red-500',
+                        isMobile ? 'h-6 w-6' : 'h-5 w-5'
+                      )}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-    </aside>
+        )}
+    </div>
   )
 }
