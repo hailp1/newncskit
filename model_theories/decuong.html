@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đề cương Nghiên cứu Tiến sĩ - Lê Phúc Hải (Bản Hoàn Chỉnh)</title>
+    <!-- Thư viện jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- Thư viện Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary-text: #333;
+            --heading-color: #2c3e50;
+            --background-color: #f8f9fa;
+            --content-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --accent-color: #007bff;
+        }
+        body { font-family: 'Times New Roman', Times, serif; line-height: 1.8; font-size: 17px; color: var(--primary-text); background-color: var(--background-color); margin: 0; scroll-behavior: smooth; }
+        .wrapper { display: flex; max-width: 1400px; margin: 20px auto; gap: 30px; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 20px; align-self: flex-start; height: 95vh; overflow-y: auto; padding-right: 15px; }
+        .sidebar h3 { font-size: 18px; color: var(--heading-color); margin-top: 0; }
+        .sidebar nav ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar nav ul ul { padding-left: 20px; }
+        .sidebar nav a { display: block; padding: 6px 10px; text-decoration: none; color: #555; font-size: 15px; border-left: 3px solid transparent; transition: all 0.2s ease; }
+        .sidebar nav a:hover { background-color: #e9ecef; color: var(--accent-color); }
+        .sidebar nav a.active { color: var(--accent-color); font-weight: bold; border-left-color: var(--accent-color); }
+        .content { flex-grow: 1; background-color: var(--content-bg); padding: 40px 50px; box-shadow: 0 0 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .paper-header { text-align: center; border-bottom: 2px solid var(--primary-text); padding-bottom: 20px; margin-bottom: 40px; }
+        .paper-header h1 { font-size: 28px; color: var(--heading-color); margin: 0 0 15px 0; }
+        .paper-header p { font-size: 16px; margin: 5px 0; }
+        h2 { font-size: 24px; margin-top: 50px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        h3 { font-size: 20px; margin-top: 30px; }
+        ul, ol { padding-left: 25px; }
+        .model-container { margin: 30px 0; }
+        .model-container figcaption { margin-top: 10px; font-style: italic; color: #666; font-size: 15px; text-align: center;}
+        .mermaid { background-color: #fcfcfc; border: 1px solid var(--border-color); padding: 15px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .ajax-box { border: 1px dashed #ccc; padding: 15px 20px; margin-top: 20px; background-color: #f9f9f9; }
+        .ajax-box button { background-color: var(--accent-color); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px; }
+        .ajax-box button:hover { opacity: 0.9; }
+        .ajax-content { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; font-size: 15px; }
+        @media (max-width: 1024px) {
+            .wrapper { flex-direction: column; }
+            .sidebar { position: static; width: 100%; height: auto; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <aside class="sidebar">
+            <h3>Mục lục</h3>
+            <nav id="toc">
+                <ul>
+                    <li><a href="#tomtat">Tóm tắt</a></li>
+                    <li>
+                        <a href="#chuong1">Chương 1 – Tổng quan</a>
+                        <ul>
+                            <li><a href="#muc1-1">1.1 Bối cảnh và tính cấp thiết</a></li>
+                            <li><a href="#muc1-2">1.2 Khoảng trống nghiên cứu</a></li>
+                            <li><a href="#muc1-3">1.3 Mục tiêu nghiên cứu</a></li>
+                            <li><a href="#muc1-4">1.4 Câu hỏi nghiên cứu</a></li>
+                            <li><a href="#muc1-5">1.5 Đối tượng và phạm vi</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#chuong2">Chương 2 – Cơ sở lý thuyết</a>
+                        <ul>
+                            <li><a href="#muc2-1">2.1 Lý thuyết nền</a></li>
+                            <li><a href="#muc2-2">2.2 Tổng quan nghiên cứu</a></li>
+                            <li><a href="#muc2-3">2.3 Mô hình và giả thuyết</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#chuong3">Chương 3 – Phương pháp</a>
+                        <ul>
+                            <li><a href="#muc3-1">3.1 Thiết kế nghiên cứu</a></li>
+                            <li><a href="#muc3-2">3.2 Giai đoạn 1: Định tính</a></li>
+                            <li><a href="#muc3-3">3.3 Giai đoạn 2: Định lượng</a></li>
+                            <li><a href="#muc3-4">3.4 Phân tích dữ liệu</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#phuluc">Phụ lục</a>
+                        <ul>
+                            <li><a href="#phuluc-a">A. Ma trận thang đo</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="paper-header">
+                <h1>Tác động của Marketing xanh và Minh bạch chuỗi cung ứng dựa trên Blockchain trong việc hóa giải sự hoài nghi và xây dựng niềm tin của người tiêu dùng: Nghiên cứu thực nghiệm trong ngành trà Atiso Việt Nam</h1>
+                <p><b>NCS:</b> Lê Phúc Hải</p>
+                <p><b>Trường Đại học Đà Lạt</b></p>
+                <p><b>Khóa:</b> 2026–2029</p>
+            </header>
+
+            <section id="tomtat">
+                <h2>Tóm tắt</h2>
+                <p>Nghiên cứu này xây dựng và kiểm định một mô hình tích hợp nhằm khám phá tác động đồng thời của Marketing xanh và tính minh bạch do Blockchain mang lại đối với niềm tin và ý định mua hàng của người tiêu dùng trà Atiso tại Việt Nam. Bằng cách sử dụng phương pháp nghiên cứu hỗn hợp, nghiên cứu không chỉ làm rõ vai trò của các tín hiệu xanh mà còn nhấn mạnh khả năng của công nghệ Blockchain trong việc giảm thiểu sự hoài nghi (green skepticism), qua đó củng cố niềm tin thương hiệu. Kết quả dự kiến sẽ cung cấp những hàm ý quản trị quan trọng cho các doanh nghiệp nông sản trong việc xây dựng chiến lược truyền thông minh bạch và hiệu quả.</p>
+            </section>
+
+            <section id="chuong1">
+                <h2>Chương 1 – TỔNG QUAN</h2>
+                <h3 id="muc1-1">1.1 Bối cảnh và tính cấp thiết</h3>
+                <p>Trong bối cảnh biến đổi khí hậu, khan hiếm tài nguyên và áp lực từ các phong trào tiêu dùng bền vững, marketing xanh trở thành xu hướng tất yếu để doanh nghiệp nâng cao lợi thế cạnh tranh và đáp ứng kỳ vọng của người tiêu dùng. Tuy nhiên, sự hoài nghi đối với các tuyên bố xanh (green claims) vẫn ở mức cao, chủ yếu do "greenwashing" – hành vi truyền thông sai lệch hoặc phóng đại các đặc tính môi trường của sản phẩm/dịch vụ.</p>
+                <p>Việc lựa chọn <strong>trà Atiso</strong> làm trường hợp nghiên cứu mang ý nghĩa đặc biệt. Đây là sản phẩm nông sản đặc trưng, có giá trị cao của vùng Lâm Đồng, nhưng đang phải đối mặt với thách thức về lòng tin do thiếu thông tin minh bạch về quy trình canh tác hữu cơ và nguồn gốc xuất xứ. Do đó, trà Atiso là một ví dụ điển hình để kiểm định hiệu quả của việc kết hợp Marketing xanh với một công cụ xác thực công nghệ cao như Blockchain.</p>
+
+                <h3 id="muc1-2">1.2 Khoảng trống nghiên cứu</h3>
+                <ul>
+                    <li>Thiếu các nghiên cứu kiểm định <strong>tác động đồng thời</strong> của marketing xanh và Blockchain đối với nhận thức và hành vi người tiêu dùng.</li>
+                    <li>Thiếu mô hình lý thuyết tích hợp giải thích cơ chế <strong>hóa giải sự hoài nghi xanh</strong> (green skepticism) thông qua tín hiệu minh bạch.</li>
+                    <li>Ít nghiên cứu thực nghiệm trong ngành nông sản đặc sản tại Việt Nam, nơi yếu tố "xuất xứ" và "chất lượng" đóng vai trò quan trọng trong niềm tin người tiêu dùng.</li>
+                </ul>
+
+                <h3 id="muc1-3">1.3 Mục tiêu nghiên cứu</h3>
+                <p><strong>Mục tiêu tổng quát:</strong> Xây dựng và kiểm định mô hình tích hợp giữa Marketing xanh và minh bạch Blockchain nhằm hóa giải sự hoài nghi và gia tăng niềm tin người tiêu dùng đối với sản phẩm trà Atiso Việt Nam.</p>
+                <p><strong>Mục tiêu cụ thể:</strong></p>
+                <ol>
+                    <li>Đánh giá tác động của Marketing xanh đến nhận thức giá trị và niềm tin của người tiêu dùng.</li>
+                    <li>Phân tích vai trò của Blockchain trong việc tăng tính minh bạch và giảm hoài nghi xanh.</li>
+                    <li>Kiểm định tác động cộng hưởng của Marketing xanh và Blockchain đến ý định mua hàng.</li>
+                    <li>Đề xuất khuyến nghị quản trị cho doanh nghiệp và chính quyền địa phương.</li>
+                </ol>
+
+                <h3 id="muc1-4">1.4 Câu hỏi nghiên cứu</h3>
+                <ol>
+                    <li>Marketing xanh ảnh hưởng như thế nào đến niềm tin và ý định mua hàng?</li>
+                    <li>Nhận thức về minh bạch dựa trên Blockchain có làm giảm sự hoài nghi xanh hay không?</li>
+                    <li>Tác động cộng hưởng giữa Marketing xanh và Blockchain được thể hiện ra sao?</li>
+                    <li>Mô hình nghiên cứu có thể áp dụng cho các ngành nông sản khác ngoài trà Atiso hay không?</li>
+                </ol>
+
+                <h3 id="muc1-5">1.5 Đối tượng và phạm vi nghiên cứu</h3>
+                <ul>
+                    <li><strong>Đối tượng nghiên cứu:</strong> Người tiêu dùng trà Atiso tại Việt Nam.</li>
+                    <li><strong>Phạm vi nội dung:</strong> Marketing xanh (4P xanh), Nhận thức về tính minh bạch do Blockchain mang lại, Sự hoài nghi xanh, Niềm tin, và Ý định mua hàng.</li>
+                    <li><strong>Phạm vi không gian:</strong> Tỉnh Lâm Đồng và các thị trường tiêu thụ chính (TP.HCM, Hà Nội).</li>
+                    <li><strong>Phạm vi thời gian:</strong> 2026–2029.</li>
+                </ul>
+            </section>
+
+            <section id="chuong2">
+                 <h2>Chương 2 – CƠ SỞ LÝ THUYẾT VÀ MÔ HÌNH</h2>
+                 <h3 id="muc2-1">2.1 Lý thuyết nền</h3>
+                <ul>
+                    <li><strong>Lý thuyết tín hiệu (Signaling Theory):</strong> Giải thích cách doanh nghiệp truyền tải thông tin về chất lượng và tính bền vững để giảm bất cân xứng thông tin.</li>
+                    <li><strong>Lý thuyết hành vi dự định (TPB):</strong> Giải thích mối quan hệ giữa thái độ, chuẩn chủ quan, kiểm soát hành vi và ý định mua hàng.</li>
+                    <li><strong>Lý thuyết minh bạch và niềm tin:</strong> Khẳng định vai trò của minh bạch thông tin trong việc giảm hoài nghi và tăng sự tin tưởng.</li>
+                </ul>
+
+                <h3 id="muc2-2">2.2 Tổng quan nghiên cứu</h3>
+                <p>Tổng hợp các nghiên cứu trước đây về:</p>
+                <ul>
+                    <li>Marketing xanh và tác động đến hành vi tiêu dùng.</li>
+                    <li>Blockchain trong chuỗi cung ứng nông sản.</li>
+                    <li>Cơ chế giảm hoài nghi xanh thông qua minh bạch thông tin.</li>
+                    <li>Khoảng trống và nghiên cứu tích hợp hai yếu tố này.</li>
+                </ul>
+                
+                <h3 id="muc2-3">2.3 Mô hình và giả thuyết</h3>
+                <p><strong>Giả thuyết:</strong></p>
+                <ul>
+                    <li><strong>H1:</strong> Marketing xanh có tác động tích cực đến Niềm tin.</li>
+                    <li><strong>H2:</strong> Marketing xanh có tác động tiêu cực đến Hoài nghi xanh.</li>
+                    <li><strong>H3:</strong> Nhận thức về minh bạch Blockchain có tác động tích cực đến Niềm tin.</li>
+                    <li><strong>H4:</strong> Nhận thức về minh bạch Blockchain có tác động tiêu cực đến Hoài nghi xanh.</li>
+                    <li><strong>H5:</strong> Niềm tin có tác động tích cực đến Ý định mua hàng.</li>
+                    <li><strong>H6:</strong> Hoài nghi xanh có tác động tiêu cực đến Ý định mua hàng.</li>
+                    <li><strong>H7:</strong> Tồn tại tác động cộng hưởng (tương tác) giữa Marketing xanh và Minh bạch Blockchain lên Niềm tin và Ý định mua hàng.</li>
+                </ul>
+                <p><strong>Lập luận cho giả thuyết tương tác (H7):</strong> Lý thuyết Tín hiệu cho rằng các tín hiệu sẽ mạnh mẽ và đáng tin cậy hơn khi chúng nhất quán và được củng cố lẫn nhau. Trong mô hình này, Marketing xanh (tuyên bố về tính bền vững) là một tín hiệu. Minh bạch Blockchain (bằng chứng xác thực) là một siêu tín hiệu (meta-signal) giúp xác thực tín hiệu ban đầu. Khi một doanh nghiệp vừa thực hiện Marketing xanh, vừa cung cấp bằng chứng minh bạch qua Blockchain, hiệu ứng tổng hợp sẽ lớn hơn tổng của hai tác động riêng lẻ, tạo ra một "hiệu ứng синерги" (synergistic effect) mạnh mẽ lên niềm tin và ý định mua của người tiêu dùng.</p>
+                 <figure class="model-container">
+                    <div class="mermaid">
+                        graph LR
+                            subgraph "BIẾN ĐỘC LẬP"
+                                GM[Marketing Xanh <br> (Green 4Ps)]
+                                BCT[Minh bạch Blockchain]
+                            end
+
+                            subgraph "BIẾN TRUNG GIAN"
+                                CT[Niềm tin]
+                                GS[Hoài nghi xanh]
+                            end
+
+                            subgraph "BIẾN PHỤ THUỘC"
+                                PI[Ý định mua hàng]
+                            end
+                            
+                            subgraph INTERACTION [TÁC ĐỘNG CỘNG HƯỞNG]
+                                style INTERACTION fill:#fff,stroke:#ddd,stroke-dasharray: 5 5
+                                IT("GM x BCT")
+                            end
+                            
+                            GM -- H1 (+) --> CT
+                            GM -- H2 (-) --> GS
+                            BCT -- H3 (+) --> CT
+                            BCT -- H4 (-) --> GS
+                            CT -- H5 (+) --> PI
+                            GS -- H6 (-) --> PI
+
+                            GM -.-> IT
+                            BCT -.-> IT
+                            IT -- H7 (+) --> CT & PI
+
+                            style CT fill:#d4edda,stroke:#c3e6cb
+                            style PI fill:#cce5ff,stroke:#b8daff
+                            style GS fill:#f8d7da,stroke:#f5c6cb
+                    </div>
+                    <figcaption>Hình 1. Mô hình nghiên cứu đề xuất</figcaption>
+                </figure>
+            </section>
+            
+            <section id="chuong3">
+                <h2>Chương 3 – PHƯƠNG PHÁP NGHIÊN CỨU</h2>
+                <h3 id="muc3-1">3.1 Thiết kế nghiên cứu</h3>
+                <p>Nghiên cứu sử dụng phương pháp hỗn hợp (mixed-method), tuần tự khám phá, kết hợp định tính và định lượng để đảm bảo tính toàn diện và sâu sắc của kết quả.</p>
+
+                <h3 id="muc3-2">3.2 Giai đoạn 1: Định tính</h3>
+                <p>Nghiên cứu định tính được thực hiện thông qua phỏng vấn sâu với 15-20 chuyên gia trong lĩnh vực marketing, công nghệ và nông sản. Mục tiêu là khám phá, xác định và điều chỉnh các biến số cũng như thang đo cho phù hợp với bối cảnh Việt Nam.</p>
+                <div class="ajax-box">
+                    <button id="loadInterviewBtn">Xem dàn bài phỏng vấn sâu dự kiến</button>
+                    <div id="interviewQuestionsContainer" class="ajax-content" style="display:none;"></div>
+                </div>
+
+                <h3 id="muc3-3">3.3 Giai đoạn 2: Định lượng</h3>
+                <p>Nghiên cứu định lượng sử dụng phương pháp khảo sát trực tuyến trên diện rộng để thu thập dữ liệu và kiểm định mô hình nghiên cứu cũng như các giả thuyết đã đề ra.</p>
+                <ul>
+                    <li><strong>Thiết kế bảng hỏi:</strong> Dựa trên thang đo đã được sàng lọc và điều chỉnh từ giai đoạn định tính và tổng quan lý thuyết.</li>
+                    <li><strong>Phương pháp chọn mẫu:</strong> Sử dụng phương pháp chọn mẫu phi xác suất theo mục đích (purposive sampling), nhắm đến những người tiêu dùng có quan tâm hoặc đã từng sử dụng các sản phẩm trà, sản phẩm hữu cơ. </li>
+                    <li><strong>Kích thước mẫu:</strong> Dự kiến thu thập khoảng 400 mẫu hợp lệ để đảm bảo đủ năng lực thống kê cho phân tích SEM.</li>
+                </ul>
+                 <div class="ajax-box">
+                    <button id="loadSurveyBtn">Xem phiếu khảo sát định lượng dự kiến</button>
+                    <div id="surveyContainer" class="ajax-content" style="display:none;"></div>
+                </div>
+                
+                 <h3 id="muc3-4">3.4 Phân tích dữ liệu</h3>
+                <ul>
+                    <li>Kiểm định độ tin cậy của thang đo bằng Cronbach's Alpha và Composite Reliability (CR).</li>
+                    <li>Kiểm định giá trị hội tụ và phân biệt bằng Phân tích nhân tố khẳng định (CFA).</li>
+                    <li>Sử dụng <strong>Mô hình phương trình cấu trúc (SEM)</strong> để kiểm định các giả thuyết về mối quan hệ trực tiếp và gián tiếp. Marketing xanh sẽ được đo lường như một cấu trúc bậc hai (second-order construct).</li>
+                    <li>Sử dụng kỹ thuật <strong>Phân tích đa nhóm (Multi-group Analysis)</strong> để kiểm tra giả thuyết tương tác (H7).</li>
+                </ul>
+            </section>
+            
+            <section id="phuluc">
+                <h2>Phụ lục</h2>
+                <h3 id="phuluc-a">Phụ lục A: Ma trận thang đo (Measurement Scale Matrix)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Biến số (Construct)</th>
+                            <th>Mã hóa</th>
+                            <th>Nguồn tham khảo chính</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Marketing Xanh (Green Marketing)</td>
+                            <td>GM1-GM4</td>
+                            <td>Chen (2010); Papadas et al. (2017)</td>
+                            <td>Thang đo đa hướng (Green Product, Price, Place, Promotion).</td>
+                        </tr>
+                        <tr>
+                            <td>Nhận thức về Minh bạch Blockchain (Perceived Blockchain Transparency)</td>
+                            <td>BCT1-BCT3</td>
+                            <td>Casino et al. (2019); Stranieri et al. (2021)</td>
+                            <td>Tập trung vào tính dễ truy xuất, độ tin cậy của thông tin và tính bất biến.</td>
+                        </tr>
+                        <tr>
+                            <td>Niềm tin của Người tiêu dùng (Consumer Trust)</td>
+                            <td>CT1-CT3</td>
+                            <td>Chaudhuri & Holbrook (2001)</td>
+                            <td>Đo lường niềm tin vào năng lực và sự chính trực của thương hiệu.</td>
+                        </tr>
+                        <tr>
+                            <td>Hoài nghi Xanh (Green Skepticism)</td>
+                            <td>GS1-GS3</td>
+                            <td>Mohr, Webb & Harris (2001)</td>
+                            <td>Đo lường mức độ nghi ngờ chung của người tiêu dùng đối với các tuyên bố về môi trường.</td>
+                        </tr>
+                        <tr>
+                            <td>Ý định Mua hàng (Purchase Intention)</td>
+                            <td>PI1-PI3</td>
+                            <td>Ajzen (1991); Taylor & Todd (1995)</td>
+                            <td>Đo lường khả năng và mong muốn mua sản phẩm trong tương lai gần.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Khởi tạo Mermaid.js
+        mermaid.initialize({ startOnLoad: true, theme: 'base' });
+
+        // Logic AJAX
+        $(document).ready(function() {
+            // Dữ liệu cho phỏng vấn định tính
+            const interviewQuestions = [
+                "Theo Ông/Bà, xu hướng marketing xanh tại Việt Nam đang có những đặc điểm nổi bật nào?",
+                "Những rào cản chính khiến người tiêu dùng còn hoài nghi về các sản phẩm 'xanh' là gì?",
+                "Công nghệ Blockchain có thể đóng vai trò như thế nào trong việc giải quyết vấn đề minh bạch nguồn gốc nông sản?",
+                "Yếu tố nào được xem là then chốt để xây dựng niềm tin của khách hàng đối với một thương hiệu nông sản đặc sản?",
+                "Theo Ông/Bà, các thang đo về Marketing xanh hiện tại đã phù hợp với thực tiễn Việt Nam chưa? Cần bổ sung hay điều chỉnh gì?",
+                "Lời khuyên của Ông/Bà cho việc thiết kế một chiến dịch truyền thông kết hợp cả yếu tố 'xanh' và 'công nghệ' là gì?"
+            ];
+            
+            // Sự kiện click cho nút tải câu hỏi phỏng vấn
+            $('#loadInterviewBtn').on('click', function() {
+                let html = '<h4>Dàn bài phỏng vấn chuyên gia (dự kiến)</h4><ol>';
+                interviewQuestions.forEach(q => { html += `<li>${q}</li>`; });
+                html += '</ol>';
+                $('#interviewQuestionsContainer').html(html).slideDown();
+                $(this).prop('disabled', true).text('Đã tải nội dung');
+            });
+
+            // Sự kiện click cho nút tải phiếu khảo sát
+            $('#loadSurveyBtn').on('click', function() {
+                const surveyHtml = `
+                    <h4>PHIẾU KHẢO SÁT DỰ KIẾN</h4>
+                    <p><strong>Phần 1: Vui lòng cho biết mức độ đồng ý của Anh/Chị với các phát biểu sau đây.</strong></p>
+                    <p><em>(Thang đo: 1-Hoàn toàn không đồng ý; 2-Không đồng ý; 3-Bình thường; 4-Đồng ý; 5-Hoàn toàn đồng ý)</em></p>
+                    <strong>Marketing Xanh (GM)</strong>
+                    <ul><li>GM1: Sản phẩm trà Atiso của thương hiệu này sử dụng bao bì thân thiện với môi trường.</li><li>GM2: Thương hiệu này công bố các chứng nhận sinh thái/hữu cơ rõ ràng.</li></ul>
+                    <strong>Nhận thức về Minh bạch Blockchain (BCT)</strong>
+                    <ul><li>BCT1: Tôi có thể dễ dàng truy xuất thông tin chi tiết về nguồn gốc sản phẩm này.</li><li>BCT2: Thông tin được cung cấp qua truy xuất là đáng tin cậy.</li></ul>
+                    <strong>Hoài nghi Xanh (GS)</strong>
+                    <ul><li>GS1: Tôi thường nghi ngờ về những gì các công ty nói về lợi ích môi trường của sản phẩm.</li><li>GS2: Hầu hết các công ty đều phóng đại các cam kết 'xanh' của họ.</li></ul>
+                    <strong>Niềm tin (CT)</strong>
+                    <ul><li>CT1: Tôi tin tưởng vào thương hiệu trà Atiso này.</li><li>CT2: Thương hiệu này là một thương hiệu đáng tin cậy.</li></ul>
+                    <strong>Ý định Mua hàng (PI)</strong>
+                    <ul><li>PI1: Tôi có ý định mua sản phẩm này trong thời gian tới.</li><li>PI2: Tôi sẽ ưu tiên chọn thương hiệu này khi có nhu cầu.</li></ul>
+                    <hr>
+                    <strong>Phần 2: Thông tin cá nhân</strong>
+                    <ul><li>Giới tính: Nam / Nữ / Khác</li><li>Độ tuổi: Dưới 18 / 18-25 / 26-35 / ...</li><li>Thu nhập hàng tháng: ...</li></ul>`;
+                $('#surveyContainer').html(surveyHtml).slideDown();
+                $(this).prop('disabled', true).text('Đã tải nội dung');
+            });
+
+            // Script highlight mục lục khi cuộn
+            const sections = $('main section[id]');
+            const navLinks = $('#toc nav a');
+            $(window).on('scroll', function () {
+                let current = '';
+                sections.each(function() {
+                    const sectionTop = $(this).offset().top;
+                    if ($(window).scrollTop() >= sectionTop - 100) { current = $(this).attr('id'); }
+                });
+                navLinks.each(function(){
+                    $(this).removeClass('active');
+                    if($(this).attr('href').includes('#' + current)){ $(this).addClass('active'); }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

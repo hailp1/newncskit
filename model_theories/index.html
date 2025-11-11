@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Hỗ Trợ Nghiên Cứu Khoa Học</title>
+    <style>
+        /* --- General Styles --- */
+        body {
+            font-family: 'Times New Roman', Times, serif; /* Font chữ học thuật phổ biến */
+            margin: 0;
+            background-color: #f8f9fa; /* Màu nền trang nhã, chuyên nghiệp */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #212529; /* Màu chữ chính, dễ đọc */
+            line-height: 1.6;
+        }
+
+        /* --- Main Container --- */
+        .container {
+            max-width: 960px;
+            width: 100%;
+            padding: 2.5rem;
+            text-align: center;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6; /* Viền nhẹ tạo sự tách biệt */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Đổ bóng tinh tế */
+        }
+
+        /* --- Header --- */
+        header h1 {
+            font-size: 2.2rem;
+            color: #003366; /* Màu xanh đậm học thuật */
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            border-bottom: 2px solid #0056b3; /* Đường gạch chân tiêu đề */
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #6c757d; /* Màu chữ phụ, trang trọng */
+            margin-bottom: 3.5rem;
+        }
+
+        /* --- Selection Grid --- */
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Bố cục linh hoạt */
+            gap: 2.5rem;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            background-color: #f8f9fa;
+            border-radius: 4px; /* Bo góc nhẹ */
+            padding: 2rem;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #ced4da;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: #0056b3; /* Nhấn mạnh khi di chuột */
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: #0056b3;
+            font-weight: 600;
+        }
+
+        .card p {
+            margin: 0;
+            color: #495057;
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        /* --- Footer --- */
+        footer {
+            margin-top: 4rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #dee2e6; /* Phân tách footer */
+            padding-top: 1.5rem;
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            .selection-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Hỗ Trợ Nghiên Cứu</h1>
+            <p>Vui lòng lựa chọn tài nguyên phù hợp cho công trình của bạn.</p>
+        </header>
+
+        <main class="selection-grid">
+            <!-- Card for Survey Tool -->
+            <a href="survey/" class="card">
+                <h2>Công Cụ Thiết Kế Bảng Hỏi</h2>
+                <p>Phát triển, hiệu chỉnh và triển khai bảng hỏi khảo sát học thuật.</p>
+            </a>
+
+            <!-- Card for CRM Tool -->
+            <a href="model/" class="card">
+                <h2>Cơ Sở Lý Thuyết & Mô Hình</h2>
+                <p>Tra cứu và tham chiếu các lý thuyết, mô hình nền tảng trong lĩnh vực Marketing và Quản trị.</p>
+            </a>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 - NCSKIT.ORG/LE PHUC HAI</p>
+        </footer>
+    </div>
+
+</body>
+</html>

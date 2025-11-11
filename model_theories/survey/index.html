@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Xây Dựng Bảng Hỏi Chuyên Nghiệp</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <h1>Công Cụ Xây Dựng Bảng Hỏi Chuyên Nghiệp</h1>
+
+    <div class="container">
+        <h3>Bước 1: Chọn mô hình nền</h3>
+        <select id="model-selector">
+            <option value="">-- Vui lòng chọn --</option>
+        </select>
+    </div>
+
+    <div class="container" id="model-builder-container" style="display: none;">
+        <h3>Bước 2: Tùy chỉnh Mô hình</h3>
+        <ul id="model-canvas-list"></ul>
+        <button id="add-variable-btn" class="btn">+ Thêm biến</button>
+    </div>
+
+    <div class="container" id="context-container" style="display: none;">
+        <h3>Bước 2.5: Thiết lập Ngữ cảnh Chi tiết</h3>
+        <p>Hệ thống đã phát hiện các ngữ cảnh cần làm rõ. Vui lòng điền vào các ô dưới đây:</p>
+        <div id="context-fields"></div>
+    </div>
+
+    <div class="container" id="questions-container" style="display: none;">
+        <h3>Bước 3: Xem trước và Xuất Bảng hỏi</h3>
+        <button id="export-excel-btn" class="btn btn-success">Xuất ra Excel</button>
+        <div id="questions-table-container">
+            <table id="questions-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">Mã</th>
+                        <th style="width: 55%;">Nội dung phát biểu</th>
+                        <th class="likert-cell">1</th><th class="likert-cell">2</th>
+                        <th class="likert-cell">3</th><th class="likert-cell">4</th>
+                        <th class="likert-cell">5</th>
+                    </tr>
+                </thead>
+                <tbody id="questions-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

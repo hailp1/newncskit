@@ -1,0 +1,46 @@
+{
+  "models": [
+    { "id": 1, "name": "Technology Acceptance Model (TAM)", "acronym": "TAM", "variables": [1, 2, 8] },
+    { "id": 2, "name": "Theory of Planned Behavior (TPB)", "acronym": "TPB", "variables": [8, 9, 10, 11] },
+    { "id": 3, "name": "Signaling Theory (Lý thuyết Tín hiệu)", "acronym": "ST", "variables": [14] },
+    { "id": 4, "name": "Trust & Transparency Theories (Niềm tin & Minh bạch)", "acronym": "TTT", "variables": [12, 16] },
+    { "id": 5, "name": "Green & Sustainability Models (Mô hình Xanh & Bền vững)", "acronym": "GSM", "variables": [17, 18] }
+  ],
+  "variables": [
+    { "id": 1, "name": "Nhận thức sự hữu ích", "acronym": "PU" },
+    { "id": 2, "name": "Nhận thức tính dễ sử dụng", "acronym": "PEOU" },
+    { "id": 8, "name": "Thái độ", "acronym": "ATT" },
+    { "id": 9, "name": "Chuẩn chủ quan", "acronym": "SN" },
+    { "id": 10, "name": "Nhận thức kiểm soát hành vi", "acronym": "PBC" },
+    { "id": 11, "name": "Ý định mua hàng", "acronym": "PI" },
+    { "id": 12, "name": "Niềm tin", "acronym": "TRU" },
+    { "id": 14, "name": "Tín nhiệm Tín hiệu", "acronym": "SC" },
+    { "id": 16, "name": "Minh bạch Thông tin", "acronym": "IT" },
+    { "id": 17, "name": "Marketing Xanh", "acronym": "GM" },
+    { "id": 18, "name": "Hoài nghi Xanh", "acronym": "GS" }
+  ],
+  "items": [
+    { "variable_id": 1, "code": "PU1", "text_vi": "Sử dụng [PRODUCT] giúp tôi hoàn thành công việc hiệu quả hơn.", "citation": "Davis, 1989" },
+    { "variable_id": 1, "code": "PU2", "text_vi": "Sử dụng [PRODUCT] giúp cải thiện hiệu suất của tôi.", "citation": "Davis, 1989" },
+    { "variable_id": 1, "code": "PU3", "text_vi": "Nhìn chung, tôi nhận thấy [PRODUCT] rất hữu ích.", "citation": "Davis, 1989" },
+    { "variable_id": 2, "code": "PEOU1", "text_vi": "Tôi nhận thấy [PRODUCT] rất dễ sử dụng.", "citation": "Davis, 1989" },
+    { "variable_id": 2, "code": "PEOU2", "text_vi": "Tương tác của tôi với [PRODUCT] rất rõ ràng và dễ hiểu.", "citation": "Davis, 1989" },
+    { "variable_id": 2, "code": "PEOU3", "text_vi": "Tôi dễ dàng trở nên thành thạo khi sử dụng [PRODUCT].", "citation": "Davis, 1989" },
+    { "variable_id": 8, "code": "ATT1", "text_vi": "Việc mua [PRODUCT] là một ý kiến hay.", "citation": "Taylor & Todd, 1995" },
+    { "variable_id": 8, "code": "ATT2", "text_vi": "Đối với tôi, mua [PRODUCT] là một việc làm khôn ngoan.", "citation": "Taylor & Todd, 1995" },
+    { "variable_id": 9, "code": "SN1", "text_vi": "Những người quan trọng với tôi nghĩ rằng tôi nên mua [PRODUCT].", "citation": "Ajzen, 1991" },
+    { "variable_id": 9, "code": "SN2", "text_vi": "Những người có ảnh hưởng đến quyết định của tôi sẽ ủng hộ việc tôi mua [PRODUCT].", "citation": "Ajzen, 1991" },
+    { "variable_id": 10, "code": "PBC1", "text_vi": "Việc mua [PRODUCT] hoàn toàn nằm trong tầm kiểm soát của tôi.", "citation": "Ajzen, 1991" },
+    { "variable_id": 11, "code": "PI1", "text_vi": "Tôi dự định sẽ mua [PRODUCT] trong tương lai gần.", "citation": "Venkatesh et al., 2003" },
+    { "variable_id": 11, "code": "PI2", "text_vi": "Tôi sẽ ưu tiên lựa chọn [PRODUCT] khi có nhu cầu.", "citation": "Zeithaml et al., 1996" },
+    { "variable_id": 12, "code": "TRU1", "text_vi": "Tôi tin rằng [PROVIDER] là một nhà cung cấp đáng tin cậy.", "citation": "Morgan & Hunt, 1994" },
+    { "variable_id": 12, "code": "TRU2", "text_vi": "Tôi tin rằng [PROVIDER] luôn thành thật về sản phẩm của họ.", "citation": "Gefen et al., 2003" },
+    { "variable_id": 14, "code": "SC1", "text_vi": "Các chứng nhận và thông tin được [PROVIDER] cung cấp về [PRODUCT] là đáng tin cậy.", "citation": "Connelly et al., 2011" },
+    { "variable_id": 16, "code": "IT1", "text_vi": "Nhờ có [TECHNOLOGY], tôi có thể dễ dàng truy cập thông tin chi tiết về nguồn gốc của [PRODUCT].", "citation": "Fu et al., 2017" },
+    { "variable_id": 16, "code": "IT2", "text_vi": "Thông tin về quy trình sản xuất của [PRODUCT] do [PROVIDER] cung cấp rất rõ ràng.", "citation": "Fu et al., 2017" },
+    { "variable_id": 17, "code": "GM1", "text_vi": "Các hoạt động quảng bá cho [PRODUCT] nhấn mạnh đến các yếu tố thân thiện với môi trường.", "citation": "Polonsky, 2011" },
+    { "variable_id": 17, "code": "GM2", "text_vi": "Bao bì của [PRODUCT] được làm từ vật liệu tái chế/thân thiện môi trường.", "citation": "Chen, 2010" },
+    { "variable_id": 18, "code": "GS1", "text_vi": "Tôi thường nghi ngờ về những tuyên bố 'xanh' của các công ty về sản phẩm của họ.", "citation": "Mohr et al., 1998" },
+    { "variable_id": 18, "code": "GS2", "text_vi": "Tôi tin rằng các công ty thường phóng đại lợi ích môi trường của các sản phẩm như [PRODUCT].", "citation": "Mohr et al., 1998" }
+  ]
+}

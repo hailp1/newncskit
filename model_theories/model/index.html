@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Công cụ tra cứu Lý thuyết Marketing & Quản trị - ncskit.org</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Thêm icon từ Google Fonts để dùng cho nút Quản trị -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ================== CSS MỚI CHO NÚT QUẢN TRỊ ================== -->
+  <style>
+    /* Canh chỉnh lại khu vực bộ lọc để chứa nút mới */
+    .filters {
+        display: flex;
+        flex-wrap: wrap; /* Cho phép xuống dòng trên màn hình nhỏ */
+        align-items: center;
+        gap: 16px;
+    }
+
+    /* Nút Quản trị */
+    .btn-admin {
+        /* Đẩy nút về phía cuối bên phải */
+        margin-left: auto; 
+        
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background-color: var(--primary-color, #0b66c3); /* Dùng màu primary nếu có, không thì dùng màu mặc định */
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+    .btn-admin:hover {
+        background-color: #084c94; /* Màu đậm hơn một chút khi di chuột */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        color: white; /* Đảm bảo màu chữ không đổi */
+    }
+    /* Icon bên trong nút */
+    .btn-admin .material-symbols-outlined {
+        font-size: 20px;
+        /* Chỉnh icon thẳng hàng với chữ */
+        vertical-align: middle;
+        margin-right: 4px; 
+    }
+  </style>
+  <!-- ============================================================= -->
+
+</head>
+<body>
+  <div class="container">
+    <header class="brand">
+      <div class="logo">nc</div>
+      <div>
+        <a href="https://ncskit.org" target="_blank">ncskit.org</a><br>
+        <small>Nền tảng tri thức nghiên cứu — compiled by Lê Phúc Hải</small>
+      </div>
+    </header>
+
+    <main>
+      <h1>Công cụ tra cứu: Lý thuyết & Mô hình Marketing - Quản trị</h1>
+      <p class="lead">Một công cụ tương tác để khám phá, lọc và tra cứu các lý thuyết quan trọng. Nhấp vào một hàng để xem thông tin chi tiết.</p>
+
+      <!-- ================== KHU VỰC BỘ LỌC ĐÃ CẬP NHẬT ================== -->
+      <div class="filters">
+        <div>
+          <label for="groupFilter">Lọc theo Nhóm:</label>
+          <select id="groupFilter"><option value="">Tất cả</option></select>
+        </div>
+        <div>
+          <label for="domainFilter">Lọc theo Lĩnh vực:</label>
+          <select id="domainFilter"><option value="">Tất cả</option></select>
+        </div>
+        <button id="resetFilters" class="reset-btn">Xóa bộ lọc</button>
+        
+        <!-- NÚT QUẢN TRỊ ĐƯỢC THÊM VÀO ĐÂY -->
+        <!-- Lưu ý: Đoạn mã PHP này cần được server thực thi để lấy biến BASE_URL -->
+        <!-- Nếu file này là file .html tĩnh, bạn cần thay thế bằng đường dẫn tuyệt đối -->
+        <a href="https://ncskit.org/index.php/admin_theories" class="btn-admin">
+            <span class="material-symbols-outlined">settings</span>
+            Quản trị
+        </a>
+      </div>
+      <!-- ============================================================= -->
+      
+      <table id="theoriesTable" class="display responsive" style="width:100%">
+        <thead>
+          <tr>
+            <th>Lý thuyết</th>
+            <th>Biến & Mã hóa</th>
+            <th>Ghi chú</th>
+            <th>Nhóm</th>
+            <th>Lĩnh vực</th>
+            <th>Biến phụ thuộc</th>
+            <th>Trích dẫn</th>
+            <th>Ứng dụng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dữ liệu sẽ được chèn vào đây bởi JavaScript -->
+        </tbody>
+      </table>
+    </main>
+  </div>
+
+  <!-- Modal Structure -->
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Modal Title</h2>
+        <span class="close-button">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p id="modal-definition"></p>
+        <div class="modal-section">
+          <h3>Các biến chính (Constructs)</h3>
+          <ul id="modal-constructs"></ul>
+        </div>
+        <div class="modal-section">
+          <h3>Thang đo mẫu (Sample Scales)</h3>
+          <ul id="modal-scales"></ul>
+        </div>
+        <div class="modal-section">
+          <h3>Lý thuyết liên quan</h3>
+          <p id="modal-related"></p>
+        </div>
+        <div class="modal-section">
+          <h3>Hạn chế/Phê bình</h3>
+          <p id="modal-limitations"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <h3>Trích dẫn (APA 7th)</h3>
+        <div class="citation-box">
+          <p id="modal-citation"></p>
+          <button id="copyCitationBtn">Sao chép</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Dataset compiled and enhanced by Le Phuc Hai for <a href="https://ncskit.org" target="_blank">ncskit.org</a>.
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  
+  <!-- ================== SCRIPT API URL (RẤT QUAN TRỌNG) ================== -->
+  <!-- Đoạn script này phải nằm trước khi bạn gọi script.js -->
+  <!-- Nó tạo ra một biến JavaScript chứa đường dẫn API để script.js có thể sử dụng -->
+  <script>
+    const API_GET_THEORIES_URL = "<?php echo BASE_URL; ?>index.php?_api=get_theories";
+  </script>
+  <!-- ==================================================================== -->
+  
+  <script src="script.js"></script>
+  
+</body>
+</html>
