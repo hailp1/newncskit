@@ -4,7 +4,7 @@
  */
 
 import dynamic from 'next/dynamic'
-import React, { ComponentType } from 'react'
+import { ComponentType, createElement } from 'react'
 
 /**
  * Create a lazy-loaded component with loading state
@@ -14,7 +14,7 @@ export function createLazyComponent<P = {}>(
   LoadingComponent?: ComponentType
 ) {
   return dynamic(importFn, {
-    loading: LoadingComponent ? () => <LoadingComponent /> : undefined,
+    loading: LoadingComponent ? () => createElement(LoadingComponent) : undefined,
     ssr: false,
   })
 }
