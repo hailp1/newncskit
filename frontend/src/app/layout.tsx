@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { LazyAuthModal } from "@/components/auth/lazy-auth-modal";
 import { ToastProvider } from "@/components/ui/toast";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
         <ToastProvider>
           <AuthProvider>
             {children}
+            <LazyAuthModal />
           </AuthProvider>
         </ToastProvider>
         <SpeedInsights />

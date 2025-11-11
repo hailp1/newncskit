@@ -174,11 +174,13 @@ export const useAuthStore = create<AuthState>()(
             session: result.session,
             isAuthenticated: true,
             isLoading: false,
+            error: null,
           })
         } catch (error) {
           console.error('Login error:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập thất bại'
           set({
-            error: error instanceof Error ? error.message : 'Login failed',
+            error: errorMessage,
             isLoading: false,
           })
           throw error
@@ -196,11 +198,13 @@ export const useAuthStore = create<AuthState>()(
             session: result.session,
             isAuthenticated: !!result.session,
             isLoading: false,
+            error: null,
           })
         } catch (error) {
           console.error('Registration error:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Đăng ký thất bại'
           set({
-            error: error instanceof Error ? error.message : 'Registration failed',
+            error: errorMessage,
             isLoading: false,
           })
           throw error
@@ -214,8 +218,9 @@ export const useAuthStore = create<AuthState>()(
           // OAuth redirect will happen, state will be updated on callback
         } catch (error) {
           console.error('Google login error:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập Google thất bại'
           set({
-            error: error instanceof Error ? error.message : 'Google login failed',
+            error: errorMessage,
             isLoading: false,
           })
           throw error
@@ -229,8 +234,9 @@ export const useAuthStore = create<AuthState>()(
           // OAuth redirect will happen, state will be updated on callback
         } catch (error) {
           console.error('LinkedIn login error:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập LinkedIn thất bại'
           set({
-            error: error instanceof Error ? error.message : 'LinkedIn login failed',
+            error: errorMessage,
             isLoading: false,
           })
           throw error

@@ -16,16 +16,14 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { user, isLoading, initialize } = useAuthStore()
-  const { isOnline, isConnected } = useNetworkStatus()
+  const { isOnline } = useNetworkStatus()
   const pathname = usePathname()
   const userIsAdmin = isAdmin(user)
 
   useEffect(() => {
-    // Initialize auth store to get user session
     initialize()
   }, [initialize])
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -38,27 +36,23 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Network status indicator */}
-      {!isOnline && (
-        <div className="bg-red-600 text-white text-center py-2 text-sm">
-          <WifiOff className="inline h-4 w-4 mr-1" />
-          Không có kết nối internet - Một số tính năng có thể không hoạt động
-        </div>
-      )}
-      
-      {!isConnected && isOnline && (
-        <div className="bg-yellow-600 text-white text-center py-2 text-sm">
-          <Wifi className="inline h-4 w-4 mr-1" />
-          Vấn đề kết nối - Đang thử lại...
-        </div>
-      )}
-
-      {/* Dashboard Header with Navigation */}
+    <div className="min-h-screen flex flex-col">
+      {/* ============================================
+          HEADER SECTION - Fixed at top
+          ============================================ */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        {/* Network Status Bar */}
+        {!isOnline && (
+          <div className="bg-red-600 text-white text-center py-2 text-sm">
+            <WifiOff className="inline h-4 w-4 mr-1" />
+            Không có kết nối internet - Một số tính năng có thể không hoạt động
+          </div>
+        )}
+
+        {/* Main Header */}
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
+            {/* Logo & Navigation */}
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
@@ -69,7 +63,6 @@ export default function DashboardLayout({
                 <span className="text-xl font-bold text-gray-900">NCSKIT</span>
               </Link>
 
-              {/* Navigation Menu */}
               <nav className="hidden md:flex items-center space-x-1">
                 <Link
                   href="/dashboard"
@@ -112,7 +105,6 @@ export default function DashboardLayout({
                   Blog
                 </Link>
                 
-                {/* Admin Link - Only for admin users */}
                 {userIsAdmin && (
                   <Link
                     href="/admin"
@@ -146,19 +138,27 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-      
-      <div className="flex flex-1">
+
+      {/* ============================================
+          CONTENT SECTION - Sidebar + Main Content
+          ============================================ */}
+      <div className="flex flex-1 bg-gray-50">
+        {/* Sidebar */}
         <Sidebar />
+        
+        {/* Main Content Area */}
         <main className="flex-1 lg:ml-64">
-          <div className="py-6 min-h-[calc(100vh-16rem)]">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
               {children}
             </div>
           </div>
         </main>
       </div>
 
-      {/* Use Footer from main layout */}
+      {/* ============================================
+          FOOTER SECTION - Fixed at bottom
+          ============================================ */}
       <Footer />
     </div>
   )

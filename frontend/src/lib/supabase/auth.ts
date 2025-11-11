@@ -52,20 +52,59 @@ export async function signIn({ email, password }: SignInData) {
 }
 
 /**
+ * Check if popup was blocked
+ */
+function checkPopupBlocked(popup: Window | null): boolean {
+  if (!popup) return true
+  
+  try {
+    // Check if popup is closed immediately (blocked)
+    if (popup.closed) return true
+    
+    // Try to access popup properties
+    popup.focus()
+    return false
+  } catch (e) {
+    return true
+  }
+}
+
+/**
  * Sign in with Google OAuth
  */
 export async function signInWithGoogle() {
   const supabase = createClient()
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  })
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: false,
+      },
+    })
 
-  if (error) throw error
-  return data
+    if (error) throw error
+
+    // Check if popup was blocked (for popup mode)
+    if (data.url) {
+      const popup = window.open(data.url, '_blank', 'popup=yes,width=600,height=700')
+      
+      if (checkPopupBlocked(popup)) {
+        throw new Error('Popup blocked. Please allow popups for this site.')
+      }
+    }
+
+    return data
+  } catch (error) {
+    // Enhance error message for OAuth-specific issues
+    if (error instanceof Error) {
+      if (error.message.includes('popup')) {
+        throw new Error('Cửa sổ đăng nhập bị chặn. Vui lòng cho phép popup và thử lại.')
+      }
+    }
+    throw error
+  }
 }
 
 /**
@@ -74,15 +113,36 @@ export async function signInWithGoogle() {
 export async function signInWithLinkedIn() {
   const supabase = createClient()
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'linkedin_oidc',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  })
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: false,
+      },
+    })
 
-  if (error) throw error
-  return data
+    if (error) throw error
+
+    // Check if popup was blocked (for popup mode)
+    if (data.url) {
+      const popup = window.open(data.url, '_blank', 'popup=yes,width=600,height=700')
+      
+      if (checkPopupBlocked(popup)) {
+        throw new Error('Popup blocked. Please allow popups for this site.')
+      }
+    }
+
+    return data
+  } catch (error) {
+    // Enhance error message for OAuth-specific issues
+    if (error instanceof Error) {
+      if (error.message.includes('popup')) {
+        throw new Error('Cửa sổ đăng nhập bị chặn. Vui lòng cho phép popup và thử lại.')
+      }
+    }
+    throw error
+  }
 }
 
 /**

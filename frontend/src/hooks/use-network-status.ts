@@ -1,110 +1,97 @@
-import { useState, useEffect } from 'react';
+/**
+ * Network Status Hook
+ * Detects online/offline status and provides network information
+ */
 
-interface NetworkStatus {
-  isOnline: boolean;
-  isConnected: boolean;
-  lastChecked: Date | null;
+import { useState, useEffect } from 'react'
+
+export interface NetworkStatus {
+  isOnline: boolean
+  isOffline: boolean
+  effectiveType?: string // '4g', '3g', '2g', 'slow-2g'
+  downlink?: number // Mbps
+  rtt?: number // Round-trip time in ms
 }
 
-export function useNetworkStatus() {
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
-    isOnline: true, // Default to true to prevent hydration issues
-    isConnected: true,
-    lastChecked: null,
-  });
+/**
+ * Hook to monitor network status
+ */
+export function useNetworkStatus(): NetworkStatus {
+  const [status, setStatus] = useState<NetworkStatus>({
+    isOnline: typeof window !== 'undefined' ? window.navigator.onLine : true,
+    isOffline: typeof window !== 'undefined' ? !window.navigator.onLine : false,
+  })
 
   useEffect(() => {
-    // Check if we're in browser environment
-    if (typeof window === 'undefined') return;
+    // Only run on client side
+    if (typeof window === 'undefined') return
 
-    // Set initial online status after mounting to prevent hydration issues
-    setNetworkStatus(prev => ({
-      ...prev,
-      isOnline: navigator.onLine,
-      lastChecked: new Date(),
-    }));
+    const updateNetworkStatus = () => {
+      const isOnline = window.navigator.onLine
+      
+      // Get network information if available
+      const connection = (navigator as any).connection || 
+                        (navigator as any).mozConnection || 
+                        (navigator as any).webkitConnection
 
-    const updateOnlineStatus = () => {
-      setNetworkStatus(prev => ({
-        ...prev,
-        isOnline: navigator.onLine,
-        lastChecked: new Date(),
-      }));
-    };
-
-    const checkConnectivity = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-        const response = await fetch('/api/health/simple', {
-          method: 'HEAD',
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        setNetworkStatus(prev => ({
-          ...prev,
-          isConnected: response.ok,
-          lastChecked: new Date(),
-        }));
-      } catch (error) {
-        setNetworkStatus(prev => ({
-          ...prev,
-          isConnected: false,
-          lastChecked: new Date(),
-        }));
-      }
-    };
-
-    // Listen to online/offline events
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-
-    // Check connectivity periodically
-    const connectivityInterval = setInterval(checkConnectivity, 60000); // Check every 60 seconds
-
-    // Initial connectivity check
-    checkConnectivity();
-
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-      clearInterval(connectivityInterval);
-    };
-  }, []);
-
-  return networkStatus;
-}
-
-// Hook for retry logic with exponential backoff
-export function useRetry() {
-  const retry = async <T>(
-    fn: () => Promise<T>,
-    maxAttempts: number = 3,
-    baseDelay: number = 1000
-  ): Promise<T> => {
-    let lastError: Error;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error as Error;
-        
-        if (attempt === maxAttempts) {
-          throw lastError;
-        }
-
-        // Exponential backoff with jitter
-        const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      setStatus({
+        isOnline,
+        isOffline: !isOnline,
+        effectiveType: connection?.effectiveType,
+        downlink: connection?.downlink,
+        rtt: connection?.rtt,
+      })
     }
 
-    throw lastError!;
-  };
+    // Initial update
+    updateNetworkStatus()
 
-  return { retry };
+    // Listen for online/offline events
+    window.addEventListener('online', updateNetworkStatus)
+    window.addEventListener('offline', updateNetworkStatus)
+
+    // Listen for connection changes if available
+    const connection = (navigator as any).connection || 
+                      (navigator as any).mozConnection || 
+                      (navigator as any).webkitConnection
+
+    if (connection) {
+      connection.addEventListener('change', updateNetworkStatus)
+    }
+
+    return () => {
+      window.removeEventListener('online', updateNetworkStatus)
+      window.removeEventListener('offline', updateNetworkStatus)
+      
+      if (connection) {
+        connection.removeEventListener('change', updateNetworkStatus)
+      }
+    }
+  }, [])
+
+  return status
+}
+
+/**
+ * Check if network is slow
+ */
+export function isSlowNetwork(status: NetworkStatus): boolean {
+  if (!status.isOnline) return true
+  
+  // Check effective type
+  if (status.effectiveType === 'slow-2g' || status.effectiveType === '2g') {
+    return true
+  }
+  
+  // Check RTT (round-trip time)
+  if (status.rtt && status.rtt > 1000) {
+    return true
+  }
+  
+  // Check downlink speed
+  if (status.downlink && status.downlink < 0.5) {
+    return true
+  }
+  
+  return false
 }

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
+import { useAuthModal } from '@/hooks/use-auth-modal'
+import { preloadAuthModal } from '@/components/auth/lazy-auth-modal'
 import { Button } from '@/components/ui/button'
 import {
   Bars3Icon,
@@ -41,6 +43,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuthStore()
+  const { openLogin, openRegister } = useAuthModal()
   const pathname = usePathname()
 
   const handleLogout = async () => {
@@ -168,11 +171,22 @@ export function Header() {
             ) : (
               // Auth Buttons
               <div className="flex items-center space-x-2">
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/auth/login">Sign In</Link>
+                <Button 
+                  onClick={openLogin} 
+                  onMouseEnter={preloadAuthModal}
+                  onFocus={preloadAuthModal}
+                  variant="outline" 
+                  size="sm"
+                >
+                  Login
                 </Button>
-                <Button asChild size="sm">
-                  <Link href="/auth/register">Get Started</Link>
+                <Button 
+                  onClick={openRegister}
+                  onMouseEnter={preloadAuthModal}
+                  onFocus={preloadAuthModal}
+                  size="sm"
+                >
+                  Sign Up
                 </Button>
               </div>
             )}
@@ -277,20 +291,26 @@ export function Header() {
                     )
                   })}
                   <div className="border-t border-gray-200 pt-4">
-                    <Link
-                      href="/auth/login"
-                      className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      onClick={() => setMobileMenuOpen(false)}
+                    <button
+                      onClick={() => {
+                        openLogin()
+                        setMobileMenuOpen(false)
+                      }}
+                      onTouchStart={preloadAuthModal}
+                      className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     >
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/auth/register"
-                      className="block rounded-md px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700"
-                      onClick={() => setMobileMenuOpen(false)}
+                      Login
+                    </button>
+                    <button
+                      onClick={() => {
+                        openRegister()
+                        setMobileMenuOpen(false)
+                      }}
+                      onTouchStart={preloadAuthModal}
+                      className="block w-full text-left rounded-md px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700"
                     >
-                      Get Started
-                    </Link>
+                      Sign Up
+                    </button>
                   </div>
                 </>
               )}
