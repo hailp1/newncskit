@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     siteName: 'NCSKIT',
     images: [
       {
-        url: '/og-image.png',
+        url: '/Logo_ngangback.png',
         width: 1200,
         height: 630,
         alt: 'NCSKIT Complete Research Platform',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NCSKIT - Complete Research Platform',
     description: 'From idea to publication. AI-powered research support for ISI, Scopus, ABDC journals.',
-    images: ['/twitter-image.png'],
+    images: ['/Logo_ngangback.png'],
   },
   alternates: {
     canonical: 'https://ncskit.org',
