@@ -285,12 +285,12 @@ export default function ModelTheoriesPage() {
               />
             </div>
             
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+            <Select value={selectedGroup || "all"} onValueChange={(value) => setSelectedGroup(value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Lọc theo nhóm" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tất cả nhóm</SelectItem>
+                <SelectItem value="all">Tất cả nhóm</SelectItem>
                 {groups.map((group) => (
                   <SelectItem key={group} value={group}>
                     {group}
@@ -299,12 +299,12 @@ export default function ModelTheoriesPage() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+            <Select value={selectedDomain || "all"} onValueChange={(value) => setSelectedDomain(value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Lọc theo lĩnh vực" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tất cả lĩnh vực</SelectItem>
+                <SelectItem value="all">Tất cả lĩnh vực</SelectItem>
                 {domains.map((domain) => (
                   <SelectItem key={domain} value={domain}>
                     {domain}
