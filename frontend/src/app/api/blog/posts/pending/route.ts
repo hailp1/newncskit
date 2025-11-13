@@ -106,11 +106,17 @@ export async function GET(request: NextRequest) {
       updated_at: post.updatedAt.toISOString(),
     }))
 
-    // Get base URL from environment or request
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 
-      (request.headers.get('x-forwarded-proto') && request.headers.get('host')
-        ? `${request.headers.get('x-forwarded-proto')}://${request.headers.get('host')}`
-        : request.url.split('?')[0].replace(/\/api\/blog\/posts\/pending.*$/, ''))
+    // Get base URL from request headers (for Cloudflare tunnel compatibility)
+    const protocol = request.headers.get('x-forwarded-proto') || 
+                     (request.url.startsWith('https') ? 'https' : 'http')
+    const host = request.headers.get('host') || 
+                 request.headers.get('x-forwarded-host') ||
+                 new URL(request.url).host
+    
+    // Use production URL if available, otherwise construct from request
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    process.env.NEXTAUTH_URL ||
+                    (host ? `${protocol}://${host}` : request.url.split('?')[0].replace(/\/api\/blog\/posts\/pending.*$/, ''))
     
     const apiPath = '/api/blog/posts/pending'
     

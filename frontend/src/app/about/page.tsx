@@ -142,7 +142,7 @@ export default function AboutPage() {
                 <div className="relative w-32 h-32 mx-auto mb-6">
                   <div className="w-full h-full rounded-full overflow-hidden border-4 border-blue-100 shadow-lg">
                     <Image
-                      src="/team/le-phuc-hai.jpg"
+                      src="/team/le-phuc-hai.png"
                       alt="Lê Phúc Hải"
                       width={128}
                       height={128}
@@ -196,7 +196,7 @@ export default function AboutPage() {
                 <div className="relative w-32 h-32 mx-auto mb-6">
                   <div className="w-full h-full rounded-full overflow-hidden border-4 border-green-100 shadow-lg">
                     <Image
-                      src="/team/nguyen-duc-tin.jpg"
+                      src="/team/nguyen-duc-tin.png"
                       alt="Nguyễn Đức Tín"
                       width={128}
                       height={128}
@@ -249,7 +249,7 @@ export default function AboutPage() {
                 <div className="relative w-32 h-32 mx-auto mb-6">
                   <div className="w-full h-full rounded-full overflow-hidden border-4 border-purple-100 shadow-lg">
                     <Image
-                      src="/team/chau-carmen-nguyen.jpg"
+                      src="/team/chau-carmen-nguyen.png"
                       alt="Châu Carmen Nguyễn"
                       width={128}
                       height={128}

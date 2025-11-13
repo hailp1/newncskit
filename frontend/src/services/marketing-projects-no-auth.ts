@@ -224,12 +224,15 @@ export const marketingProjectsService = {
   // Get all marketing projects for a user
   async getUserProjects(userId: string): Promise<MarketingProject[]> {
     try {
-      const { prisma } = await import('@/lib/prisma')
+      // Use API route instead of direct Prisma access (prevents browser bundle issues)
+      const response = await fetch(`/api/projects/user/${userId}`)
       
-      const data = await prisma.project.findMany({
-        where: { userId },
-        orderBy: { updatedAt: 'desc' }
-      })
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      const data = result.data || []
 
       // Process projects with graceful fallbacks
       const projectsWithDetails = await Promise.all(
