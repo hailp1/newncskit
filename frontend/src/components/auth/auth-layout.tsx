@@ -25,19 +25,14 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   illustrationContent,
 }) => {
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[40%_60%] transition-all duration-300 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[40%_60%] transition-all duration-300">
       {/* Form Panel - Left side on desktop, full width on mobile/tablet */}
       <main 
-        className="flex items-center justify-center px-4 py-8 sm:py-12 sm:px-6 md:px-8 lg:px-12 bg-white/80 backdrop-blur-sm transition-all duration-300 relative"
+        className="flex items-center justify-center px-4 py-8 sm:py-12 sm:px-6 md:px-8 lg:px-8 bg-white transition-all duration-300"
         role="main"
         aria-label={mode === 'login' ? 'Biểu mẫu đăng nhập' : 'Biểu mẫu đăng ký'}
       >
-        {/* Decorative background */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(59,130,246,0.3)_1px,transparent_0)] bg-[size:30px_30px]"></div>
-        </div>
-        
-        <div className="w-full max-w-md space-y-4 sm:space-y-6 relative z-10">
+        <div className="w-full max-w-md space-y-4 sm:space-y-6">
           {children}
         </div>
       </main>

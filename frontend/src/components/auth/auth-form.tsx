@@ -320,27 +320,24 @@ export function AuthForm({
       isModal ? 'max-w-md' : 'max-w-md mx-auto'
     )}>
       <div className="space-y-6 sm:space-y-8">
-        {/* Header - Premium Design */}
+        {/* Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 mb-6 shadow-lg">
-            <SparklesIcon className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
             {isRegisterMode ? 'Tạo tài khoản NCSKIT' : 'Đăng nhập vào NCSKIT'}
           </h2>
-          <p className="mt-3 text-base md:text-base text-gray-600">
+          <p className="mt-2 text-sm md:text-sm text-gray-600">
             {isRegisterMode ? 'Hoặc ' : 'Hoặc '}
             {onModeChange ? (
               <button
                 type="button"
                 onClick={() => onModeChange(isRegisterMode ? 'login' : 'register')}
-                className="font-semibold text-blue-600 hover:text-blue-700 min-h-[44px] inline-flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 transition-colors"
+                className="font-medium text-blue-600 hover:text-blue-500 min-h-[44px] inline-flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1"
                 aria-label={isRegisterMode ? 'Chuyển sang đăng nhập' : 'Chuyển sang đăng ký'}
               >
                 {isRegisterMode ? 'đăng nhập vào tài khoản có sẵn' : 'tạo tài khoản mới'}
               </button>
             ) : (
-              <span className="font-semibold text-blue-600">
+              <span className="font-medium text-blue-600">
                 {isRegisterMode ? 'đăng nhập vào tài khoản có sẵn' : 'tạo tài khoản mới'}
               </span>
             )}
@@ -442,8 +439,8 @@ export function AuthForm({
           />
         )}
 
-        {/* Form - Premium Design */}
-        <form onSubmit={handleSubmit} className="space-y-5 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-200 shadow-lg">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name - Register only */}
           {isRegisterMode && (
             <div>
@@ -457,8 +454,8 @@ export function AuthForm({
                 autoComplete="name"
                 required
               className={cn(
-                'appearance-none relative block w-full px-4 py-3 border-2 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base bg-white/80 backdrop-blur-sm transition-all duration-300 min-h-[48px]',
-                validationErrors.fullName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
+                'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
+                validationErrors.fullName ? 'border-red-500' : 'border-gray-300'
               )}
                 placeholder="Họ và tên"
                 value={formData.fullName}
@@ -495,8 +492,8 @@ export function AuthForm({
               autoComplete="email"
               required
               className={cn(
-                'appearance-none relative block w-full px-4 py-3 border-2 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base bg-white/80 backdrop-blur-sm transition-all duration-300 min-h-[48px]',
-                validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
+                'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
+                validationErrors.email ? 'border-red-500' : 'border-gray-300'
               )}
               placeholder="Địa chỉ email"
               value={formData.email}
@@ -532,8 +529,8 @@ export function AuthForm({
               autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
               required
               className={cn(
-                'appearance-none relative block w-full px-4 py-3 border-2 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base bg-white/80 backdrop-blur-sm transition-all duration-300 min-h-[48px]',
-                validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
+                'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
+                validationErrors.password ? 'border-red-500' : 'border-gray-300'
               )}
               placeholder={isRegisterMode ? 'Mật khẩu (tối thiểu 6 ký tự)' : 'Mật khẩu'}
               value={formData.password}
@@ -570,8 +567,8 @@ export function AuthForm({
                 autoComplete="new-password"
                 required
                 className={cn(
-                  'appearance-none relative block w-full px-4 py-3 border-2 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base bg-white/80 backdrop-blur-sm transition-all duration-300 min-h-[48px]',
-                  validationErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
+                  'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
+                  validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                 )}
                 placeholder="Xác nhận mật khẩu"
                 value={formData.confirmPassword}
@@ -600,10 +597,10 @@ export function AuthForm({
           <div>
             <Button
               type="submit"
-              className={`w-full min-h-[52px] text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl ${
+              className={`w-full min-h-[44px] text-base md:text-sm transition-all duration-300 ${
                 isLoading ? 'scale-95' : 'scale-100 hover:scale-105'
               } ${
-                isSuccess ? 'bg-green-600 hover:bg-green-600' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                isSuccess ? 'bg-green-600 hover:bg-green-600' : ''
               }`}
               disabled={isLoading || isSuccess}
               style={{ willChange: 'transform, background-color' }}
@@ -640,13 +637,13 @@ export function AuthForm({
         </div>
 
         {/* OAuth Buttons with hover animations */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => handleOAuthLogin('google')}
             disabled={isLoading || isSuccess}
-            className="min-h-[52px] text-base font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-blue-400"
+            className="min-h-[44px] text-base md:text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
             style={{ willChange: 'transform' }}
             aria-label="Đăng nhập bằng Google"
           >
@@ -676,7 +673,7 @@ export function AuthForm({
             variant="outline"
             onClick={() => handleOAuthLogin('linkedin')}
             disabled={isLoading || isSuccess}
-            className="min-h-[52px] text-base font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-blue-400"
+            className="min-h-[44px] text-base md:text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
             style={{ willChange: 'transform' }}
             aria-label="Đăng nhập bằng LinkedIn"
           >

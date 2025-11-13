@@ -51,25 +51,20 @@ const navigation = {
 
 export function Footer() {
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-gray-950 border-t-2 border-gray-800 relative overflow-hidden" aria-labelledby="footer-heading">
-      {/* Decorative background */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[size:40px_40px]"></div>
-      </div>
-      
+    <footer className="bg-gray-900 border-t border-gray-800" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Footer</h2>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-20 relative z-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Brand & Newsletter Section */}
           <div className="lg:col-span-4">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-xl">
-                <BeakerIcon className="h-7 w-7 text-white" />
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 shadow-lg">
+                <BeakerIcon className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">NCSKIT</span>
+              <span className="text-xl font-bold text-white tracking-tight">NCSKIT</span>
             </div>
-            <p className="text-base text-gray-300 mb-8 leading-relaxed font-light">
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
               Nền tảng nghiên cứu thông minh cho mọi người. Từ khảo sát đến phân tích, tất cả trong một nơi.
             </p>
             
@@ -79,15 +74,15 @@ export function Footer() {
               <p className="text-xs text-gray-400 mb-3">
                 Get the latest research insights and platform updates.
               </p>
-              <form className="flex gap-3">
+              <form className="flex gap-2">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="flex-1 px-4 py-3 bg-gray-800/50 backdrop-blur-sm border-2 border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Subscribe
                 </button>
@@ -102,7 +97,7 @@ export function Footer() {
                   href={item.href} 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-800/50 backdrop-blur-sm text-gray-400 hover:text-white hover:bg-blue-600 transition-all duration-300 hover:scale-110"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
                   <span className="sr-only">{item.name}</span>
                   <item.icon className="h-5 w-5" aria-hidden="true" />

@@ -91,84 +91,72 @@ function DashboardContent() {
   ]
 
   return (
-    <div className="space-y-8 md:space-y-10">
-      {/* Welcome Header - Premium Design with Effects */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[size:30px_30px]"></div>
-        </div>
-        {/* Glowing orb */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-3xl"></div>
-        
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+    <div className="space-y-6 md:space-y-8">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-xl p-6 md:p-8 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-white/20 backdrop-blur-md rounded-full text-sm font-semibold shadow-lg">
-              <SparklesIcon className="w-4 h-4 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 bg-white/20 rounded-full text-sm font-medium">
+              <SparklesIcon className="w-4 h-4" />
               <span>Dashboard</span>
             </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-3 tracking-tight">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 tracking-tight">
               Welcome back, {user?.full_name || user?.email || 'Guest'}! 👋
             </h1>
-            <p className="text-blue-100 text-lg md:text-xl font-light">
+            <p className="text-blue-100 text-base md:text-lg">
               Ready to advance your research today?
             </p>
           </div>
-          <div className="flex items-center gap-5">
-            <div className="text-right hidden sm:block bg-white/10 backdrop-blur-md rounded-xl px-4 py-3">
-              <p className="text-xs text-blue-200 mb-1 uppercase tracking-wide">Role</p>
-              <p className="font-bold text-xl capitalize">{user?.role === 'user' ? 'Researcher' : user?.role || 'Guest'}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm text-blue-100 mb-1">Role</p>
+              <p className="font-semibold text-lg capitalize">{user?.role === 'user' ? 'Researcher' : user?.role || 'Guest'}</p>
             </div>
-            <div className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/40 shadow-xl">
-              <UserIcon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+            <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 border-2 border-white/30">
+              <UserIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* User Info Card - Premium Design */}
+      {/* User Info Card */}
       {user && (
-        <Card className="border-2 border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-6 pt-8">
-            <CardTitle className="flex items-center text-2xl font-bold">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 mr-4 shadow-lg">
-                <UserIcon className="h-6 w-6 text-blue-600" />
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center text-xl font-semibold">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 mr-3">
+                <UserIcon className="h-5 w-5 text-blue-600" />
               </div>
               Account Information
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-50 to-blue-50/30 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg group">
-                <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Email</p>
-                <p className="font-bold text-gray-900 break-all text-lg group-hover:text-blue-600 transition-colors">{user.email || 'Not available'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Email</p>
+                <p className="font-semibold text-gray-900 break-all">{user.email || 'Not available'}</p>
               </div>
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-50 to-indigo-50/30 border border-gray-200 hover:border-indigo-300 transition-all duration-300 hover:shadow-lg group">
-                <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Full Name</p>
-                <p className="font-bold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors">{user.full_name || 'Not set'}</p>
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Full Name</p>
+                <p className="font-semibold text-gray-900">{user.full_name || 'Not set'}</p>
               </div>
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-50 to-purple-50/30 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-lg group">
-                <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Account Type</p>
-                <p className="font-bold text-gray-900 capitalize text-lg group-hover:text-purple-600 transition-colors">{user.role || 'Guest'}</p>
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Account Type</p>
+                <p className="font-semibold text-gray-900 capitalize">{user.role || 'Guest'}</p>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t-2 border-gray-200 flex flex-wrap gap-4">
+            <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3">
               <Button 
                 onClick={handleRefreshAuth} 
                 variant="outline" 
-                size="default"
+                size="sm"
                 disabled={isRefreshing}
-                className="min-w-[160px] hover:bg-blue-50 hover:border-blue-400 transition-all duration-300"
+                className="min-w-[140px]"
               >
-                <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <ArrowPathIcon className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh Profile
               </Button>
-              <Button 
-                onClick={logout} 
-                variant="outline" 
-                size="default" 
-                className="min-w-[120px] hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition-all duration-300"
-              >
+              <Button onClick={logout} variant="outline" size="sm" className="min-w-[100px]">
                 Logout
               </Button>
             </div>
@@ -195,34 +183,28 @@ function DashboardContent() {
         </Card>
       )}
 
-      {/* Quick Actions - Premium Grid with Animations */}
+      {/* Quick Actions */}
       <div>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900">
-            Quick Actions
-          </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Quick Actions</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {quickActions.map((action, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {quickActions.map((action) => (
             <Card 
               key={action.title} 
-              className="group hover:shadow-2xl transition-all duration-500 cursor-pointer border-2 border-gray-200 hover:border-blue-400 bg-white hover:-translate-y-2 relative overflow-hidden"
-              style={{ animationDelay: `${index * 100}ms` }}
+              className="group hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-200 hover:border-blue-300 bg-white"
             >
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/50 transition-all duration-500"></div>
-              
-              <Link href={action.href} className="block h-full relative z-10">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-5">
-                    <div className={`flex-shrink-0 p-4 rounded-2xl ${action.color} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
-                      <action.icon className="h-7 w-7 text-white" />
+              <Link href={action.href} className="block h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-300`}>
+                      <action.icon className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 mb-2 text-lg group-hover:text-blue-600 transition-colors">
+                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                         {action.title}
                       </h3>
-                      <p className="text-sm text-gray-600 leading-relaxed font-medium">{action.description}</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">{action.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -232,16 +214,16 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Welcome Notice - Premium Info Card */}
-      <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 shadow-xl hover:shadow-2xl transition-all duration-500">
-        <CardContent className="p-8">
-          <div className="flex items-start gap-5">
-            <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-lg">
-              <SparklesIcon className="h-7 w-7 text-blue-600 animate-pulse" />
+      {/* Welcome Notice */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100">
+              <SparklesIcon className="h-5 w-5 text-blue-600" />
             </div>
             <div className="flex-1">
-              <p className="text-lg font-bold text-blue-900 mb-2">Welcome to NCSKIT</p>
-              <p className="text-base text-blue-700 leading-relaxed font-medium">
+              <p className="text-base font-semibold text-blue-900 mb-1">Welcome to NCSKIT</p>
+              <p className="text-sm text-blue-700 leading-relaxed">
                 Your research management platform is ready to use. Start by creating a new project or analyzing your data.
               </p>
             </div>
