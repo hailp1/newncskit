@@ -38,34 +38,15 @@ import {
   BarChart3
 } from 'lucide-react';
 import { SEOAnalyzer } from './seo-analyzer';
-
-interface BlogPost {
-  id?: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  status: 'draft' | 'review' | 'scheduled' | 'published';
-  meta_title: string;
-  meta_description: string;
-  focus_keyword: string;
-  canonical_url: string;
-  og_title: string;
-  og_description: string;
-  categories: Array<{ id: string; name: string; slug: string }>;
-  tags: Array<{ id: string; name: string; slug: string }>;
-  featured_image?: string;
-  published_at?: string;
-  scheduled_at?: string;
-}
+import type { BlogPost, BlogCategory, BlogTag } from '@/services/blog';
 
 interface BlogEditorProps {
   post?: BlogPost;
   onSave: (post: Partial<BlogPost>) => void;
   onPublish?: (post: Partial<BlogPost>) => void;
   onSchedule?: (post: Partial<BlogPost>, scheduledAt: string) => void;
-  categories?: Array<{ id: string; name: string; slug: string }>;
-  tags?: Array<{ id: string; name: string; slug: string }>;
+  categories?: BlogCategory[];
+  tags?: BlogTag[];
 }
 
 export const BlogEditor: React.FC<BlogEditorProps> = ({ 
@@ -76,7 +57,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   categories = [],
   tags = []
 }) => {
-  const [currentPost, setCurrentPost] = useState<BlogPost>(post || {
+  const [currentPost, setCurrentPost] = useState<Partial<BlogPost>>(post || {
     title: '',
     slug: '',
     content: '',
@@ -101,19 +82,21 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-save functionality
+  // Auto-save functionality - DISABLED (tắt auto-save tự động)
   const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
+    // Auto-save đã được tắt - chỉ cập nhật status
     setAutoSaveStatus('unsaved');
     
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      setAutoSaveStatus('saving');
-      onSave(currentPost);
-      setTimeout(() => setAutoSaveStatus('saved'), 1000);
-    }, 2000);
+    // Không tự động lưu nữa - user phải click Save manually
+    // if (autoSaveTimeoutRef.current) {
+    //   clearTimeout(autoSaveTimeoutRef.current);
+    // }
+    // 
+    // autoSaveTimeoutRef.current = setTimeout(() => {
+    //   setAutoSaveStatus('saving');
+    //   onSave(currentPost);
+    //   setTimeout(() => setAutoSaveStatus('saved'), 1000);
+    // }, 2000);
   }, [currentPost, onSave]);
 
   // Update post data
@@ -121,16 +104,17 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
     setCurrentPost(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Trigger auto-save when post changes
-  useEffect(() => {
-    if (currentPost.title || currentPost.content) {
-      triggerAutoSave();
-    }
-  }, [currentPost, triggerAutoSave]);
+  // Trigger auto-save when post changes - DISABLED
+  // useEffect(() => {
+  //   if (currentPost.title || currentPost.content) {
+  //     triggerAutoSave();
+  //   }
+  // }, [currentPost, triggerAutoSave]);
 
   // Calculate word count and reading time
   useEffect(() => {
-    const words = currentPost.content.split(/\s+/).filter(word => word.length > 0).length;
+    const content = currentPost.content || '';
+    const words = content.split(/\s+/).filter(word => word.length > 0).length;
     setWordCount(words);
     setReadingTime(Math.ceil(words / 200)); // Average reading speed: 200 words/minute
   }, [currentPost.content]);
@@ -520,12 +504,13 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
                     <label key={category.id} className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={currentPost.categories.some(cat => cat.id === category.id)}
+                        checked={currentPost.categories?.some(cat => cat.id === category.id) || false}
                         onChange={(e) => {
+                          const currentCats = currentPost.categories || [];
                           const newCategories = e.target.checked
-                            ? [...currentPost.categories, category]
-                            : currentPost.categories.filter(cat => cat.id !== category.id);
-                          updatePost({ categories: newCategories });
+                            ? [...currentCats, category]
+                            : currentCats.filter(cat => cat.id !== category.id);
+                          updatePost({ categories: newCategories as BlogCategory[] });
                         }}
                       />
                       <span className="text-sm">{category.name}</span>
@@ -535,22 +520,69 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
               </div>
 
               <div>
-                <Label>Tags</Label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {currentPost.tags.map(tag => (
-                    <Badge key={tag.id} variant="secondary">
-                      {tag.name}
-                      <button
-                        onClick={() => {
-                          const newTags = currentPost.tags.filter(t => t.id !== tag.id);
-                          updatePost({ tags: newTags });
-                        }}
-                        className="ml-1 text-xs"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  ))}
+                <Label>Hashtags / Tags</Label>
+                <div className="mt-2 space-y-3">
+                  {/* Selected Tags */}
+                  {currentPost.tags && currentPost.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {(currentPost.tags || []).map(tag => {
+                        const tagId = typeof tag === 'string' ? tag : tag.id;
+                        const tagName = typeof tag === 'string' ? tag : tag.name;
+                        return (
+                          <Badge key={tagId} variant="secondary" className="px-3 py-1">
+                            #{tagName}
+                            <button
+                              onClick={() => {
+                                const currentTags = currentPost.tags || [];
+                                const newTags = currentTags.filter(t => (typeof t === 'string' ? t : t.id) !== tagId);
+                                updatePost({ tags: newTags as BlogTag[] });
+                              }}
+                              className="ml-2 text-xs hover:text-red-600"
+                              title="Xóa tag"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Tag Selection */}
+                  <div className="border rounded-lg p-3 bg-gray-50">
+                    <div className="text-sm text-gray-600 mb-2">Chọn hashtag:</div>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                      {tags.map(tag => {
+                        const currentTags = currentPost.tags || [];
+                        const isSelected = currentTags.some(t => (typeof t === 'string' ? t : t.id) === tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                const newTags = currentTags.filter(t => (typeof t === 'string' ? t : t.id) !== tag.id);
+                                updatePost({ tags: newTags as BlogTag[] });
+                              } else {
+                                const newTags = [...currentTags, tag];
+                                updatePost({ tags: newTags as BlogTag[] });
+                              }
+                            }}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                              isSelected
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300'
+                            }`}
+                          >
+                            #{tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {tags.length === 0 && (
+                      <p className="text-sm text-gray-500 mt-2">Chưa có hashtag nào. Vui lòng tạo hashtag trong phần quản lý.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

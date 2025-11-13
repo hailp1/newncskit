@@ -29,7 +29,11 @@ export function useFileUpload(options: UseFileUploadOptions) {
         setProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      const uploadResult = await uploadFile(file, options)
+      const uploadResult = await uploadFile({
+        bucket: options.bucket || 'default',
+        path: options.path || `uploads/${file.name}`,
+        file
+      })
 
       clearInterval(progressInterval)
       setProgress(100)

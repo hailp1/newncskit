@@ -1,22 +1,22 @@
 /**
- * Authentication Store using Zustand
- * Manages authentication state with Supabase
+ * Authentication Store using NextAuth
+ * Compatible API with old Supabase store
  */
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
-import { signIn, signUp, signOut, signInWithGoogle, signInWithLinkedIn } from '@/lib/supabase/auth'
-import type { SignInData, SignUpData } from '@/lib/supabase/auth'
+import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from 'next-auth/react'
+import type { Session } from 'next-auth'
 
-// Extend Supabase User type with profile
-export interface User extends SupabaseUser {
-  role?: 'admin' | 'super_admin' | 'moderator' | 'user' | string | null;
-  full_name?: string | null;
-  avatar_url?: string | null;
-  status?: 'active' | 'inactive' | 'suspended' | 'banned';
-  last_login_at?: string | null;
+// Compatible User type
+export interface User {
+  id: string
+  email: string
+  name?: string | null
+  role?: 'admin' | 'super_admin' | 'moderator' | 'user' | string | null
+  full_name?: string | null
+  avatar_url?: string | null
+  status?: 'active' | 'inactive' | 'suspended' | 'banned'
+  last_login_at?: string | null
   profile?: {
     firstName?: string
     lastName?: string
@@ -34,6 +34,17 @@ export interface User extends SupabaseUser {
   updatedAt?: string
 }
 
+interface SignInData {
+  email: string
+  password: string
+}
+
+interface SignUpData {
+  email: string
+  password: string
+  fullName?: string
+}
+
 interface AuthState {
   user: User | null
   session: Session | null
@@ -41,284 +52,176 @@ interface AuthState {
   isAuthenticated: boolean
   error: string | null
   
-  // Actions
+  // Actions - Compatible with old API
   initialize: () => Promise<void>
   login: (data: SignInData) => Promise<void>
   register: (data: SignUpData) => Promise<void>
   loginWithGoogle: () => Promise<void>
   loginWithLinkedIn: () => Promise<void>
+  loginWithOrcid: () => Promise<void>
   logout: () => Promise<void>
   clearError: () => void
   refreshSession: () => Promise<void>
   updateUser: (updates: Partial<User>) => void
+  setSession: (session: Session | null) => void
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      session: null,
-      isLoading: true,
-      isAuthenticated: false,
-      error: null,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  session: null,
+  isLoading: false,
+  isAuthenticated: false,
+  error: null,
 
-      initialize: async () => {
-        try {
-          const supabase = createClient()
-          
-          // Get current session (fast, uses cache)
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-          
-          if (sessionError) throw sessionError
+  initialize: async () => {
+    // NextAuth handles session automatically
+    // This is just for compatibility
+    set({ isLoading: false })
+  },
 
-          if (session) {
-            // Set session immediately for fast UI update
-            set({
-              user: session.user as User,
-              session,
-              isAuthenticated: true,
-              isLoading: false,
-            })
+  login: async (data: SignInData) => {
+    set({ isLoading: true, error: null })
+    
+    try {
+      const result = await nextAuthSignIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      })
 
-            // Lazy load profile data in background (non-blocking)
-            Promise.resolve(
-              supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
-            ).then(({ data: userProfile }) => {
-              if (userProfile) {
-                const enrichedUser: User = {
-                  ...session.user,
-                  role: (userProfile as any)?.role ?? null,
-                  full_name: (userProfile as any)?.full_name ?? null,
-                  avatar_url: (userProfile as any)?.avatar_url ?? null,
-                  status: (userProfile as any)?.status ?? 'active',
-                  last_login_at: (userProfile as any)?.last_login_at ?? null,
-                }
-                set({ user: enrichedUser })
-              }
-            }).catch(err => console.error('Profile load error:', err))
-          } else {
-            set({
-              user: null,
-              session: null,
-              isAuthenticated: false,
-              isLoading: false,
-            })
-          }
+      if (result?.error) {
+        throw new Error('Email hoặc mật khẩu không đúng')
+      }
 
-          // Listen for auth changes
-          supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (session) {
-              // Fetch user profile when auth state changes
-              const { data: userProfile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
-
-              const enrichedUser: User = {
-                ...session.user,
-                role: (userProfile as any)?.role ?? null,
-                full_name: (userProfile as any)?.full_name ?? null,
-                avatar_url: (userProfile as any)?.avatar_url ?? null,
-                status: (userProfile as any)?.status ?? 'active',
-                last_login_at: (userProfile as any)?.last_login_at ?? null,
-              }
-
-              set({
-                user: enrichedUser,
-                session,
-                isAuthenticated: true,
-              })
-            } else {
-              set({
-                user: null,
-                session: null,
-                isAuthenticated: false,
-              })
-            }
-          })
-        } catch (error) {
-          console.error('Auth initialization error:', error)
-          set({
-            error: error instanceof Error ? error.message : 'Failed to initialize auth',
-            isLoading: false,
-            isAuthenticated: false,
-          })
-        }
-      },
-
-      login: async (data: SignInData) => {
-        try {
-          set({ isLoading: true, error: null })
-          const result = await signIn(data)
-          
-          // Fetch user profile with role
-          const supabase = createClient()
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', result.user.id)
-            .single()
-
-          const enrichedUser: User = {
-            ...result.user,
-            role: (userProfile as any)?.role ?? null,
-            full_name: (userProfile as any)?.full_name ?? null,
-            avatar_url: (userProfile as any)?.avatar_url ?? null,
-            status: (userProfile as any)?.status ?? 'active',
-            last_login_at: (userProfile as any)?.last_login_at ?? null,
-          }
-          
-          set({
-            user: enrichedUser,
-            session: result.session,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          })
-        } catch (error) {
-          console.error('Login error:', error)
-          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập thất bại'
-          set({
-            error: errorMessage,
-            isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      register: async (data: SignUpData) => {
-        try {
-          set({ isLoading: true, error: null })
-          const result = await signUp(data)
-          
-          // Note: User might need to confirm email before session is created
-          set({
-            user: result.user,
-            session: result.session,
-            isAuthenticated: !!result.session,
-            isLoading: false,
-            error: null,
-          })
-        } catch (error) {
-          console.error('Registration error:', error)
-          const errorMessage = error instanceof Error ? error.message : 'Đăng ký thất bại'
-          set({
-            error: errorMessage,
-            isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      loginWithGoogle: async () => {
-        try {
-          set({ isLoading: true, error: null })
-          await signInWithGoogle()
-          // OAuth redirect will happen, state will be updated on callback
-        } catch (error) {
-          console.error('Google login error:', error)
-          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập Google thất bại'
-          set({
-            error: errorMessage,
-            isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      loginWithLinkedIn: async () => {
-        try {
-          set({ isLoading: true, error: null })
-          await signInWithLinkedIn()
-          // OAuth redirect will happen, state will be updated on callback
-        } catch (error) {
-          console.error('LinkedIn login error:', error)
-          const errorMessage = error instanceof Error ? error.message : 'Đăng nhập LinkedIn thất bại'
-          set({
-            error: errorMessage,
-            isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      logout: async () => {
-        try {
-          set({ isLoading: true, error: null })
-          await signOut()
-          
-          set({
-            user: null,
-            session: null,
-            isAuthenticated: false,
-            isLoading: false,
-          })
-        } catch (error) {
-          console.error('Logout error:', error)
-          set({
-            error: error instanceof Error ? error.message : 'Logout failed',
-            isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      clearError: () => {
-        set({ error: null })
-      },
-
-      refreshSession: async () => {
-        try {
-          const supabase = createClient()
-          const { data: { session }, error } = await supabase.auth.refreshSession()
-          
-          if (error) throw error
-
-          set({
-            user: session?.user ?? null,
-            session,
-            isAuthenticated: !!session,
-          })
-        } catch (error) {
-          console.error('Session refresh error:', error)
-          set({
-            error: error instanceof Error ? error.message : 'Failed to refresh session',
-          })
-        }
-      },
-
-      updateUser: (updates: Partial<User>) => {
-        const currentUser = get().user
-        if (currentUser) {
-          set({
-            user: { ...currentUser, ...updates }
-          })
-        }
-      },
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        // Only persist minimal essential data
-        isAuthenticated: state.isAuthenticated,
-        // Session is managed by Supabase, no need to persist
-      }),
-      // Use sessionStorage for better performance
-      storage: {
-        getItem: (name) => {
-          const str = sessionStorage.getItem(name)
-          return str ? JSON.parse(str) : null
-        },
-        setItem: (name, value) => {
-          sessionStorage.setItem(name, JSON.stringify(value))
-        },
-        removeItem: (name) => sessionStorage.removeItem(name),
-      },
+      set({ isLoading: false, isAuthenticated: true })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng nhập thất bại'
+      set({ error: message, isLoading: false })
+      throw error
     }
-  )
-)
+  },
+
+  register: async (data: SignUpData) => {
+    set({ isLoading: true, error: null })
+    
+    try {
+      // Call register API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          name: data.fullName,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Đăng ký thất bại')
+      }
+
+      // Auto login after register
+      await get().login({ email: data.email, password: data.password })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng ký thất bại'
+      set({ error: message, isLoading: false })
+      throw error
+    }
+  },
+
+  loginWithGoogle: async () => {
+    set({ isLoading: true, error: null })
+    
+    try {
+      await nextAuthSignIn('google', { callbackUrl: '/dashboard' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng nhập Google thất bại'
+      set({ error: message, isLoading: false })
+      throw error
+    }
+  },
+
+  loginWithLinkedIn: async () => {
+    set({ isLoading: true, error: null })
+    
+    try {
+      await nextAuthSignIn('linkedin', { callbackUrl: '/dashboard' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng nhập LinkedIn thất bại'
+      set({ error: message, isLoading: false })
+      throw error
+    }
+  },
+
+  loginWithOrcid: async () => {
+    set({ isLoading: true, error: null })
+    
+    try {
+      await nextAuthSignIn('orcid', { callbackUrl: '/dashboard' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đăng nhập ORCID thất bại'
+      set({ error: message, isLoading: false })
+      throw error
+    }
+  },
+
+  logout: async () => {
+    set({ isLoading: true })
+    
+    try {
+      await nextAuthSignOut({ callbackUrl: '/auth/login' })
+      set({ 
+        user: null, 
+        session: null, 
+        isAuthenticated: false, 
+        isLoading: false 
+      })
+    } catch (error) {
+      set({ isLoading: false })
+      throw error
+    }
+  },
+
+  clearError: () => {
+    set({ error: null })
+  },
+
+  refreshSession: async () => {
+    // NextAuth handles this automatically
+    set({ isLoading: false })
+  },
+
+  updateUser: (updates: Partial<User>) => {
+    const currentUser = get().user
+    if (currentUser) {
+      set({ user: { ...currentUser, ...updates } })
+    }
+  },
+
+  setSession: (session: Session | null) => {
+    if (session?.user) {
+      const user: User = {
+        id: (session.user as any).id || '',
+        email: session.user.email || '',
+        name: session.user.name,
+        role: (session.user as any).role || 'user',
+        full_name: session.user.name,
+      }
+      
+      set({
+        session,
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+    } else {
+      set({
+        session: null,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+      })
+    }
+  },
+}))

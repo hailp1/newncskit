@@ -6,7 +6,7 @@
 /**
  * Blog post status
  */
-export type PostStatus = 'draft' | 'published' | 'scheduled' | 'archived';
+export type PostStatus = 'draft' | 'published' | 'scheduled' | 'archived' | 'review';
 
 /**
  * Blog post (alias for backward compatibility)

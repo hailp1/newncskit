@@ -322,8 +322,8 @@ export default function ProfilePage() {
             
             <div>
               <label className="text-sm font-medium text-gray-500">Account Status</label>
-              <p className={`capitalize font-medium ${profile.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                {profile.is_active ? 'Active' : 'Inactive'}
+              <p className={`capitalize font-medium ${profile.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                {profile.status === 'active' ? 'Active' : profile.status || 'Inactive'}
               </p>
             </div>
             

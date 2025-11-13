@@ -57,13 +57,13 @@ export function AvatarUpload({
       reader.readAsDataURL(file)
 
       // Upload to Supabase
-      const result = await uploadAvatar(file)
+      const result = await uploadAvatar(file, 'user-id-placeholder')
 
       // Update profile in database (you may want to add this)
-      // await updateProfile({ avatar_url: result.publicUrl })
+      // await updateProfile({ avatar_url: result })
 
-      if (onUploadSuccess && result.publicUrl) {
-        onUploadSuccess(result.publicUrl)
+      if (onUploadSuccess && result) {
+        onUploadSuccess(result)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -80,7 +80,7 @@ export function AvatarUpload({
     setError(null)
 
     try {
-      await deleteFile('avatars', `${user.id}/avatar.jpg`)
+      await deleteFile(`avatars/${user.id}/avatar.jpg`)
       setPreviewUrl(null)
       
       if (onUploadSuccess) {

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ErrorMessageComponent } from '@/components/ui/error-message';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import readXlsxFile from 'read-excel-file';
 import { DataColumn } from '@/app/(dashboard)/analysis/page';
 import { ErrorHandler, ErrorMessage } from '@/services/error-handler';
 import { errorRecoveryService, ErrorRecoveryContext, RecoveryAction } from '@/services/error-recovery';
@@ -122,36 +122,27 @@ export default function DataUpload({ onDataUploaded, mode = 'both', projectId }:
     });
   };
 
-  const parseExcel = (file: File): Promise<any[][]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          resolve(jsonData as any[][]);
-        } catch (error) {
-          reject(error);
+  const parseExcel = async (file: File): Promise<any[][]> => {
+    const rows = await readXlsxFile(file, { dateFormat: 'yyyy-mm-dd' });
+    return rows.map((row) =>
+      row.map((cell) => {
+        if (cell === null || cell === undefined) return '';
+        if (cell instanceof Date) {
+          return cell.toISOString();
         }
-      };
-      
-      reader.onerror = () => reject(new Error('Failed to read Excel file'));
-      reader.readAsArrayBuffer(file);
-    });
+        return typeof cell === 'string' ? cell : cell.toString();
+      })
+    );
   };
 
   // Enhanced file validation function
   const validateFile = (file: File): { isValid: boolean; error?: string } => {
     // File type validation
-    const allowedTypes = ['csv', 'xlsx', 'xls'];
+    const allowedTypes = ['csv', 'xlsx'];
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
     if (!fileExtension || !allowedTypes.includes(fileExtension)) {
-      return { isValid: false, error: 'Only CSV and Excel files (.csv, .xlsx, .xls) are allowed' };
+      return { isValid: false, error: 'Only CSV and Excel (.csv, .xlsx) files are allowed' };
     }
     
     // File size validation (50MB limit)
@@ -170,7 +161,6 @@ export default function DataUpload({ onDataUploaded, mode = 'both', projectId }:
     const allowedMimeTypes = [
       'text/csv',
       'application/csv',
-      'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
     
@@ -574,7 +564,7 @@ export default function DataUpload({ onDataUploaded, mode = 'both', projectId }:
         <div className="mt-6 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors border-gray-300 hover:border-gray-400">
           <input
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx"
             onChange={handleFileChange}
             className="hidden"
             id="file-upload"
@@ -585,7 +575,7 @@ export default function DataUpload({ onDataUploaded, mode = 'both', projectId }:
                 Click to browse and select your data file
               </p>
               <p className="text-sm text-gray-500">
-                Supports CSV, Excel (.xlsx, .xls) files up to 50MB
+                Supports CSV and Excel (.xlsx) files up to 50MB
               </p>
             </div>
           </label>

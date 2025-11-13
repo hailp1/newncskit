@@ -70,7 +70,7 @@ describe('QuestionBankService', () => {
       const result = await questionBankService.getByConstruct('Behavioral Intention')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/question-bank/by-construct?construct=Behavioral%20Intention')
+        expect.stringContaining('/api/question-bank/by-construct?construct=Behavioral+Intention')
       )
       expect(result).toEqual(searchResult)
     })
@@ -180,7 +180,7 @@ describe('QuestionBankService', () => {
       const result = await questionBankService.getConstructs('TAM', 'Perceived Usefulness')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/question-bank/constructs?theoretical_model=TAM&research_variable=Perceived%20Usefulness')
+        expect.stringContaining('/api/question-bank/constructs?theoretical_model=TAM&research_variable=Perceived+Usefulness')
       )
       expect(result).toEqual(constructs)
     })

@@ -1,0 +1,33 @@
+# Cloudflare Tunnel Configuration for ncskit.org
+# Copy this file to cloudflared-config.yml and update with your values
+
+# Replace with your Tunnel ID from: cloudflared tunnel create ncskit
+tunnel: YOUR_TUNNEL_ID_HERE
+
+# Replace with your Windows username
+credentials-file: C:\Users\YOUR_USERNAME\.cloudflared\YOUR_TUNNEL_ID_HERE.json
+
+# Ingress rules - routes traffic to your services
+ingress:
+  # Main domain
+  - hostname: ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+  
+  # WWW subdomain
+  - hostname: www.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+  
+  # API subdomain (optional)
+  # - hostname: api.ncskit.org
+  #   service: http://localhost:3000/api
+  
+  # Catch-all rule (required - must be last)
+  - service: http_status:404
+
+# Optional: Logging
+# loglevel: info
+# logfile: cloudflared.log

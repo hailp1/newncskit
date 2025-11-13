@@ -1,80 +1,68 @@
 /**
  * Next.js Middleware
- * Handles authentication and session management
+ * Handles authentication and session management with NextAuth
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession, requireAuth } from '@/lib/supabase/middleware'
+import { withAuth } from 'next-auth/middleware'
+import { NextResponse } from 'next/server'
 
-// Protected routes that require authentication
-const protectedRoutes = [
-  '/dashboard',
-  '/projects',
-  '/editor',
-  '/references',
-  '/analytics',
-  '/journals',
-  '/topics',
-  '/reviews',
-  '/analysis',
-  '/blog-admin',
-  '/admin',
-  '/profile',
-  '/settings',
-  '/docs',
-]
+export default withAuth(
+  function middleware(req) {
+    const { pathname } = req.nextUrl
+    const token = req.nextauth.token
 
-// Public routes that don't require authentication
-const publicRoutes = [
-  '/',
-  '/auth',
-  '/login',
-  '/register',
-  '/about',
-  '/features',
-  '/blog',
-  '/contact',
-  '/privacy',
-  '/terms',
-  '/setup-guide',
-  '/tutorials',
-]
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isPublicRoute = publicRoutes.some(route => 
-    pathname === route || pathname.startsWith(`${route}/`)
-  )
-
-  // Update session for all requests
-  const response = await updateSession(request)
-
-  // If it's a protected route, check authentication
-  if (isProtectedRoute) {
-    const user = await requireAuth(request)
-
-    if (!user) {
-      // Redirect to login with return URL
-      const redirectUrl = new URL('/auth/login', request.url)
-      redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
+    // Redirect /login to /auth/login
+    if (pathname === '/login') {
+      return NextResponse.redirect(new URL('/auth/login', req.url))
     }
-  }
 
-  // If user is authenticated and trying to access auth pages, redirect to dashboard
-  if (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')) {
-    const user = await requireAuth(request)
-    
-    if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    // If user is authenticated and trying to access auth pages, redirect to dashboard
+    if (token && (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register'))) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
-  }
 
-  return response
-}
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ req, token }) => {
+        const { pathname } = req.nextUrl
+
+        // Protected routes that require authentication
+        const protectedRoutes = [
+          '/dashboard',
+          '/projects',
+          '/editor',
+          '/references',
+          '/analytics',
+          '/journals',
+          '/topics',
+          '/reviews',
+          '/analysis',
+          '/blog-admin',
+          '/admin',
+          '/profile',
+          '/settings',
+          '/docs',
+        ]
+
+        // Check if the route is protected
+        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
+        // If it's a protected route, require authentication
+        if (isProtectedRoute) {
+          return !!token
+        }
+
+        // Allow access to public routes
+        return true
+      },
+    },
+    pages: {
+      signIn: '/auth/login',
+    },
+  }
+)
 
 export const config = {
   matcher: [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -257,41 +257,9 @@ export default function AdminPermissions() {
     try {
       setLoadingAudit(true);
       
-      // Load recent permission-related audit logs from database
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from('admin_logs')
-        .select(`
-          id,
-          admin_id,
-          action,
-          target_type,
-          details,
-          created_at,
-          admin:profiles!admin_logs_admin_id_fkey(full_name)
-        `)
-        .eq('target_type', 'permission')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      if (error) {
-        console.error('Failed to load audit logs:', error);
-        return;
-      }
-      
-      const formattedLogs: AuditLog[] = (data || []).map((log: any) => ({
-        id: log.id,
-        admin_id: log.admin_id,
-        action: log.action,
-        target_type: log.target_type,
-        details: log.details,
-        created_at: log.created_at,
-        admin_name: log.admin?.full_name || 'Unknown Admin'
-      }));
-      
-      setAuditLogs(formattedLogs);
+      // TODO: Implement audit log functionality with Prisma
+      // For now, show empty state as admin_logs table doesn't exist yet
+      setAuditLogs([]);
       
     } catch (err) {
       console.error('Error loading audit logs:', err);
@@ -495,8 +463,8 @@ export default function AdminPermissions() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {Object.entries(PERMISSION_CATEGORIES).map(([category, permissions]) => (
-                    <>
-                      <tr key={`category-${category}`} className="bg-gray-100">
+                    <Fragment key={category}>
+                      <tr className="bg-gray-100">
                         <td colSpan={roles.length + 1} className="px-6 py-2 text-sm font-semibold text-gray-700">
                           {category}
                         </td>
@@ -530,7 +498,7 @@ export default function AdminPermissions() {
                           })}
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

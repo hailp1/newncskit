@@ -1,0 +1,397 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Authentication Models (NextAuth.js)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// User Management (Compatible with Supabase)
+// ============================================
+
+model User {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                    String    @unique @db.VarChar(255)
+  password                 String?   @db.VarChar(255) // For NextAuth credentials
+  firstName                String?   @map("first_name") @db.VarChar(255)
+  lastName                 String?   @map("last_name") @db.VarChar(255)
+  fullName                 String?   @map("full_name") @db.VarChar(255)
+  avatarUrl                String?   @map("avatar_url") @db.Text
+  institution              String?   @db.VarChar(255)
+  department               String?   @db.VarChar(255)
+  position                 String?   @db.VarChar(255)
+  academicTitle            String?   @map("academic_title") @db.VarChar(255)
+  bio                      String?   @db.Text
+  phone                    String?   @db.VarChar(50)
+  dateOfBirth              DateTime? @map("date_of_birth") @db.Date
+  gender                   String?   @db.VarChar(20)
+  websiteUrl               String?   @map("website_url") @db.Text
+  linkedinUrl              String?   @map("linkedin_url") @db.Text
+  googleScholarUrl         String?   @map("google_scholar_url") @db.Text
+  orcidId                  String?   @map("orcid_id") @db.VarChar(255)
+  researchDomains          String[]  @default([]) @map("research_domains")
+  role                     String    @default("user") @db.VarChar(50)
+  status                   String    @default("active") @map("account_status") @db.VarChar(50)
+  subscriptionType         String    @default("free") @map("subscription_type") @db.VarChar(50)
+  subscriptionExpiresAt    DateTime? @map("subscription_expires_at") @db.Timestamptz(6)
+  tokenBalance             Int       @default(100) @map("token_balance")
+  totalTokensEarned        Int       @default(100) @map("total_tokens_earned")
+  totalTokensSpent         Int       @default(0) @map("total_tokens_spent")
+  tokenTier                String    @default("bronze") @map("token_tier") @db.VarChar(50)
+  referralCode             String?   @unique @map("referral_code") @db.VarChar(50)
+  referredByCode           String?   @map("referred_by_code") @db.VarChar(50)
+  referredByUserId         String?   @map("referred_by_user_id") @db.Uuid
+  referralCount            Int       @default(0) @map("referral_count")
+  referralTokensEarned     Int       @default(0) @map("referral_tokens_earned")
+  projectsCreated          Int       @default(0) @map("projects_created")
+  outlinesGenerated        Int       @default(0) @map("outlines_generated")
+  aiQueriesMade            Int       @default(0) @map("ai_queries_made")
+  lastLoginAt              DateTime? @map("last_login_at") @db.Timestamptz(6)
+  loginCount               Int       @default(0) @map("login_count")
+  lastActivityAt           DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  preferredLanguage        String    @default("vi") @map("preferred_language") @db.VarChar(10)
+  timezone                 String    @default("Asia/Ho_Chi_Minh") @db.VarChar(50)
+  preferences              Json      @default("{}") @db.JsonB
+  notificationPreferences  Json      @default("{\"push\": false, \"email\": true, \"marketing\": true, \"token_updates\": true, \"referral_updates\": true, \"research_updates\": true}") @map("notification_preferences") @db.JsonB
+  privacySettings          Json      @default("{\"email_public\": false, \"profile_public\": true, \"show_institution\": true, \"show_research_interests\": true}") @map("privacy_settings") @db.JsonB
+  uiPreferences            Json      @default("{\"theme\": \"light\", \"dashboard_layout\": \"default\", \"sidebar_collapsed\": false}") @map("ui_preferences") @db.JsonB
+  emailVerified            Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt          DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerified            Boolean   @default(false) @map("phone_verified")
+  twoFactorEnabled         Boolean   @default(false) @map("two_factor_enabled")
+  passwordResetRequired    Boolean   @default(false) @map("password_reset_required")
+  passwordResetToken       String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpiresAt   DateTime? @map("password_reset_expires_at") @db.Timestamptz(6)
+  lastPasswordChange       DateTime  @default(now()) @map("last_password_change") @db.Timestamptz(6)
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  accounts            Account[]
+  sessions            Session[]
+  projects            Project[]
+  analysisProjects    AnalysisProject[]
+  tokenTransactions   TokenTransaction[]
+  referrals           Referral[]          @relation("Referrer")
+  referredUsers       Referral[]          @relation("Referred")
+  posts               Post[]
+  permissions         Permission[]
+  userAchievements    UserAchievement[]
+
+  @@map("users")
+}
+
+// ============================================
+// Project Management
+// ============================================
+
+model Project {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title              String    @db.VarChar(255)
+  description        String?   @db.Text
+  userId             String    @map("user_id") @db.Uuid
+  businessDomainId   Int?      @map("business_domain_id")
+  selectedModels     Int[]     @default([]) @map("selected_models")
+  researchOutline    Json?     @map("research_outline") @db.JsonB
+  status             String    @default("draft") @db.VarChar(50)
+  progress           Int       @default(0)
+  phase              String    @default("planning") @db.VarChar(50)
+  tags               String[]  @default([])
+  wordCount          Int       @default(0) @map("word_count")
+  referenceCount     Int       @default(0) @map("reference_count")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+// ============================================
+// CSV Analysis Projects
+// ============================================
+
+model AnalysisProject {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  name          String    @db.VarChar(255)
+  description   String?   @db.Text
+  csvFilePath   String    @map("csv_file_path") @db.Text
+  csvFileSize   Int       @map("csv_file_size")
+  rowCount      Int       @map("row_count")
+  columnCount   Int       @map("column_count")
+  status        String    @default("draft") @db.VarChar(50)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variables AnalysisVariable[]
+  groups    VariableGroup[]
+  results   AnalysisResult[]
+
+  @@map("analysis_projects")
+}
+
+model AnalysisVariable {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  projectId        String    @map("project_id") @db.Uuid
+  columnName       String    @map("column_name") @db.VarChar(255)
+  displayName      String?   @map("display_name") @db.VarChar(255)
+  dataType         String?   @map("data_type") @db.VarChar(50)
+  isDemographic    Boolean   @default(false) @map("is_demographic")
+  demographicType  String?   @map("demographic_type") @db.VarChar(50)
+  semanticName     String?   @map("semantic_name") @db.VarChar(255)
+  variableGroupId  String?   @map("variable_group_id") @db.Uuid
+  missingCount     Int       @default(0) @map("missing_count")
+  uniqueCount      Int       @default(0) @map("unique_count")
+  minValue         Decimal?  @map("min_value") @db.Decimal
+  maxValue         Decimal?  @map("max_value") @db.Decimal
+  meanValue        Decimal?  @map("mean_value") @db.Decimal
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project AnalysisProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  group   VariableGroup?  @relation(fields: [variableGroupId], references: [id])
+
+  @@map("analysis_variables")
+}
+
+model VariableGroup {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  groupType   String    @default("construct") @map("group_type") @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project   AnalysisProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  variables AnalysisVariable[]
+
+  @@map("variable_groups")
+}
+
+model AnalysisResult {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  projectId     String    @map("project_id") @db.Uuid
+  analysisType  String    @map("analysis_type") @db.VarChar(50)
+  config        Json?     @db.JsonB
+  results       Json?     @db.JsonB
+  resultsPath   String?   @map("results_path") @db.Text
+  status        String    @default("completed") @db.VarChar(50)
+  executedAt    DateTime  @default(now()) @map("executed_at") @db.Timestamptz(6)
+  executionTime Int?      @map("execution_time")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project AnalysisProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_results")
+}
+
+// ============================================
+// Token System
+// ============================================
+
+model TokenTransaction {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String?   @map("user_id") @db.Uuid
+  transactionType String    @map("transaction_type") @db.VarChar(50)
+  amount          Int
+  balanceBefore   Int       @map("balance_before")
+  balanceAfter    Int       @map("balance_after")
+  description     String    @db.Text
+  referenceId     String?   @map("reference_id") @db.Uuid
+  referenceType   String?   @map("reference_type") @db.VarChar(50)
+  fromUserId      String?   @map("from_user_id") @db.Uuid
+  toUserId        String?   @map("to_user_id") @db.Uuid
+  createdByAdmin  String?   @map("created_by_admin") @db.Uuid
+  adminNotes      String?   @map("admin_notes") @db.Text
+  metadata        Json?     @db.JsonB
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("token_transactions")
+}
+
+// ============================================
+// Referral System
+// ============================================
+
+model Referral {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referrerId           String?   @map("referrer_id") @db.Uuid
+  referrerCode         String    @map("referrer_code") @db.VarChar(50)
+  referredId           String?   @map("referred_id") @db.Uuid
+  referredEmail        String    @map("referred_email") @db.VarChar(255)
+  status               String    @default("pending") @db.VarChar(50)
+  completedAt          DateTime? @map("completed_at") @db.Timestamptz(6)
+  referrerRewardTokens Int       @default(0) @map("referrer_reward_tokens")
+  referredRewardTokens Int       @default(0) @map("referred_reward_tokens")
+  rewardGiven          Boolean   @default(false) @map("reward_given")
+  rewardGivenAt        DateTime? @map("reward_given_at") @db.Timestamptz(6)
+  referralSource       String?   @map("referral_source") @db.VarChar(100)
+  ipAddress            String?   @map("ip_address") @db.Inet
+  userAgent            String?   @map("user_agent") @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  referrer User? @relation("Referrer", fields: [referrerId], references: [id])
+  referred User? @relation("Referred", fields: [referredId], references: [id])
+
+  @@map("referrals")
+}
+
+// ============================================
+// Blog/Content Management
+// ============================================
+
+model Post {
+  id              Int           @id @default(autoincrement())
+  title           String        @db.VarChar(255)
+  content         String?       @db.Text
+  authorId        String?       @map("author_id") @db.Uuid
+  status          String        @default("draft") @db.VarChar(50)
+  categoryId      Int?          @map("category_id")
+  tags            Json?         @db.JsonB
+  featuredImage   String?       @map("featured_image") @db.VarChar(500)
+  metaDescription String?       @map("meta_description") @db.Text
+  slug            String?       @unique @db.VarChar(255)
+  publishedAt     DateTime?     @map("published_at") @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  author   User?          @relation(fields: [authorId], references: [id])
+  category BlogCategory?  @relation(fields: [categoryId], references: [id])
+
+  @@map("posts")
+}
+
+model BlogCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  color       String?  @db.VarChar(50)
+  icon        String?  @db.VarChar(50)
+  parentId    Int?     @map("parent_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  parent   BlogCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children BlogCategory[] @relation("CategoryHierarchy")
+  posts    Post[]
+
+  @@map("blog_categories")
+}
+
+// ============================================
+// Permissions
+// ============================================
+
+model Permission {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  permission String    @db.VarChar(100)
+  grantedBy  String?   @map("granted_by") @db.Uuid
+  grantedAt  DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("permissions")
+}
+
+// ============================================
+// Achievements
+// ============================================
+
+model UserAchievement {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String?   @map("user_id") @db.Uuid
+  achievementType        String    @map("achievement_type") @db.VarChar(50)
+  achievementName        String    @map("achievement_name") @db.VarChar(255)
+  achievementDescription String?   @map("achievement_description") @db.Text
+  tokenReward            Int       @default(0) @map("token_reward")
+  badgeIcon              String?   @map("badge_icon") @db.VarChar(100)
+  badgeColor             String?   @map("badge_color") @db.VarChar(50)
+  progressCurrent        Int       @default(0) @map("progress_current")
+  progressRequired       Int       @default(1) @map("progress_required")
+  isCompleted            Boolean   @default(false) @map("is_completed")
+  completedAt            DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_achievements")
+}
+
+// ============================================
+// Brand Settings
+// ============================================
+
+model BrandSettings {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  logo            String?  @db.Text
+  logoHeight      Int      @default(40) @map("logo_height")
+  logoFooter      String?  @map("logo_footer") @db.Text
+  logoFooterHeight Int     @default(32) @map("logo_footer_height")
+  favicon         String?  @db.Text
+  primaryColor    String   @default("#2563EB") @map("primary_color") @db.VarChar(50)
+  secondaryColor  String   @default("#10B981") @map("secondary_color") @db.VarChar(50)
+  accentColor     String   @default("#F59E0B") @map("accent_color") @db.VarChar(50)
+  companyName     String   @default("NCSKit") @map("company_name") @db.VarChar(255)
+  tagline         String   @default("Nền tảng phân tích dữ liệu nghiên cứu khoa học") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("brand_settings")
+}

@@ -1,17 +1,7 @@
-/**
- * Supabase Client for Browser
- * Use this in Client Components
- */
-
-import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/types/supabase'
+// This file has been deprecated - Supabase has been replaced with NextAuth + Prisma
+// Keeping this stub to prevent import errors during migration
+// TODO: Remove all imports of this file
 
 export function createClient() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  throw new Error('Supabase client is deprecated. Use Prisma instead.')
 }
-
-// Export singleton instance for convenience
-export const supabase = createClient()

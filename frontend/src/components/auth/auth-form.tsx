@@ -38,7 +38,7 @@ export function AuthForm({
   onSuccess,
   isModal = false,
 }: AuthFormProps) {
-  const { login, register, loginWithGoogle, loginWithLinkedIn, isLoading, error, clearError } = useAuthStore()
+  const { login, register, loginWithGoogle, loginWithLinkedIn, loginWithOrcid, isLoading, error, clearError } = useAuthStore()
   const networkStatus = useNetworkStatus()
   
   const [formData, setFormData] = useState<FormData>({
@@ -56,7 +56,7 @@ export function AuthForm({
   const [canRetry, setCanRetry] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
   const [oauthError, setOauthError] = useState<{
-    provider: 'google' | 'linkedin'
+    provider: 'google' | 'linkedin' | 'orcid'
     type: 'popup_blocked' | 'access_denied' | 'general'
   } | null>(null)
 
@@ -240,7 +240,7 @@ export function AuthForm({
     await handleSubmit(submitEvent)
   }
 
-  const handleOAuthLogin = async (provider: 'google' | 'linkedin') => {
+  const handleOAuthLogin = async (provider: 'google' | 'linkedin' | 'orcid') => {
     setLocalError(null)
     setShowError(false)
     setCanRetry(false)
@@ -264,8 +264,10 @@ export function AuthForm({
         async () => {
           if (provider === 'google') {
             await loginWithGoogle()
-          } else {
+          } else if (provider === 'linkedin') {
             await loginWithLinkedIn()
+          } else {
+            await loginWithOrcid()
           }
         },
         {
@@ -680,6 +682,25 @@ export function AuthForm({
               <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
             </svg>
             LinkedIn
+          </Button>
+        </div>
+
+        {/* ORCID Button - Full Width */}
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOAuthLogin('orcid')}
+            disabled={isLoading || isSuccess}
+            className="w-full min-h-[44px] text-base md:text-sm transition-all duration-200 hover:scale-105 hover:shadow-md border-[#A6CE39] hover:bg-[#A6CE39]/5"
+            style={{ willChange: 'transform' }}
+            aria-label="Đăng nhập bằng ORCID"
+          >
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 256 256" fill="none" aria-hidden="true">
+              <rect width="256" height="256" fill="#A6CE39"/>
+              <path d="M80.5 104.5h15v70h-15v-70zm7.5-25c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm38.5 25h14.5v10h.5c2-6.5 10-12 20-12 21.5 0 25.5 14 25.5 32v35h-15v-31c0-7.5-.5-17-10.5-17s-12 7.5-12 17v31h-15v-65h-7.5" fill="white"/>
+            </svg>
+            ORCID
           </Button>
         </div>
       </div>

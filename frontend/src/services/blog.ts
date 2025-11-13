@@ -1,5 +1,6 @@
 import { apiClient } from './api-client';
 
+// Service-specific BlogPost type with all required fields
 export interface BlogPost {
   id: string;
   title: string;
@@ -48,6 +49,7 @@ export interface BlogPost {
   updated_at: string;
 }
 
+// Service-specific category with additional fields
 export interface BlogCategory {
   id: string;
   name: string;
@@ -175,6 +177,7 @@ export class BlogService {
     page?: number;
     limit?: number;
     category?: string;
+    categoryId?: string | number;
     tag?: string;
     search?: string;
     status?: string;
@@ -183,48 +186,66 @@ export class BlogService {
     const params = new URLSearchParams();
     
     if (options.page) params.append('page', options.page.toString());
-    if (options.limit) params.append('page_size', options.limit.toString());
+    if (options.limit) params.append('limit', options.limit.toString());
     if (options.category) params.append('category', options.category);
+    if (options.categoryId) params.append('categoryId', options.categoryId.toString());
     if (options.tag) params.append('tag', options.tag);
     if (options.search) params.append('search', options.search);
     if (options.status) params.append('status', options.status);
     if (options.author) params.append('author', options.author);
 
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/?${params.toString()}`);
+    const response = await apiClient.get(`${this.baseUrl}/posts?${params.toString()}`);
     return response.data;
   }
 
   async getPostById(id: string): Promise<BlogPost> {
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/${id}/`);
+    const response = await apiClient.get(`${this.baseUrl}/posts/${id}`);
     return response.data;
   }
 
   async getPostBySlug(slug: string): Promise<BlogPost> {
-    const response = await apiClient.get(`${this.baseUrl}/api/public/posts/${slug}/`);
+    const response = await apiClient.get(`${this.baseUrl}/posts/slug/${slug}`);
     return response.data;
   }
 
   async createPost(postData: Partial<BlogPost>): Promise<BlogPost> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/`, postData);
+    const response = await apiClient.post(`${this.baseUrl}/posts`, postData);
     return response.data;
   }
 
   async updatePost(id: string, postData: Partial<BlogPost>): Promise<BlogPost> {
-    const response = await apiClient.patch(`${this.baseUrl}/api/posts/${id}/`, postData);
+    const response = await apiClient.patch(`${this.baseUrl}/posts/${id}`, postData);
     return response.data;
   }
 
   async deletePost(id: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/api/posts/${id}/`);
+    await apiClient.delete(`${this.baseUrl}/posts/${id}`);
   }
 
   async publishPost(id: string): Promise<BlogPost> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/${id}/publish/`);
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/publish`);
+    return response.data;
+  }
+
+  async getPendingPosts(options: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ results: BlogPost[], count: number, next?: string, previous?: string }> {
+    const params = new URLSearchParams();
+    if (options.page) params.append('page', options.page.toString());
+    if (options.limit) params.append('limit', options.limit.toString());
+
+    const response = await apiClient.get(`${this.baseUrl}/posts/pending?${params.toString()}`);
+    return response.data;
+  }
+
+  async approvePost(id: string): Promise<BlogPost> {
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/approve`);
     return response.data;
   }
 
   async schedulePost(id: string, scheduledAt: string): Promise<BlogPost> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/${id}/schedule/`, {
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/schedule`, {
       scheduled_at: scheduledAt
     });
     return response.data;
@@ -236,99 +257,91 @@ export class BlogService {
     category?: string;
     tag?: string;
   } = {}): Promise<{ results: BlogPost[], count: number }> {
-    const params = new URLSearchParams();
-    
-    if (options.page) params.append('page', options.page.toString());
-    if (options.limit) params.append('page_size', options.limit.toString());
-    if (options.category) params.append('category', options.category);
-    if (options.tag) params.append('tag', options.tag);
-
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/published/?${params.toString()}`);
-    return response.data;
+    return this.getPosts({ ...options, status: 'published' });
   }
 
   async getDraftPosts(): Promise<BlogPost[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/drafts/`);
-    return response.data;
+    const response = await this.getPosts({ status: 'draft' });
+    return response.results;
   }
 
   async getRelatedPosts(id: string): Promise<BlogPost[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/${id}/related/`);
+    const response = await apiClient.get(`${this.baseUrl}/posts/${id}/related`);
     return response.data;
   }
 
   async incrementView(id: string): Promise<{ view_count: number }> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/${id}/increment-view/`);
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/view`);
     return response.data;
   }
 
   async likePost(id: string, action: 'like' | 'unlike' = 'like'): Promise<{ like_count: number }> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/${id}/like/`, { action });
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/like`, { action });
     return response.data;
   }
 
   async searchPosts(query: string): Promise<BlogPost[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/search/posts/?q=${encodeURIComponent(query)}`);
+    const response = await apiClient.get(`${this.baseUrl}/posts/search?q=${encodeURIComponent(query)}`);
     return response.data;
   }
 
   // Categories
   async getCategories(): Promise<BlogCategory[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/categories/`);
+    const response = await apiClient.get(`${this.baseUrl}/categories`);
     return response.data.results || response.data;
   }
 
   async getCategoryHierarchy(): Promise<BlogCategory[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/categories/hierarchy/`);
+    const response = await apiClient.get(`${this.baseUrl}/categories/hierarchy`);
     return response.data;
   }
 
   async createCategory(categoryData: Partial<BlogCategory>): Promise<BlogCategory> {
-    const response = await apiClient.post(`${this.baseUrl}/api/categories/`, categoryData);
+    const response = await apiClient.post(`${this.baseUrl}/categories`, categoryData);
     return response.data;
   }
 
   async updateCategory(id: string, categoryData: Partial<BlogCategory>): Promise<BlogCategory> {
-    const response = await apiClient.patch(`${this.baseUrl}/api/categories/${id}/`, categoryData);
+    const response = await apiClient.patch(`${this.baseUrl}/categories/${id}`, categoryData);
     return response.data;
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/api/categories/${id}/`);
+    await apiClient.delete(`${this.baseUrl}/categories/${id}`);
   }
 
   async getCategoryPosts(id: string): Promise<BlogPost[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/categories/${id}/posts/`);
+    const response = await apiClient.get(`${this.baseUrl}/categories/${id}/posts`);
     return response.data;
   }
 
   // Tags
   async getTags(): Promise<BlogTag[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/tags/`);
+    const response = await apiClient.get(`${this.baseUrl}/tags`);
     return response.data.results || response.data;
   }
 
   async getPopularTags(): Promise<BlogTag[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/tags/popular/`);
+    const response = await apiClient.get(`${this.baseUrl}/tags/popular`);
     return response.data;
   }
 
   async createTag(tagData: Partial<BlogTag>): Promise<BlogTag> {
-    const response = await apiClient.post(`${this.baseUrl}/api/tags/`, tagData);
+    const response = await apiClient.post(`${this.baseUrl}/tags`, tagData);
     return response.data;
   }
 
   async updateTag(id: string, tagData: Partial<BlogTag>): Promise<BlogTag> {
-    const response = await apiClient.patch(`${this.baseUrl}/api/tags/${id}/`, tagData);
+    const response = await apiClient.patch(`${this.baseUrl}/tags/${id}`, tagData);
     return response.data;
   }
 
   async deleteTag(id: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/api/tags/${id}/`);
+    await apiClient.delete(`${this.baseUrl}/tags/${id}`);
   }
 
   async getTagPosts(id: string): Promise<BlogPost[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/tags/${id}/posts/`);
+    const response = await apiClient.get(`${this.baseUrl}/tags/${id}/posts`);
     return response.data;
   }
 
@@ -342,16 +355,16 @@ export class BlogService {
     const params = new URLSearchParams();
     
     if (options.page) params.append('page', options.page.toString());
-    if (options.limit) params.append('page_size', options.limit.toString());
+    if (options.limit) params.append('limit', options.limit.toString());
     if (options.search) params.append('search', options.search);
     if (options.folder) params.append('folder', options.folder);
 
-    const response = await apiClient.get(`${this.baseUrl}/api/media/?${params.toString()}`);
+    const response = await apiClient.get(`${this.baseUrl}/media?${params.toString()}`);
     return response.data;
   }
 
   async getImages(): Promise<MediaFile[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/media/images/`);
+    const response = await apiClient.get(`${this.baseUrl}/media/images`);
     return response.data;
   }
 
@@ -370,7 +383,7 @@ export class BlogService {
     if (metadata.description) formData.append('description', metadata.description);
     if (metadata.folder) formData.append('folder', metadata.folder);
 
-    const response = await apiClient.post(`${this.baseUrl}/api/media/`, formData, {
+    const response = await apiClient.post(`${this.baseUrl}/media`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -379,13 +392,13 @@ export class BlogService {
   }
 
   async generateAltText(id: string): Promise<{ alt_text: string }> {
-    const response = await apiClient.post(`${this.baseUrl}/api/media/${id}/generate-alt-text/`);
+    const response = await apiClient.post(`${this.baseUrl}/media/${id}/alt-text`);
     return response.data;
   }
 
   // SEO Analysis
   async analyzeSEO(id: string, focusKeyword?: string): Promise<SEOAnalysis> {
-    const response = await apiClient.post(`${this.baseUrl}/api/posts/${id}/analyze-seo/`, {
+    const response = await apiClient.post(`${this.baseUrl}/posts/${id}/seo`, {
       focus_keyword: focusKeyword
     });
     return response.data;
@@ -397,24 +410,24 @@ export class BlogService {
     meta_description: string;
     focus_keyword: string;
   }): Promise<any> {
-    const response = await apiClient.post(`${this.baseUrl}/api/seo-analysis/analyze-content/`, content);
+    const response = await apiClient.post(`${this.baseUrl}/seo/analyze`, content);
     return response.data;
   }
 
   // Analytics
   async getPostAnalytics(id: string): Promise<any[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/posts/${id}/analytics/`);
+    const response = await apiClient.get(`${this.baseUrl}/posts/${id}/analytics`);
     return response.data;
   }
 
   // Comments
   async getComments(postId: string): Promise<BlogComment[]> {
-    const response = await apiClient.get(`${this.baseUrl}/api/comments/?post=${postId}`);
+    const response = await apiClient.get(`${this.baseUrl}/comments?post=${postId}`);
     return response.data.results || response.data;
   }
 
   async createComment(postId: string, content: string, parentId?: string): Promise<BlogComment> {
-    const response = await apiClient.post(`${this.baseUrl}/api/comments/`, {
+    const response = await apiClient.post(`${this.baseUrl}/comments`, {
       post: postId,
       content,
       parent: parentId
@@ -423,7 +436,7 @@ export class BlogService {
   }
 
   async replyToComment(commentId: string, content: string): Promise<BlogComment> {
-    const response = await apiClient.post(`${this.baseUrl}/api/comments/${commentId}/reply/`, {
+    const response = await apiClient.post(`${this.baseUrl}/comments/${commentId}/reply`, {
       content
     });
     return response.data;

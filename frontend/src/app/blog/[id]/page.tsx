@@ -21,10 +21,14 @@ import {
   Twitter,
   Facebook,
   Linkedin,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Trash2,
+  Edit
 } from 'lucide-react';
 import Link from 'next/link';
 import { blogService, BlogPost, BlogComment } from '@/services/blog';
+import { useAuthStore } from '@/store/auth';
+import { useRouter } from 'next/navigation';
 
 // Interface để hiển thị blog post
 interface BlogPostDisplay {
@@ -57,11 +61,21 @@ interface CommentDisplay {
 
 export default function BlogPostPage() {
   const params = useParams();
+  const { user } = useAuthStore();
+  const router = useRouter();
   const [post, setPost] = useState<BlogPostDisplay | null>(null);
+  const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
   const [comments, setComments] = useState<CommentDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  
+  // Check if user can delete post
+  const canDeletePost = blogPost && user && (
+    user.id === blogPost.author.id || 
+    user.role === 'admin' || 
+    user.role === 'super_admin'
+  );
 
   useEffect(() => {
     if (params.id) {
@@ -74,30 +88,33 @@ export default function BlogPostPage() {
       setIsLoading(true);
       
       // Load post
-      const blogPost = await blogService.getPostById(postId);
+      const loadedPost = await blogService.getPostById(postId);
+      if (loadedPost && typeof loadedPost === 'object' && 'id' in loadedPost) {
+        setBlogPost(loadedPost as BlogPost);
+      }
       
       // Load comments
       const blogComments = await blogService.getComments(postId);
       
       // Transform API data to display format
       const displayPost: BlogPostDisplay = {
-        id: blogPost.id,
-        title: blogPost.title,
-        content: blogPost.content,
+        id: loadedPost.id,
+        title: loadedPost.title,
+        content: loadedPost.content,
         author: {
-          name: `${blogPost.author.first_name} ${blogPost.author.last_name}`.trim() || blogPost.author.username,
-          bio: `Tác giả tại NCSKIT với chuyên môn về ${blogPost.categories.map(c => c.name).join(', ')}.`,
+          name: `${loadedPost.author.first_name} ${loadedPost.author.last_name}`.trim() || loadedPost.author.username,
+          bio: `Tác giả tại NCSKIT với chuyên môn về ${loadedPost.categories.map(c => c.name).join(', ')}.`,
           avatar: undefined
         },
-        publishedAt: blogPost.published_at || blogPost.created_at,
-        updatedAt: blogPost.updated_at,
-        readTime: blogPost.reading_time,
-        category: blogPost.categories.length > 0 ? blogPost.categories[0].name : 'Chưa phân loại',
-        tags: blogPost.tags.map(tag => tag.name),
-        views: blogPost.view_count,
-        likes: blogPost.like_count,
-        comments: blogPost.comment_count,
-        featured: blogPost.categories.some(cat => cat.name.toLowerCase().includes('featured')) || blogPost.seo_score > 80
+        publishedAt: loadedPost.published_at || loadedPost.created_at,
+        updatedAt: loadedPost.updated_at,
+        readTime: loadedPost.reading_time,
+        category: loadedPost.categories.length > 0 ? loadedPost.categories[0].name : 'Chưa phân loại',
+        tags: loadedPost.tags.map(tag => tag.name),
+        views: loadedPost.view_count,
+        likes: loadedPost.like_count,
+        comments: loadedPost.comment_count,
+        featured: loadedPost.categories.some(cat => cat.name.toLowerCase().includes('featured')) || loadedPost.seo_score > 80
       };
       
       const displayComments: CommentDisplay[] = blogComments.map(comment => ({
@@ -170,6 +187,22 @@ export default function BlogPostPage() {
       } : null);
     } catch (error) {
       console.error('Error liking post:', error);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!blogPost || !canDeletePost) return;
+    
+    if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+      return;
+    }
+    
+    try {
+      await blogService.deletePost(blogPost.id);
+      router.push('/blog');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Không thể xóa bài viết. Vui lòng thử lại.');
     }
   };
 
@@ -265,7 +298,7 @@ export default function BlogPostPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant={liked ? "default" : "outline"}
                   size="sm"
@@ -314,6 +347,30 @@ export default function BlogPostPage() {
                     <LinkIcon className="h-4 w-4" />
                   </Button>
                 </div>
+
+                {/* Edit and Delete buttons for author/admin */}
+                {canDeletePost && (
+                  <div className="flex items-center gap-1 ml-2 pl-2 border-l">
+                    <Link href={`/blog-admin/create?id=${blogPost?.id}`}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Chỉnh sửa bài viết"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      onClick={handleDeletePost}
+                      title="Xóa bài viết"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardHeader>
           </Card>

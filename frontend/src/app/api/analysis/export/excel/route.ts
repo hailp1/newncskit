@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ExportService } from '@/services/export.service';
-import * as XLSX from 'xlsx';
+import writeXlsxFile from 'write-excel-file/node';
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,32 +64,44 @@ export async function POST(request: NextRequest) {
     // Format data for Excel
     const sheets = ExportService.formatForExcel(results, project);
 
-    // Create workbook
-    const workbook = XLSX.utils.book_new();
+    const sheetEntries = Object.entries(sheets);
 
-    // Add each sheet
-    Object.entries(sheets).forEach(([sheetName, sheetData]) => {
-      const data = sheetData as any[][];
-      const worksheet = XLSX.utils.aoa_to_sheet(data);
-      
-      // Set column widths
-      const maxWidths = (data as any[][]).reduce((widths: number[], row: any[]) => {
-        row.forEach((cell, i) => {
-          const cellLength = String(cell || '').length;
-          widths[i] = Math.max(widths[i] || 10, cellLength + 2);
+    const formatCellValue = (value: any) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      if (value instanceof Date) {
+        return { value, type: Date, format: 'yyyy-mm-dd' };
+      }
+      if (typeof value === 'number') {
+        return { value, type: Number };
+      }
+      if (typeof value === 'boolean') {
+        return { value, type: Boolean };
+      }
+      return { value: value.toString() };
+    };
+
+    const dataSheets = sheetEntries.map(([, sheetData]) =>
+      (sheetData as any[][]).map((row) => row.map((cell) => formatCellValue(cell)))
+    );
+
+    const columnConfigs = sheetEntries.map(([, sheetData]) => {
+      const widths: number[] = [];
+      (sheetData as any[][]).forEach((row) => {
+        row.forEach((cell, idx) => {
+          const length = cell === null || cell === undefined ? 0 : cell.toString().length;
+          widths[idx] = Math.min(Math.max(widths[idx] || 10, length + 2), 50);
         });
-        return widths;
-      }, []);
-
-      worksheet['!cols'] = maxWidths.map(w => ({ wch: Math.min(w, 50) }));
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+      return widths.map((width) => ({ width }));
     });
 
-    // Generate Excel file
-    const excelBuffer = XLSX.write(workbook, { 
-      type: 'buffer', 
-      bookType: 'xlsx' 
+    const excelBuffer = await writeXlsxFile(dataSheets, {
+      sheets: sheetEntries.map(([name]) => name),
+      columns: columnConfigs,
+      buffer: true,
+      dateFormat: 'yyyy-mm-dd'
     });
 
     // Generate filename
@@ -99,7 +111,25 @@ export async function POST(request: NextRequest) {
     );
 
     // Return file as download
-    return new NextResponse(excelBuffer, {
+    // Convert Buffer to ArrayBuffer for NextResponse compatibility
+    let responseBody: BodyInit;
+    if (excelBuffer instanceof Buffer) {
+      // Create a new ArrayBuffer from the Buffer
+      const arrayBuffer = new ArrayBuffer(excelBuffer.length);
+      const view = new Uint8Array(arrayBuffer);
+      view.set(excelBuffer);
+      responseBody = arrayBuffer;
+    } else if (excelBuffer instanceof Uint8Array) {
+      // Create a new ArrayBuffer from the Uint8Array
+      const arrayBuffer = new ArrayBuffer(excelBuffer.length);
+      const view = new Uint8Array(arrayBuffer);
+      view.set(excelBuffer);
+      responseBody = arrayBuffer;
+    } else {
+      responseBody = excelBuffer;
+    }
+    
+    return new NextResponse(responseBody, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,

@@ -5,12 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter, Calendar, User, Eye, Heart, MessageCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, User, Eye, Heart, MessageCircle, Edit, Trash2, MoreHorizontal, CheckCircle, XCircle, Bell, Folder, CheckSquare, Square } from 'lucide-react';
 import Link from 'next/link';
 import { blogService, BlogPost } from '@/services/blog';
+import { useAuthStore } from '@/store/auth';
 
 function BlogPageContent() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const currentUserId = user?.id;
+  
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [pendingPosts, setPendingPosts] = useState<BlogPost[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -23,13 +30,21 @@ function BlogPageContent() {
     total: 0,
     published: 0,
     draft: 0,
+    review: 0,
     totalViews: 0
   });
 
-  // Load stats separately (lighter query)
+  // Bulk delete state (admin only)
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Load stats and pending posts separately
   useEffect(() => {
     loadStats();
-  }, []);
+    if (isAdmin) {
+      loadPendingPosts();
+    }
+  }, [isAdmin]);
 
   // Debounce search query
   useEffect(() => {
@@ -46,39 +61,211 @@ function BlogPageContent() {
     loadPosts();
   }, [currentPage, debouncedSearch]);
 
+  // Reload posts when page becomes visible (after redirect from create page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadPosts();
+      }
+    };
+    
+    // Also reload if URL has refresh parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('refresh')) {
+      loadPosts();
+      // Remove refresh parameter from URL
+      window.history.replaceState({}, '', '/blog-admin');
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  const loadPendingPosts = async () => {
+    try {
+      const response = await blogService.getPendingPosts({ limit: 10 });
+      setPendingPosts(response?.results || []);
+      setPendingCount(response?.count || 0);
+    } catch (error) {
+      console.error('Error loading pending posts:', error);
+    }
+  };
+
+  const handleApprovePost = async (postId: string) => {
+    try {
+      await blogService.approvePost(postId);
+      // Reload posts and pending posts
+      loadPosts();
+      loadPendingPosts();
+      loadStats();
+    } catch (error) {
+      console.error('Error approving post:', error);
+      alert('Không thể phê duyệt bài viết. Vui lòng thử lại.');
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    
+    const confirmMessage = `Bạn có chắc chắn muốn xóa bài viết "${post.title}"?\n\nHành động này không thể hoàn tác.`;
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      await blogService.deletePost(postId);
+      // Reload posts and stats
+      loadPosts();
+      loadPendingPosts();
+      loadStats();
+      alert('Xóa bài viết thành công!');
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể xóa bài viết. Vui lòng thử lại.';
+      alert(errorMessage);
+    }
+  };
+
+  // Bulk delete functions (admin only)
+  const handleToggleSelect = (postId: string) => {
+    setSelectedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPosts.size === filteredPosts.length) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(filteredPosts.map(p => p.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPosts.size === 0) {
+      alert('Vui lòng chọn ít nhất một bài viết để xóa.');
+      return;
+    }
+
+    const selectedCount = selectedPosts.size;
+    const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedCount} bài viết đã chọn?\n\nHành động này không thể hoàn tác.`;
+    if (!confirm(confirmMessage)) return;
+
+    setIsDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      // Delete posts in parallel
+      const deletePromises = Array.from(selectedPosts).map(async (postId) => {
+        try {
+          await blogService.deletePost(postId);
+          successCount++;
+        } catch (error) {
+          console.error(`Error deleting post ${postId}:`, error);
+          failCount++;
+        }
+      });
+
+      await Promise.all(deletePromises);
+
+      // Reload data
+      loadPosts();
+      loadPendingPosts();
+      loadStats();
+      setSelectedPosts(new Set());
+
+      if (failCount === 0) {
+        alert(`Đã xóa thành công ${successCount} bài viết!`);
+      } else {
+        alert(`Đã xóa ${successCount} bài viết. ${failCount} bài viết không thể xóa.`);
+      }
+    } catch (error) {
+      console.error('Error in bulk delete:', error);
+      alert('Có lỗi xảy ra khi xóa bài viết. Vui lòng thử lại.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const loadStats = async () => {
     try {
+      // Check if blogService is available
+      if (!blogService || typeof blogService.getPosts !== 'function') {
+        console.warn('Blog service not available')
+        setStats({
+          total: 0,
+          published: 0,
+          draft: 0,
+          review: 0,
+          totalViews: 0
+        })
+        return
+      }
+      
       // Load only stats, not full posts - Already optimized with Promise.all
-      const [publishedRes, draftRes] = await Promise.all([
+      const [publishedRes, draftRes, reviewRes] = await Promise.all([
         blogService.getPosts({ status: 'published', limit: 1 }),
-        blogService.getPosts({ status: 'draft', limit: 1 })
+        blogService.getPosts({ status: 'draft', limit: 1 }),
+        blogService.getPosts({ status: 'review', limit: 1 })
       ]);
       
       setStats({
-        total: publishedRes.count + draftRes.count,
-        published: publishedRes.count,
-        draft: draftRes.count,
+        total: (publishedRes?.count || 0) + (draftRes?.count || 0) + (reviewRes?.count || 0),
+        published: publishedRes?.count || 0,
+        draft: draftRes?.count || 0,
+        review: reviewRes?.count || 0,
         totalViews: 0 // Calculate separately if needed
       });
     } catch (error) {
       console.error('Error loading stats:', error);
+      // Set default stats on error
+      setStats({
+        total: 0,
+        published: 0,
+        draft: 0,
+        review: 0,
+        totalViews: 0
+      });
     }
   };
 
   const loadPosts = async () => {
     try {
       setIsLoading(true);
+      
+      // Check if blogService is available
+      if (!blogService || typeof blogService.getPosts !== 'function') {
+        console.warn('Blog service not available')
+        setPosts([]);
+        setTotalCount(0);
+        setTotalPages(1);
+        return;
+      }
+      
+      // Load all posts for admin (no status filter)
       const response = await blogService.getPosts({ 
         page: currentPage,
         limit: postsPerPage,
-        search: debouncedSearch || undefined
+        search: debouncedSearch || undefined,
+        // Don't filter by status - admin can see all posts
       });
       
-      setPosts(response.results);
-      setTotalCount(response.count);
-      setTotalPages(Math.ceil(response.count / postsPerPage));
+      console.log('[Blog Admin] Loaded posts:', response);
+      
+      setPosts(response?.results || []);
+      setTotalCount(response?.count || 0);
+      setTotalPages(Math.ceil((response?.count || 0) / postsPerPage));
     } catch (error) {
       console.error('Error loading posts:', error);
+      setPosts([]);
+      setTotalCount(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
     }
@@ -116,16 +303,103 @@ function BlogPageContent() {
           <h1 className="text-3xl font-bold text-gray-900">Blog Management</h1>
           <p className="text-gray-600 mt-1">Quản lý bài viết blog chuyên nghiệp</p>
         </div>
-        <Link href="/blog-admin/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo bài viết mới
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link href="/blog-admin/categories">
+              <Button variant="outline">
+                <Folder className="h-4 w-4 mr-2" />
+                Quản lý Danh mục
+              </Button>
+            </Link>
+          )}
+          <Link href="/blog-admin/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo bài viết mới
+            </Button>
+          </Link>
+        </div>
       </div>
 
+      {/* Pending Posts Notification (Admin Only) */}
+      {isAdmin && pendingCount > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-orange-600" />
+                <span className="text-orange-900">Bài viết chờ duyệt</span>
+                <Badge className="bg-orange-600 text-white">{pendingCount}</Badge>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingPosts.slice(0, 3).map((post) => (
+                <div key={post.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{post.title}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-orange-100 text-orange-800">Chờ duyệt</Badge>
+                      {post.categories.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {post.categories[0].name}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-gray-500">
+                        {post.author.first_name} {post.author.last_name}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
+                      onClick={() => handleApprovePost(post.id)}
+                      title="Phê duyệt bài viết"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Duyệt
+                    </Button>
+                    <Link href={`/blog-admin/create?id=${post.id}`}>
+                      <Button size="sm" variant="outline" title="Xem/Chỉnh sửa">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    {/* Show delete button only if user is the author or admin */}
+                    {(isAdmin || post.author.id === currentUserId) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        onClick={() => handleDeletePost(post.id)}
+                        title="Xóa bài viết"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {pendingCount > 3 && (
+                <div className="text-center pt-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    // Filter to show only review posts
+                    setSearchQuery('');
+                    // TODO: Add filter by status
+                  }}>
+                    Xem tất cả {pendingCount} bài viết chờ duyệt
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-${isAdmin ? '5' : '4'} gap-4`}>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -161,13 +435,27 @@ function BlogPageContent() {
             </div>
           </CardContent>
         </Card>
+
+        {isAdmin && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-700">Chờ duyệt</p>
+                  <p className="text-2xl font-bold text-orange-600">{pendingCount || stats.review || 0}</p>
+                </div>
+                <Bell className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Lượt xem</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.totalViews.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-purple-600">{(stats.totalViews || 0).toLocaleString()}</p>
               </div>
               <Heart className="h-8 w-8 text-purple-600" />
             </div>
@@ -198,10 +486,41 @@ function BlogPageContent() {
       {/* Blog Posts List */}
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách bài viết</CardTitle>
-          <CardDescription>
-            Quản lý và theo dõi tất cả bài viết blog
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Danh sách bài viết</CardTitle>
+              <CardDescription>
+                Quản lý và theo dõi tất cả bài viết blog
+              </CardDescription>
+            </div>
+            {isAdmin && filteredPosts.length > 0 && (
+              <div className="flex items-center gap-2">
+                {selectedPosts.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {isDeleting ? 'Đang xóa...' : `Xóa đã chọn (${selectedPosts.size})`}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  title={selectedPosts.size === filteredPosts.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                >
+                  {selectedPosts.size === filteredPosts.length ? (
+                    <CheckSquare className="h-4 w-4" />
+                  ) : (
+                    <Square className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -231,11 +550,23 @@ function BlogPageContent() {
             <div className="space-y-4">
               {filteredPosts.map((post) => (
                 <div key={post.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Checkbox for bulk selection (admin only) */}
+                    {isAdmin && (
+                      <div className="flex-shrink-0 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedPosts.has(post.id)}
+                          onChange={() => handleToggleSelect(post.id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          title="Chọn bài viết"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                          <Link href={`/blog/${post.id}`}>
+                          <Link href={`/blog-admin/create?id=${post.id}`}>
                             {post.title}
                           </Link>
                         </h3>
@@ -257,11 +588,11 @@ function BlogPageContent() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
-                          <span>{post.view_count}</span>
+                          <span>{post.view_count || 0}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <MessageCircle className="h-4 w-4" />
-                          <span>{post.comment_count}</span>
+                          <span>{post.comment_count || 0}</span>
                         </div>
                       </div>
                       
@@ -274,13 +605,35 @@ function BlogPageContent() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                      {isAdmin && post.status === 'review' && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 text-white hover:bg-green-700"
+                          onClick={() => handleApprovePost(post.id)}
+                          title="Phê duyệt bài viết"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Duyệt
+                        </Button>
+                      )}
+                      <Link href={`/blog-admin/create?id=${post.id}`}>
+                        <Button size="sm" variant="outline" title="Chỉnh sửa">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {/* Show delete button only if user is the author or admin */}
+                      {(isAdmin || post.author.id === currentUserId) && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                          title="Xóa bài viết"
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -51,20 +51,20 @@ const navigation = {
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900" aria-labelledby="footer-heading">
+    <footer className="bg-gray-900 border-t border-gray-800" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Footer</h2>
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Brand & Newsletter Section */}
           <div className="lg:col-span-4">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-                <BeakerIcon className="h-5 w-5 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 shadow-lg">
+                <BeakerIcon className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">NCSKIT</span>
+              <span className="text-xl font-bold text-white tracking-tight">NCSKIT</span>
             </div>
-            <p className="text-sm text-gray-400 mb-6">
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
               Nền tảng nghiên cứu thông minh cho mọi người. Từ khảo sát đến phân tích, tất cả trong một nơi.
             </p>
             
@@ -201,11 +201,11 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-gray-400">
-              © 2024 NCSKIT. Made with ❤️ for Vietnamese Researchers
+            <p className="text-sm text-gray-400 text-center md:text-left">
+              © {new Date().getFullYear()} NCSKIT. Made with ❤️ for Vietnamese Researchers
             </p>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-400"></div>
+              <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
               <span className="text-xs text-gray-400">All Systems Operational</span>
             </div>
           </div>

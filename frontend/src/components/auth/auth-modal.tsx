@@ -65,11 +65,15 @@ export function AuthModal() {
         <Dialog.Content
           className="fixed left-[50%] top-[50%] z-50 w-[calc(100%-2rem)] sm:w-full max-w-md translate-x-[-50%] translate-y-[-50%] bg-white rounded-lg shadow-2xl focus:outline-none p-4 sm:p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
           aria-describedby={undefined}
-          aria-label={mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
           role="dialog"
           aria-modal="true"
           style={{ willChange: 'transform, opacity' }}
         >
+          {/* Accessible Title for Screen Readers */}
+          <Dialog.Title className="sr-only">
+            {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+          </Dialog.Title>
+
           {/* Close Button */}
           <Dialog.Close
             className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-sm opacity-70 ring-offset-white transition-all duration-200 hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none min-w-[44px] min-h-[44px] flex items-center justify-center"

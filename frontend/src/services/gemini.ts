@@ -2,7 +2,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { templateService } from './templates'
 
-const GEMINI_API_KEY = 'AIzaSyCo8p2IapVdrr03Ed4Aforvd68mdUg7RDI'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY
+if (!GEMINI_API_KEY) {
+  throw new Error('GEMINI_API_KEY environment variable is required')
+}
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
 export interface ResearchOutlineRequest {

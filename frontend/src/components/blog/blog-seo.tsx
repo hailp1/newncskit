@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import type { BlogPost } from '@/types/blog';
+import type { BlogPost } from '@/services/blog';
 
 interface BlogSEOProps {
   post?: BlogPost;
@@ -21,45 +21,56 @@ export function BlogSEO({
   // Post-specific SEO
   if (post) {
     const postUrl = `${siteUrl}/blog/${post.slug}`;
-    const imageUrl = post.featured_image ? 
-      (post.featured_image.startsWith('http') ? post.featured_image : `${siteUrl}${post.featured_image}`) :
+    const featuredImageUrl = typeof post.featured_image === 'string' 
+      ? post.featured_image 
+      : post.featured_image?.cdn_url || post.featured_image?.storage_path || '';
+    const imageUrl = featuredImageUrl ? 
+      (featuredImageUrl.startsWith('http') ? featuredImageUrl : `${siteUrl}${featuredImageUrl}`) :
       `${siteUrl}/images/blog-default.jpg`;
+    const authorName = post.author.first_name && post.author.last_name 
+      ? `${post.author.first_name} ${post.author.last_name}` 
+      : post.author.username;
+    const categoryName = post.categories && post.categories.length > 0 
+      ? post.categories[0].name 
+      : '';
+    const tagNames = post.tags.map(tag => typeof tag === 'string' ? tag : tag.name).join(', ');
 
     return (
       <Head>
         {/* Basic Meta Tags */}
-        <title>{post.seo.meta_title || post.title}</title>
-        <meta name="description" content={post.seo.meta_description || post.excerpt} />
-        <meta name="keywords" content={(Array.isArray(post.seo.meta_keywords) ? post.seo.meta_keywords.join(', ') : post.seo.meta_keywords) || (Array.isArray(post.tags) ? post.tags.join(', ') : '')} />
-        <meta name="author" content={post.author.name} />
+        <title>{post.meta_title || post.title}</title>
+        <meta name="description" content={post.meta_description || post.excerpt} />
+        <meta name="keywords" content={post.focus_keyword || tagNames} />
+        <meta name="author" content={authorName} />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={post.seo.canonical_url || postUrl} />
+        <link rel="canonical" href={post.canonical_url || postUrl} />
 
         {/* Open Graph */}
         <meta property="og:type" content="article" />
-        <meta property="og:title" content={post.seo.og_title || post.title} />
-        <meta property="og:description" content={post.seo.og_description || post.excerpt} />
+        <meta property="og:title" content={post.og_title || post.title} />
+        <meta property="og:description" content={post.og_description || post.excerpt} />
         <meta property="og:url" content={postUrl} />
         <meta property="og:image" content={imageUrl} />
-        <meta property="og:image:alt" content={post.featured_image_alt || post.title} />
+        <meta property="og:image:alt" content={post.title} />
         <meta property="og:site_name" content="NCSKIT" />
         <meta property="og:locale" content="vi_VN" />
 
         {/* Article specific */}
-        <meta property="article:published_time" content={post.published_at} />
+        <meta property="article:published_time" content={post.published_at || ''} />
         <meta property="article:modified_time" content={post.updated_at} />
-        <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={typeof post.category === 'object' ? post.category.name : post.category || ''} />
-        {post.tags.map(tag => (
-          <meta key={tag} property="article:tag" content={tag} />
-        ))}
+        <meta property="article:author" content={authorName} />
+        <meta property="article:section" content={categoryName} />
+        {post.tags.map(tag => {
+          const tagName = typeof tag === 'string' ? tag : tag.name;
+          return <meta key={tagName} property="article:tag" content={tagName} />;
+        })}
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={post.seo.og_title || post.title} />
-        <meta name="twitter:description" content={post.seo.og_description || post.excerpt} />
+        <meta name="twitter:title" content={post.twitter_title || post.title} />
+        <meta name="twitter:description" content={post.twitter_description || post.excerpt} />
         <meta name="twitter:image" content={imageUrl} />
-        <meta name="twitter:image:alt" content={post.featured_image_alt || post.title} />
+        <meta name="twitter:image:alt" content={post.title} />
 
         {/* JSON-LD Structured Data */}
         <script
@@ -73,7 +84,7 @@ export function BlogSEO({
               "image": imageUrl,
               "author": {
                 "@type": "Person",
-                "name": post.author.name
+                "name": authorName
               },
               "publisher": {
                 "@type": "Organization",
@@ -83,15 +94,15 @@ export function BlogSEO({
                   "url": `${siteUrl}/images/logo.png`
                 }
               },
-              "datePublished": post.published_at,
+              "datePublished": post.published_at || post.created_at,
               "dateModified": post.updated_at,
               "mainEntityOfPage": {
                 "@type": "WebPage",
                 "@id": postUrl
               },
-              "articleSection": typeof post.category === 'object' ? post.category.name : post.category || '',
-              "keywords": Array.isArray(post.tags) ? post.tags.join(', ') : '',
-              "wordCount": post.content.replace(/<[^>]*>/g, '').split(/\s+/).length,
+              "articleSection": categoryName,
+              "keywords": tagNames,
+              "wordCount": post.word_count || post.content.replace(/<[^>]*>/g, '').split(/\s+/).length,
               "timeRequired": `PT${post.reading_time}M`,
               "url": postUrl
             })

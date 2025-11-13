@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,20 +38,40 @@ import { blogService, BlogPost as BlogPostType, BlogCategory, BlogTag } from '@/
 
 
 export default function CreateBlogPage() {
+  const searchParams = useSearchParams();
+  const postId = searchParams.get('id');
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [tags, setTags] = useState<BlogTag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialPost, setInitialPost] = useState<BlogPostType | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // Load categories and tags
+  // Load categories, tags, and existing post if editing
   useEffect(() => {
     const loadData = async () => {
       try {
+        setIsLoading(true);
+        
+        // Load categories and tags
         const [categoriesData, tagsData] = await Promise.all([
           blogService.getCategories(),
           blogService.getTags()
         ]);
         setCategories(categoriesData);
         setTags(tagsData);
+
+        // Load existing post if editing
+        if (postId) {
+          try {
+            const existingPost = await blogService.getPostById(postId);
+            setInitialPost(existingPost);
+            setIsEditMode(true);
+            console.log('[Create Blog] Loaded post for editing:', existingPost);
+          } catch (error) {
+            console.error('[Create Blog] Error loading post for editing:', error);
+            setError('Không thể tải bài viết để chỉnh sửa. Vui lòng thử lại.');
+          }
+        }
       } catch (error) {
         console.error('Error loading blog data:', error);
       } finally {
@@ -59,7 +80,7 @@ export default function CreateBlogPage() {
     };
 
     loadData();
-  }, []);
+  }, [postId]);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -79,14 +100,22 @@ export default function CreateBlogPage() {
       const postData = {
         ...post,
         status: 'draft',
-        categories: post.categories?.map((cat: any) => cat.id || cat) || [],
+        categoryId: post.categories?.[0]?.id || post.categoryId || null,
         tags: post.tags?.map((tag: any) => tag.id || tag) || []
       };
-      
-      const savedPost = await blogService.createPost(postData);
-      console.log('Blog post saved:', savedPost);
-      
-      setSuccess('Bài viết đã được lưu thành công!');
+
+      // Update existing post or create new one
+      if (isEditMode && postId) {
+        // Update existing post
+        const updatedPost = await blogService.updatePost(postId, postData);
+        console.log('Blog post updated:', updatedPost);
+        setSuccess('Bài viết đã được cập nhật thành công!');
+      } else {
+        // Create new post
+        const savedPost = await blogService.createPost(postData);
+        console.log('Blog post saved:', savedPost);
+        setSuccess('Bài viết đã được lưu thành công!');
+      }
       
     } catch (error: any) {
       console.error('Error saving post:', error);
@@ -112,22 +141,47 @@ export default function CreateBlogPage() {
         return;
       }
 
+      // Check if category is "paper" - will be set to "review" by API
+      const selectedCategory = post.categories?.[0];
+      const isPaperCategory = selectedCategory && (
+        selectedCategory.name?.toLowerCase() === 'paper' || 
+        selectedCategory.slug?.toLowerCase() === 'paper'
+      );
+
       const postData = {
         ...post,
-        status: 'published',
-        published_at: new Date().toISOString(),
-        categories: post.categories?.map((cat: any) => cat.id || cat) || [],
+        status: 'published', // API will change to "review" if category is "paper"
+        categoryId: post.categories?.[0]?.id || post.categoryId || null,
         tags: post.tags?.map((tag: any) => tag.id || tag) || []
       };
+
+      // Update existing post or create new one
+      if (isEditMode && postId) {
+        // Update and publish existing post
+        const updatedPost = await blogService.updatePost(postId, postData);
+        console.log('Blog post updated and published:', updatedPost);
+        
+        if (isPaperCategory && updatedPost.status === 'review') {
+          setSuccess('Bài viết đã được gửi để admin duyệt. Bạn sẽ được thông báo khi được phê duyệt!');
+        } else {
+          setSuccess('Bài viết đã được cập nhật và xuất bản thành công!');
+        }
+      } else {
+        // Create and publish new post
+        const publishedPost = await blogService.createPost(postData);
+        console.log('Blog post published:', publishedPost);
+        
+        if (isPaperCategory && publishedPost.status === 'review') {
+          setSuccess('Bài viết đã được gửi để admin duyệt. Bạn sẽ được thông báo khi được phê duyệt!');
+        } else {
+          setSuccess('Bài viết đã được xuất bản thành công!');
+        }
+      }
       
-      const publishedPost = await blogService.createPost(postData);
-      console.log('Blog post published:', publishedPost);
-      
-      setSuccess('Bài viết đã được xuất bản thành công!');
-      
-      // Redirect to blog admin after 2 seconds
+      // Redirect to blog admin and force refresh after 2 seconds
       setTimeout(() => {
-        window.location.href = '/blog-admin';
+        // Force reload to ensure new post appears
+        window.location.href = '/blog-admin?refresh=' + Date.now();
       }, 2000);
       
     } catch (error: any) {
@@ -199,6 +253,7 @@ export default function CreateBlogPage() {
       )}
 
       <BlogEditor
+        post={initialPost || undefined}
         onSave={handleSave}
         onPublish={handlePublish}
         onSchedule={handleSchedule}

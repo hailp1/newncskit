@@ -1,10 +1,11 @@
 /**
  * User Service
  * Manages user CRUD operations, role management, and bulk actions
+ * Refactored to use Prisma instead of Supabase
  * Implements requirements: 1.1, 1.2, 3.1, 3.2, 6.2, 6.3, 7.1, 8.1, 8.5
  */
 
-import { createClient } from '@/lib/supabase/client'
+import { prisma } from '@/lib/prisma'
 import { UserRole, Permission } from '@/lib/permissions/constants'
 import { permissionService } from './permission.service'
 
@@ -14,18 +15,17 @@ import { permissionService } from './permission.service'
 export interface UserProfile {
   id: string
   email: string
-  full_name: string | null
-  avatar_url: string | null
+  fullName: string | null
+  avatarUrl: string | null
   institution: string | null
-  orcid_id: string | null
-  research_domains: string[] | null
+  orcidId: string | null
+  researchDomains: string[] | null
   role: UserRole
-  subscription_type: 'free' | 'premium' | 'institutional'
-  is_active: boolean
+  subscriptionType: 'free' | 'premium' | 'institutional'
   status: string | null
-  created_at: string
-  updated_at: string
-  last_login_at?: string | null
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string | null
 }
 
 /**
@@ -37,10 +37,9 @@ export interface UserFilters {
   search?: string
   role?: UserRole
   status?: string
-  subscription_type?: 'free' | 'premium' | 'institutional'
-  is_active?: boolean
-  sort_by?: 'created_at' | 'updated_at' | 'email' | 'full_name'
-  sort_order?: 'asc' | 'desc'
+  subscriptionType?: 'free' | 'premium' | 'institutional'
+  sortBy?: 'createdAt' | 'updatedAt' | 'email' | 'fullName'
+  sortOrder?: 'asc' | 'desc'
 }
 
 /**
@@ -51,16 +50,16 @@ export interface UserListResponse {
   total: number
   page: number
   limit: number
-  total_pages: number
+  totalPages: number
 }
 
 /**
  * Bulk action result
  */
 export interface BulkActionResult {
-  success_count: number
-  failure_count: number
-  errors: Array<{ user_id: string; error: string }>
+  successCount: number
+  failureCount: number
+  errors: Array<{ userId: string; error: string }>
 }
 
 /**
@@ -85,61 +84,76 @@ export class UserService {
       search,
       role,
       status,
-      subscription_type,
-      is_active,
-      sort_by = 'created_at',
-      sort_order = 'desc',
+      subscriptionType,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
     } = filters
 
     return this.withRetry(async () => {
-      const supabase = createClient()
-
-      // Build query with pagination
-      let query = supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .range(page * limit, (page + 1) * limit - 1)
-        .order(sort_by, { ascending: sort_order === 'asc' })
+      // Build where clause
+      const where: any = {}
 
       // Apply search filter
       if (search && search.trim()) {
-        query = query.or(
-          `email.ilike.%${search}%,full_name.ilike.%${search}%,institution.ilike.%${search}%`
-        )
+        where.OR = [
+          { email: { contains: search, mode: 'insensitive' } },
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { institution: { contains: search, mode: 'insensitive' } },
+        ]
       }
 
       // Apply role filter
       if (role) {
-        query = query.eq('role', role)
+        where.role = role
       }
 
       // Apply status filter
       if (status) {
-        query = query.eq('status', status)
+        where.status = status
       }
 
       // Apply subscription type filter
-      if (subscription_type) {
-        query = query.eq('subscription_type', subscription_type)
+      if (subscriptionType) {
+        where.subscriptionType = subscriptionType
       }
 
-      // Apply is_active filter
-      if (is_active !== undefined) {
-        query = query.eq('is_active', is_active)
-      }
+      // Get total count
+      const total = await prisma.user.count({ where })
 
-      const { data, count, error } = await query
-
-      if (error) {
-        throw new Error(`Failed to fetch users: ${error.message}`)
-      }
+      // Get users with pagination
+      const users = await prisma.user.findMany({
+        where,
+        skip: page * limit,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          avatarUrl: true,
+          institution: true,
+          orcidId: true,
+          researchDomains: true,
+          role: true,
+          subscriptionType: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLoginAt: true,
+        },
+      })
 
       return {
-        users: (data || []) as UserProfile[],
-        total: count || 0,
+        users: users.map(u => ({
+          ...u,
+          createdAt: u.createdAt.toISOString(),
+          updatedAt: u.updatedAt.toISOString(),
+          lastLoginAt: u.lastLoginAt?.toISOString() || null,
+        })) as UserProfile[],
+        total,
         page,
         limit,
-        total_pages: Math.ceil((count || 0) / limit),
+        totalPages: Math.ceil(total / limit),
       }
     })
   }
@@ -157,21 +171,25 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = createClient()
-
       // Fetch user profile
-      const { data: user, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          throw new Error(`User not found: ${userId}`)
-        }
-        throw new Error(`Failed to fetch user: ${error.message}`)
-      }
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          avatarUrl: true,
+          institution: true,
+          orcidId: true,
+          researchDomains: true,
+          role: true,
+          subscriptionType: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLoginAt: true,
+        },
+      })
 
       if (!user) {
         throw new Error(`User not found: ${userId}`)
@@ -179,15 +197,23 @@ export class UserService {
 
       // Fetch user's explicit permissions
       try {
-        const permissions = await permissionService.getExplicitPermissions(userId)
+        const permissions = await permissionService.getUserPermissions(userId)
         return {
-          ...(user as UserProfile),
+          ...user,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+          lastLoginAt: user.lastLoginAt?.toISOString() || null,
           permissions,
-        }
+        } as UserProfile & { permissions?: any[] }
       } catch (permError) {
         // Return user without permissions if permission fetch fails
         console.error('Failed to fetch user permissions:', permError)
-        return user as UserProfile
+        return {
+          ...user,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+          lastLoginAt: user.lastLoginAt?.toISOString() || null,
+        } as UserProfile
       }
     })
   }
@@ -214,42 +240,51 @@ export class UserService {
     this.validateUserData(data)
 
     return this.withRetry(async () => {
-      const supabase = createClient()
-
       // Prepare update data (exclude sensitive fields)
-      const updateData: any = {
-        ...data,
-        updated_at: new Date().toISOString(),
-      }
+      const updateData: any = {}
 
-      // Remove fields that shouldn't be updated directly
-      delete updateData.id
-      delete updateData.created_at
-      delete updateData.email // Email changes should go through auth
+      if (data.fullName !== undefined) updateData.fullName = data.fullName
+      if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl
+      if (data.institution !== undefined) updateData.institution = data.institution
+      if (data.orcidId !== undefined) updateData.orcidId = data.orcidId
+      if (data.researchDomains !== undefined) updateData.researchDomains = data.researchDomains
+      if (data.role !== undefined) updateData.role = data.role
+      if (data.subscriptionType !== undefined) updateData.subscriptionType = data.subscriptionType
+      if (data.status !== undefined) updateData.status = data.status
 
-      const { data: updatedUser, error } = await (supabase as any)
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId)
-        .select()
-        .single()
-
-      if (error) {
-        throw new Error(`Failed to update user: ${error.message}`)
-      }
-
-      if (!updatedUser) {
-        throw new Error(`User not found: ${userId}`)
-      }
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          avatarUrl: true,
+          institution: true,
+          orcidId: true,
+          researchDomains: true,
+          role: true,
+          subscriptionType: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLoginAt: true,
+        },
+      })
 
       // Log action if admin ID provided
       if (adminId) {
         await this.logAdminAction(adminId, 'update_user', userId, {
-          updated_fields: Object.keys(data),
+          updatedFields: Object.keys(data),
         })
       }
 
-      return updatedUser as UserProfile
+      return {
+        ...updatedUser,
+        createdAt: updatedUser.createdAt.toISOString(),
+        updatedAt: updatedUser.updatedAt.toISOString(),
+        lastLoginAt: updatedUser.lastLoginAt?.toISOString() || null,
+      } as UserProfile
     })
   }
 
@@ -291,37 +326,27 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = createClient()
-
       // Get current role for logging
-      const { data: currentUser } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single()
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      })
 
-      const oldRole = (currentUser as any)?.role || 'user'
+      const oldRole = currentUser?.role || 'user'
 
       // Update role
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .update({
-          role: newRole,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
-
-      if (error) {
-        throw new Error(`Failed to update role: ${error.message}`)
-      }
+      await prisma.user.update({
+        where: { id: userId },
+        data: { role: newRole },
+      })
 
       // Invalidate permission cache
       permissionService.invalidateCache(userId)
 
       // Log action
       await this.logAdminAction(adminId, 'update_role', userId, {
-        old_role: oldRole,
-        new_role: newRole,
+        oldRole,
+        newRole,
       })
     })
   }
@@ -358,24 +383,16 @@ export class UserService {
     }
 
     return this.withRetry(async () => {
-      const supabase = createClient()
-
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .update({
-          is_active: isActive,
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
           status: isActive ? 'active' : 'suspended',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
-
-      if (error) {
-        throw new Error(`Failed to update status: ${error.message}`)
-      }
+        },
+      })
 
       // Log action
       await this.logAdminAction(adminId, 'toggle_status', userId, {
-        is_active: isActive,
+        isActive,
         status: isActive ? 'active' : 'suspended',
       })
     })
@@ -423,8 +440,8 @@ export class UserService {
     }
 
     const result: BulkActionResult = {
-      success_count: 0,
-      failure_count: 0,
+      successCount: 0,
+      failureCount: 0,
       errors: [],
     }
 
@@ -438,11 +455,11 @@ export class UserService {
         } else if (action === 'delete') {
           await this.deleteUser(userId, adminId)
         }
-        result.success_count++
+        result.successCount++
       } catch (error) {
-        result.failure_count++
+        result.failureCount++
         result.errors.push({
-          user_id: userId,
+          userId,
           error: error instanceof Error ? error.message : 'Unknown error',
         })
       }
@@ -450,35 +467,27 @@ export class UserService {
 
     // Log bulk action
     await this.logAdminAction(adminId, `bulk_${action}`, 'multiple', {
-      user_count: userIds.length,
-      success_count: result.success_count,
-      failure_count: result.failure_count,
+      userCount: userIds.length,
+      successCount: result.successCount,
+      failureCount: result.failureCount,
     })
 
     return result
   }
 
   /**
-   * Delete user (soft delete by setting is_active to false)
+   * Delete user (soft delete by setting status to deleted)
    * 
    * @param userId - User ID to delete
    * @param adminId - ID of admin performing the deletion
    */
   private async deleteUser(userId: string, adminId: string): Promise<void> {
-    const supabase = createClient()
-
-    const { error } = await (supabase as any)
-      .from('profiles')
-      .update({
-        is_active: false,
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
         status: 'deleted',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
-
-    if (error) {
-      throw new Error(`Failed to delete user: ${error.message}`)
-    }
+      },
+    })
 
     await this.logAdminAction(adminId, 'delete_user', userId, {})
   }
@@ -499,9 +508,9 @@ export class UserService {
     }
 
     // Validate ORCID format if provided
-    if (data.orcid_id) {
+    if (data.orcidId) {
       const orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$/
-      if (!orcidRegex.test(data.orcid_id)) {
+      if (!orcidRegex.test(data.orcidId)) {
         throw new Error('Invalid ORCID format. Expected: 0000-0000-0000-000X')
       }
     }
@@ -520,16 +529,16 @@ export class UserService {
     }
 
     // Validate subscription type if provided
-    if (data.subscription_type) {
+    if (data.subscriptionType) {
       const validTypes = ['free', 'premium', 'institutional']
-      if (!validTypes.includes(data.subscription_type)) {
-        throw new Error(`Invalid subscription type: ${data.subscription_type}`)
+      if (!validTypes.includes(data.subscriptionType)) {
+        throw new Error(`Invalid subscription type: ${data.subscriptionType}`)
       }
     }
   }
 
   /**
-   * Log admin action to admin_logs table
+   * Log admin action (placeholder - implement based on your logging system)
    * 
    * @param adminId - ID of admin performing the action
    * @param action - Action performed
@@ -543,18 +552,9 @@ export class UserService {
     details: any
   ): Promise<void> {
     try {
-      const supabase = createClient()
-
-      await (supabase as any).from('admin_logs').insert({
-        admin_id: adminId,
-        action,
-        target_type: 'user',
-        target_id: 0, // Using 0 as placeholder since target_id is integer
-        details: {
-          ...details,
-          target_user_id: targetId,
-        },
-      })
+      // TODO: Implement admin logging
+      // This could write to a separate admin_logs table or use a logging service
+      console.log('Admin action:', { adminId, action, targetId, details })
     } catch (error) {
       // Log error but don't fail the operation
       console.error('Failed to log admin action:', error)

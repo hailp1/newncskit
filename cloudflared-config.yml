@@ -1,0 +1,19 @@
+# Cloudflare Tunnel Configuration for ncskit.org
+tunnel: bce1d1b0-1f68-4b83-a7d8-6aa36095346f
+credentials-file: C:\Users\OWNER\.cloudflared\bce1d1b0-1f68-4b83-a7d8-6aa36095346f.json
+
+ingress:
+  # Route ncskit.org to Next.js app
+  - hostname: ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+  
+  # Route www.ncskit.org to Next.js app
+  - hostname: www.ncskit.org
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+  
+  # Catch-all rule (required)
+  - service: http_status:404

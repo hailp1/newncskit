@@ -20,9 +20,11 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   EyeIcon,
-  PaintBrushIcon
+  PaintBrushIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { blogService, BlogPost } from '@/services/blog'
 
 interface SystemMetrics {
   userCount: number
@@ -60,18 +62,14 @@ interface EnhancedAdminDashboardProps {
 export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardProps) {
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null)
   const [adminActivities, setAdminActivities] = useState<AdminActivity[]>([])
+  const [recentPosts, setRecentPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
 
   // Fetch system metrics
   const fetchSystemMetrics = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
-      const response = await fetch(`${apiUrl}/api/admin/monitoring/metrics/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
+      const response = await fetch('/api/admin/metrics')
       if (response.ok) {
         const data = await response.json()
         setSystemMetrics(data)
@@ -84,12 +82,7 @@ export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardP
   // Fetch admin activities
   const fetchAdminActivities = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
-      const response = await fetch(`${apiUrl}/api/admin/activities/?limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
+      const response = await fetch('/api/admin/activities?limit=10')
       if (response.ok) {
         const data = await response.json()
         setAdminActivities(data.results || [])
@@ -99,11 +92,32 @@ export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardP
     }
   }
 
+  // Fetch recent blog posts
+  const fetchRecentPosts = async () => {
+    try {
+      // Check if blogService is available
+      if (!blogService || typeof blogService.getPosts !== 'function') {
+        console.warn('Blog service not available')
+        setRecentPosts([])
+        return
+      }
+      
+      const response = await blogService.getPosts({ 
+        limit: 5,
+        // Load all posts for admin
+      })
+      setRecentPosts(response?.results || [])
+    } catch (error) {
+      console.error('Failed to fetch recent posts:', error)
+      setRecentPosts([]) // Set empty array on error
+    }
+  }
+
   // Initial load and periodic refresh
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      await Promise.all([fetchSystemMetrics(), fetchAdminActivities()])
+      await Promise.all([fetchSystemMetrics(), fetchAdminActivities(), fetchRecentPosts()])
       setLoading(false)
       setLastUpdate(new Date())
     }
@@ -154,11 +168,25 @@ export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardP
       color: 'pink'
     },
     {
+      title: 'Phân quyền',
+      description: 'Quản lý quyền hạn cho từng vai trò người dùng',
+      icon: KeyIcon,
+      href: '/admin/permissions',
+      color: 'indigo'
+    },
+    {
       title: 'Bảo mật & Quyền truy cập',
       description: 'Quản lý quyền truy cập và bảo mật hệ thống',
       icon: KeyIcon,
       href: '/admin/security',
       color: 'indigo'
+    },
+    {
+      title: 'Quản lý Blog',
+      description: 'Quản lý bài viết, danh mục và tags',
+      icon: DocumentTextIcon,
+      href: '/blog-admin',
+      color: 'teal'
     }
   ]
 
@@ -196,7 +224,8 @@ export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardP
       orange: 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100',
       red: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100',
       indigo: 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100',
-      pink: 'border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100'
+      pink: 'border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100',
+      teal: 'border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'
     }
     return colorMap[color as keyof typeof colorMap] || colorMap.blue
   }
@@ -434,6 +463,53 @@ export default function EnhancedAdminDashboard({ user }: EnhancedAdminDashboardP
           )
         })}
       </div>
+
+      {/* Recent Blog Posts */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Bài viết gần đây</span>
+            <Link href="/blog-admin">
+              <Button variant="outline" size="sm">
+                Xem tất cả
+              </Button>
+            </Link>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {recentPosts.length > 0 ? (
+              recentPosts.map((post) => (
+                <div key={post.id} className="flex items-start justify-between py-2 border-b border-gray-100 last:border-b-0">
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/blog-admin/create?id=${post.id}`} className="block hover:text-blue-600">
+                      <h4 className="text-sm font-medium truncate">{post.title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge 
+                          variant={post.status === 'published' ? 'default' : 'secondary'}
+                          className={post.status === 'published' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {post.status === 'published' ? 'Đã xuất bản' : post.status === 'draft' ? 'Nháp' : post.status}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {post.author?.first_name} {post.author?.last_name}
+                        </span>
+                      </div>
+                    </Link>
+                  </div>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {new Date(post.created_at).toLocaleDateString('vi-VN')}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Chưa có bài viết nào
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Admin Activities */}
       <Card>

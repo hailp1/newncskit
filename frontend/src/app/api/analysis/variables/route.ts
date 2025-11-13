@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import {
   createErrorResponse,
   createSuccessResponse,
   generateCorrelationId,
   logRequest,
 } from '@/lib/api-middleware';
-import { getSupabaseClient } from '../lib/supabase';
-import { toApiError } from '../lib/errors';
 
 export async function GET(request: NextRequest) {
   const correlationId = generateCorrelationId();
@@ -14,7 +15,12 @@ export async function GET(request: NextRequest) {
   try {
     logRequest(request, correlationId);
 
-    const supabase = await getSupabaseClient(correlationId);
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return createErrorResponse('Unauthorized', 401, correlationId);
+    }
+
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
@@ -22,46 +28,35 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
-    // Load variables from database
-    console.log('[Variables] Loading for project:', projectId);
-    const { data: dbVariables, error: variablesError } = await supabase
-      .from('analysis_variables')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at');
+    // Load variables from database with Prisma
+    console.log(`[Variables] ${correlationId}: Loading for project:`, projectId);
+    const dbVariables = await prisma.analysisVariable.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'asc' }
+    });
 
-    if (variablesError) {
-      console.error('[Variables] Database error:', variablesError);
-      console.error('[Variables] Error details:', JSON.stringify(variablesError, null, 2));
-      return createErrorResponse(
-        `Failed to load variables: ${variablesError.message || 'Unknown error'}`,
-        500,
-        correlationId
-      );
-    }
-
-    console.log('[Variables] Loaded', dbVariables?.length || 0, 'variables');
+    console.log(`[Variables] ${correlationId}: Loaded ${dbVariables.length} variables`);
 
     // Convert database variables to AnalysisVariable format
-    const variables = (dbVariables || []).map((v: any) => ({
+    const variables = dbVariables.map((v) => ({
       id: v.id,
-      projectId: v.project_id,
-      columnName: v.column_name,
-      displayName: v.display_name,
-      semanticName: v.semantic_name,
-      dataType: v.data_type || 'numeric',
-      isDemographic: v.is_demographic || false,
-      demographicType: v.demographic_type,
-      missingCount: v.missing_count || 0,
-      uniqueCount: v.unique_count || 0,
-      createdAt: v.created_at
+      projectId: v.projectId,
+      columnName: v.columnName,
+      displayName: v.displayName,
+      semanticName: v.semanticName,
+      dataType: v.dataType || 'numeric',
+      isDemographic: v.isDemographic || false,
+      demographicType: v.demographicType,
+      missingCount: v.missingCount || 0,
+      uniqueCount: v.uniqueCount || 0,
+      createdAt: v.createdAt
     }));
 
     return createSuccessResponse({ variables }, correlationId);
 
   } catch (error) {
-    const apiError = toApiError(error, 'Failed to load variables');
-    console.error(`[Variables] ${correlationId}: Error`, apiError, { cause: apiError.cause });
-    return createErrorResponse(apiError, apiError.status, correlationId);
+    console.error(`[Variables] ${correlationId}: Error:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load variables';
+    return createErrorResponse(errorMessage, 500, correlationId);
   }
 }

@@ -1,0 +1,80 @@
+==============================================
+NCSKIT PRODUCTION CONFIG - COPY & PASTE
+==============================================
+
+📋 BẠN CẦN ĐIỀN VÀO ĐÂY, SAU ĐÓ COPY VÀO .env.production
+
+==============================================
+1. DATABASE CONFIGURATION
+==============================================
+
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD_HERE@YOUR_HOST_HERE:5432/ncskit_production
+
+Ví dụ:
+- Local: postgresql://postgres:mypassword@localhost:5432/ncskit_production
+- Supabase: postgresql://postgres:[YOUR-PASSWORD]@db.xxx.supabase.co:5432/postgres
+- Railway: postgresql://postgres:xxx@containers-us-west-xxx.railway.app:5432/railway
+- Render: postgresql://user:pass@dpg-xxx.oregon-postgres.render.com/dbname
+
+==============================================
+2. NEXTAUTH SECRET (Generate mới)
+==============================================
+
+Chạy lệnh này để generate:
+  openssl rand -base64 32
+
+Hoặc dùng online: https://generate-secret.vercel.app/32
+
+NEXTAUTH_SECRET=PASTE_GENERATED_SECRET_HERE
+
+==============================================
+3. GEMINI API KEY
+==============================================
+
+Lấy từ: https://makersuite.google.com/app/apikey
+
+GEMINI_API_KEY=PASTE_YOUR_GEMINI_API_KEY_HERE
+
+==============================================
+4. GOOGLE OAUTH (Tùy chọn)
+==============================================
+
+Lấy từ: https://console.cloud.google.com/apis/credentials
+
+GOOGLE_CLIENT_ID=PASTE_YOUR_CLIENT_ID_HERE
+GOOGLE_CLIENT_SECRET=PASTE_YOUR_CLIENT_SECRET_HERE
+
+Nhớ thêm Authorized redirect URI:
+  https://ncskit.org/api/auth/callback/google
+
+==============================================
+5. R ANALYTICS SERVICE (Nếu có)
+==============================================
+
+R_SERVICE_URL=http://localhost:8000
+
+Hoặc nếu deploy riêng:
+R_SERVICE_URL=https://analytics.ncskit.org
+
+==============================================
+
+SAU KHI ĐIỀN XONG:
+
+1. Mở file: frontend/.env.production
+2. Tìm và thay thế các giá trị tương ứng
+3. Save file
+4. Chạy: .\deploy-production.ps1 -ServiceMode
+
+==============================================
+CHECKLIST TRƯỚC KHI DEPLOY
+==============================================
+
+[ ] DATABASE_URL đã điền đúng
+[ ] NEXTAUTH_SECRET đã generate mới
+[ ] GEMINI_API_KEY đã điền (nếu dùng AI)
+[ ] GOOGLE_CLIENT_ID/SECRET đã điền (nếu dùng Google login)
+[ ] Đã test kết nối database
+[ ] Đã setup Cloudflare Tunnel (chạy setup-tunnel.ps1)
+[ ] Đã verify DNS records trong Cloudflare Dashboard
+
+==============================================

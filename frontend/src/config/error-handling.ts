@@ -221,7 +221,7 @@ export const recoveryActionTemplates = {
     label: 'Đăng nhập lại',
     type: 'redirect' as const,
     priority: 'high' as const,
-    href: '/login'
+    href: '/auth/login'
   },
   
   'refresh-token': {

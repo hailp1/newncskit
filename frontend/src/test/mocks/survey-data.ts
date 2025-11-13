@@ -53,6 +53,7 @@ export const mockQuestionTemplate: QuestionTemplate = {
   text: 'Using this system would improve my job performance',
   textVi: 'Việc sử dụng hệ thống này sẽ cải thiện hiệu suất công việc của tôi',
   type: QuestionType.LIKERT,
+  required: true,
   theoreticalModel: 'Technology Acceptance Model',
   researchVariable: 'Perceived Usefulness',
   construct: 'Behavioral Intention',
@@ -61,10 +62,8 @@ export const mockQuestionTemplate: QuestionTemplate = {
     max: 7,
     labels: ['Strongly Disagree', 'Disagree', 'Somewhat Disagree', 'Neutral', 'Somewhat Agree', 'Agree', 'Strongly Agree']
   },
-  reliability: 0.85,
   source: 'Davis, F. D. (1989)',
   tags: ['tam', 'usefulness'],
-  category: 'Technology Acceptance',
   version: 1,
   isActive: true
 }
@@ -75,28 +74,30 @@ export const mockSurveyCampaign: SurveyCampaign = {
   id: 'campaign_1',
   projectId: 'project_1',
   surveyId: 'survey_1',
+  name: 'Technology Acceptance Study',
   title: 'Technology Acceptance Study',
   description: 'Research campaign for technology acceptance',
+  status: CampaignStatus.DRAFT,
+  targetSampleSize: 100,
+  currentSampleSize: 0,
+  startDate: new Date(),
+  eligibilityCriteria: {
+    minAge: 18,
+    maxAge: 65,
+  },
   config: {
     targetParticipants: 100,
     tokenRewardPerParticipant: 10,
     duration: 30,
-    eligibilityCriteria: {
-      minAge: 18,
-      maxAge: 65,
-
-
-    }
   },
-  status: CampaignStatus.DRAFT,
   participation: {
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    abandoned: 0,
     totalParticipants: 0,
-    completedResponses: 0,
-    totalTokensAwarded: 0,
-    adminFeeCollected: 0
-  },
-  createdAt: new Date('2025-01-01'),
-
+    completedResponses: 0
+  }
 }
 
 export const mockCampaignAnalytics = {

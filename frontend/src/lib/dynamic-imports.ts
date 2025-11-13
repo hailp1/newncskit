@@ -23,8 +23,8 @@ export function createLazyComponent<P = {}>(
  * Lazy load heavy libraries
  */
 export const lazyLibraries = {
-  // XLSX for Excel export (500 KB)
-  xlsx: () => import('xlsx'),
+  // Excel writer for exports
+  excelWriter: () => import('write-excel-file'),
   
   // D3 modules (only load what's needed)
   d3Scale: () => import('d3-scale'),
@@ -50,11 +50,57 @@ export async function exportToExcel(
   filename: string = 'export.xlsx',
   sheetName: string = 'Data'
 ) {
-  const XLSX = await lazyLibraries.xlsx()
-  const ws = XLSX.utils.json_to_sheet(data)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, sheetName)
-  XLSX.writeFile(wb, filename)
+  if (!data || data.length === 0) {
+    throw new Error('No data provided for export')
+  }
+
+  const module = await lazyLibraries.excelWriter()
+  const writeXlsxFile = (module as any).default || module
+
+  const headers = Object.keys(data[0])
+  const headerRow = headers.map((header) => ({
+    value: header,
+    fontWeight: 'bold'
+  }))
+
+  const sheetRows = [
+    headerRow,
+    ...data.map((item) =>
+      headers.map((key) => {
+        const value = item[key]
+        if (value === null || value === undefined) {
+          return null
+        }
+        if (value instanceof Date) {
+          return { value, type: Date, format: 'yyyy-mm-dd' }
+        }
+        if (typeof value === 'number') {
+          return { value, type: Number }
+        }
+        if (typeof value === 'boolean') {
+          return { value, type: Boolean }
+        }
+        return { value: value.toString() }
+      })
+    )
+  ]
+
+  const widths = headers.map((header) => {
+    const maxLength = data.reduce((max, item) => {
+      const cell = item[header]
+      const length = cell === null || cell === undefined ? 0 : cell.toString().length
+      return Math.max(max, length)
+    }, header.length)
+
+    return { width: Math.min(Math.max(maxLength + 2, 10), 50) }
+  })
+
+  await writeXlsxFile([sheetRows], {
+    fileName: filename,
+    sheets: [sheetName],
+    columns: [widths],
+    dateFormat: 'yyyy-mm-dd'
+  })
 }
 
 /**

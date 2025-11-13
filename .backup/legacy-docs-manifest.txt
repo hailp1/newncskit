@@ -1,0 +1,18 @@
+Legacy Documentation Backup Manifest
+Created: 2025-01-11
+Total Files Backed Up: 30
+
+Files backed up include:
+- ADMIN_*.md (15+ files) - Admin troubleshooting guides
+- CURRENT_STATUS*.md (5+ files) - Status reports
+- FINAL_*.md (10+ files) - Final summaries
+- *_SUMMARY.md (8+ files) - Various summaries
+- CLEANUP_*.md - Cleanup documentation
+- cleanup-legacy.ps1, cleanup-legacy.sh - Cleanup scripts
+- *.sql - SQL scripts (UPDATE_ADMIN_ROLE.sql, enable-uuid.sql)
+
+Reason for backup:
+These files are obsolete, duplicate, or have been consolidated into docs/ directory.
+They are kept in backup for reference but removed from project root for cleanliness.
+
+Backup Location: .backup/legacy-docs-{timestamp}/

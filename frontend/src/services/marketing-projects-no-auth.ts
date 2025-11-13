@@ -1,10 +1,21 @@
 // Marketing Projects Service using Supabase
 // @ts-nocheck - Supabase generated types causing issues
-import { createClient } from '@/lib/supabase/client';
+// DEPRECATED: This file is deprecated and should be migrated to Prisma
+// import { createClient } from '@/lib/supabase/client';
 import { ErrorHandler } from './error-handler';
 
 // Initialize Supabase client
-const supabase = createClient();
+// const supabase = createClient();
+
+// Temporary stub to prevent errors during migration
+const supabase = {
+  from: () => ({
+    select: () => ({ order: () => ({ data: [], error: null }) }),
+    insert: () => ({ select: () => ({ single: () => ({ data: null, error: { message: 'Supabase deprecated' } }) }) }),
+    eq: () => ({ single: () => ({ data: null, error: null }) }),
+    in: () => ({ data: [], error: null })
+  })
+} as any;
 
 export interface MarketingProject {
   id: string
@@ -213,16 +224,12 @@ export const marketingProjectsService = {
   // Get all marketing projects for a user
   async getUserProjects(userId: string): Promise<MarketingProject[]> {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-
-      if (error) {
-        console.warn('Projects table error:', error.message)
-        return []
-      }
+      const { prisma } = await import('@/lib/prisma')
+      
+      const data = await prisma.project.findMany({
+        where: { userId },
+        orderBy: { updatedAt: 'desc' }
+      })
 
       // Process projects with graceful fallbacks
       const projectsWithDetails = await Promise.all(

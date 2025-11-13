@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AnalysisProject } from '@/app/(dashboard)/analysis/page';
-import * as XLSX from 'xlsx';
+import writeXlsxFile from 'write-excel-file';
 
 interface ResultsExportProps {
   project: AnalysisProject;
@@ -31,7 +31,41 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
   const exportToExcel = async () => {
     setIsExporting(true);
     try {
-      const workbook = XLSX.utils.book_new();
+      type RawSheet = { name: string; rows: any[][] };
+
+      const formatCellValue = (value: any) => {
+        if (value === null || value === undefined) {
+          return null;
+        }
+        if (value instanceof Date) {
+          return {
+            value,
+            type: Date,
+            format: 'yyyy-mm-dd',
+          };
+        }
+        if (typeof value === 'number') {
+          return { value, type: Number };
+        }
+        if (typeof value === 'boolean') {
+          return { value, type: Boolean };
+        }
+        return { value: value.toString() };
+      };
+
+      const toSheetData = (rows: any[][]) =>
+        rows.map((row) => row.map((cell) => formatCellValue(cell)));
+
+      const buildColumnWidths = (rows: any[][]) => {
+        const widths: number[] = [];
+        rows.forEach((row) => {
+          row.forEach((cell, index) => {
+            const length = cell === null || cell === undefined ? 0 : cell.toString().length;
+            widths[index] = Math.min(Math.max(widths[index] || 10, length + 2), 50);
+          });
+        });
+        return widths.map((width) => ({ width }));
+      };
 
       // Enhanced Project Summary Sheet with survey metadata
       const summaryData = [
@@ -39,9 +73,9 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
         [''],
         ['Project Information'],
         ['Project Name', project.name],
-        ['Description', project.description],
-        ['Created', new Date(project.createdAt).toLocaleDateString()],
-        ['Updated', new Date(project.updatedAt).toLocaleDateString()],
+        ['Description', project.description ?? 'N/A'],
+        ['Created', new Date(project.createdAt)],
+        ['Updated', new Date(project.updatedAt)],
         ['']
       ];
 
@@ -52,14 +86,14 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
           ['Data Source', 'Survey Campaign'],
           ['Campaign ID', surveyMetadata?.campaignId || 'N/A'],
           ['Survey ID', surveyMetadata?.surveyId || 'N/A'],
-          ['Response Count', (surveyMetadata?.responseCount || project.data.length - 1).toString()],
-          ['Target Sample Size', surveyMetadata?.targetSampleSize?.toString() || 'N/A']
+          ['Response Count', String(surveyMetadata?.responseCount ?? project.data.length - 1)],
+          ['Target Sample Size', surveyMetadata?.targetSampleSize ? String(surveyMetadata.targetSampleSize) : 'N/A']
         );
 
         if (surveyMetadata?.collectionPeriod) {
           summaryData.push(
-            ['Collection Start', new Date(surveyMetadata.collectionPeriod.start).toLocaleDateString()],
-            ['Collection End', new Date(surveyMetadata.collectionPeriod.end).toLocaleDateString()]
+            ['Collection Start', new Date(surveyMetadata.collectionPeriod.start)],
+            ['Collection End', new Date(surveyMetadata.collectionPeriod.end)]
           );
         }
 
@@ -68,8 +102,8 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
             [''],
             ['Research Design Information'],
             ['Theoretical Frameworks', projectContext.researchDesign.theoreticalFrameworks?.map(f => f.name).join(', ') || 'N/A'],
-            ['Research Variables', (projectContext.researchDesign.researchVariables?.length || 0).toString()],
-            ['Hypotheses', (projectContext.researchDesign.hypotheses?.length || 0).toString()]
+            ['Research Variables', projectContext.researchDesign.researchVariables?.length || 0],
+            ['Hypotheses', projectContext.researchDesign.hypotheses?.length || 0]
           );
         }
       } else {
@@ -83,19 +117,16 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
       summaryData.push(
         [''],
         ['Data Summary'],
-        ['Total Rows', (project.data.length - 1).toString()],
-        ['Total Columns', project.columns.length.toString()],
-        ['Numeric Variables', project.columns.filter(col => col.type === 'numeric').length.toString()],
-        ['Categorical Variables', project.columns.filter(col => col.type === 'categorical').length.toString()],
+        ['Total Rows', String(project.data.length - 1)],
+        ['Total Columns', String(project.columns.length)],
+        ['Numeric Variables', String(project.columns.filter(col => col.type === 'numeric').length)],
+        ['Categorical Variables', String(project.columns.filter(col => col.type === 'categorical').length)],
         [''],
         ['Analysis Summary'],
-        ['Research Models', project.models.length.toString()],
-        ['Completed Analyses', project.results.length.toString()],
-        ['Total Hypotheses', project.models.reduce((sum, model) => sum + model.hypotheses.length, 0).toString()]
+        ['Research Models', String(project.models.length)],
+        ['Completed Analyses', String(project.results.length)],
+        ['Total Hypotheses', String(project.models.reduce((sum, model) => sum + model.hypotheses.length, 0))]
       );
-
-      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Project Summary');
 
       // Variable Information Sheet
       const variableData = [
@@ -108,19 +139,21 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
           col.type,
           col.role,
           col.group || '',
-          (col.missing || 0).toString(),
-          (col.stats?.unique || '').toString(),
-          (col.stats?.mean || '').toString(),
-          (col.stats?.std || '').toString(),
-          (col.stats?.min || '').toString(),
-          (col.stats?.max || '').toString()
+          String(col.missing || 0),
+          col.stats?.unique ? String(col.stats.unique) : '',
+          col.stats?.mean ? String(col.stats.mean) : '',
+          col.stats?.std ? String(col.stats.std) : '',
+          col.stats?.min !== undefined ? String(col.stats.min) : '',
+          col.stats?.max !== undefined ? String(col.stats.max) : ''
         ]);
       });
 
-      const variableSheet = XLSX.utils.aoa_to_sheet(variableData);
-      XLSX.utils.book_append_sheet(workbook, variableSheet, 'Variables');
-
       // Research Models Sheet
+      const sheets: RawSheet[] = [
+        { name: 'Project Summary', rows: summaryData },
+        { name: 'Variables', rows: variableData }
+      ];
+
       if (project.models.length > 0) {
         const modelData = [
           ['Model Name', 'Type', 'Independent Variables', 'Dependent Variables', 'Hypotheses']
@@ -136,8 +169,7 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
           ]);
         });
 
-        const modelSheet = XLSX.utils.aoa_to_sheet(modelData);
-        XLSX.utils.book_append_sheet(workbook, modelSheet, 'Research Models');
+        sheets.push({ name: 'Research Models', rows: modelData });
       }
 
       // Analysis Results Sheets
@@ -188,18 +220,24 @@ export default function ResultsExport({ project, projectContext, surveyMetadata 
           resultData.push([JSON.stringify(result.data, null, 2)]);
         }
 
-        const resultSheet = XLSX.utils.aoa_to_sheet(resultData);
-        XLSX.utils.book_append_sheet(workbook, resultSheet, sheetName);
+        sheets.push({ name: sheetName, rows: resultData });
       });
 
       // Raw Data Sheet (first 1000 rows to avoid Excel limits)
       const rawDataRows = project.data.slice(0, Math.min(1001, project.data.length));
-      const rawDataSheet = XLSX.utils.aoa_to_sheet(rawDataRows);
-      XLSX.utils.book_append_sheet(workbook, rawDataSheet, 'Raw Data');
+      sheets.push({ name: 'Raw Data', rows: rawDataRows });
 
-      // Export file
       const fileName = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
+      const data = sheets.map((sheet) => toSheetData(sheet.rows));
+      const columns = sheets.map((sheet) => buildColumnWidths(sheet.rows));
+      const sheetNames = sheets.map((sheet) => sheet.name);
+
+      await writeXlsxFile(data, {
+        sheets: sheetNames,
+        columns,
+        fileName,
+        dateFormat: 'yyyy-mm-dd'
+      });
 
     } catch (error) {
       console.error('Export failed:', error);

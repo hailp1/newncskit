@@ -1,0 +1,72 @@
+═══════════════════════════════════════════════════════════
+DNS CONFIGURATION - NCSKIT.ORG
+═══════════════════════════════════════════════════════════
+
+🔑 TUNNEL ID:
+bce1d1b0-1f68-4b83-a7d8-6aa36095346f
+
+🌐 TUNNEL DOMAIN (Copy này để config DNS):
+bce1d1b0-1f68-4b83-a7d8-6aa36095346f.cfargotunnel.com
+
+═══════════════════════════════════════════════════════════
+📝 DNS RECORDS CẦN CONFIG
+═══════════════════════════════════════════════════════════
+
+Vào: https://dash.cloudflare.com
+→ Chọn domain: ncskit.org
+→ Click: DNS → Records
+→ Add 2 CNAME records:
+
+───────────────────────────────────────────────────────────
+RECORD 1: Root Domain
+───────────────────────────────────────────────────────────
+Type:   CNAME
+Name:   @
+Target: bce1d1b0-1f68-4b83-a7d8-6aa36095346f.cfargotunnel.com
+Proxy:  🟠 Proxied (Orange cloud ON)
+TTL:    Auto
+
+───────────────────────────────────────────────────────────
+RECORD 2: WWW Subdomain
+───────────────────────────────────────────────────────────
+Type:   CNAME
+Name:   www
+Target: bce1d1b0-1f68-4b83-a7d8-6aa36095346f.cfargotunnel.com
+Proxy:  🟠 Proxied (Orange cloud ON)
+TTL:    Auto
+
+═══════════════════════════════════════════════════════════
+✅ STATUS: DNS ĐÃ ĐƯỢC CONFIG TỰ ĐỘNG!
+═══════════════════════════════════════════════════════════
+
+DNS records đã được tạo tự động bằng cloudflared CLI.
+Bạn chỉ cần verify trong Cloudflare Dashboard.
+
+═══════════════════════════════════════════════════════════
+🔍 VERIFY DNS
+═══════════════════════════════════════════════════════════
+
+PowerShell:
+  nslookup ncskit.org
+  nslookup www.ncskit.org
+
+Online:
+  https://dnschecker.org/#CNAME/ncskit.org
+
+Cloudflare Dashboard:
+  https://dash.cloudflare.com
+  → ncskit.org → DNS → Records
+
+═══════════════════════════════════════════════════════════
+🚀 NEXT STEPS
+═══════════════════════════════════════════════════════════
+
+1. Verify DNS records trong Cloudflare Dashboard
+2. Wait for Docker Desktop to start
+3. Start Docker stack:
+   docker-compose -f docker-compose.production.yml up -d
+4. Start tunnel:
+   .\cloudflared.exe tunnel --config cloudflared-config.yml run ncskit
+5. Access: https://ncskit.org
+
+═══════════════════════════════════════════════════════════

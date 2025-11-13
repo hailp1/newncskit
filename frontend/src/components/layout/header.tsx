@@ -9,6 +9,7 @@ import { preloadAuthModal } from '@/components/auth/lazy-auth-modal'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import { isAdmin as checkIsAdmin } from '@/lib/auth-utils'
 import { useViewport } from '@/hooks/use-viewport'
+import { useBrand } from '@/contexts/BrandContext'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -52,6 +53,7 @@ export function Header() {
   const { user, isAuthenticated, logout, updateUser } = useAuthStore()
   const { openLogin, openRegister } = useAuthModal()
   const { isMobile, isTablet, isDesktop } = useViewport()
+  const { brandSettings } = useBrand()
   const pathname = usePathname()
   const isAdmin = checkIsAdmin(user)
 
@@ -87,13 +89,27 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-                <BeakerIcon className="h-5 w-5 text-white" />
-              </div>
-              <span className={cn(
-                'font-bold text-gray-900',
-                isMobile ? 'text-lg' : 'text-xl' // Responsive font size
-              )}>NCSKIT</span>
+              {brandSettings.logo ? (
+                <img 
+                  src={brandSettings.logo} 
+                  alt={brandSettings.companyName}
+                  className="w-auto object-contain"
+                  style={{ 
+                    height: isMobile ? '32px' : '40px',
+                    maxHeight: isMobile ? '32px' : '40px'
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+                    <BeakerIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <span className={cn(
+                    'font-bold text-gray-900',
+                    isMobile ? 'text-lg' : 'text-xl'
+                  )}>{brandSettings.companyName}</span>
+                </>
+              )}
             </Link>
           </div>
 
@@ -118,7 +134,7 @@ export function Header() {
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       )}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
                       {isDesktop && <span>{item.name}</span>}
                     </Link>
                   )

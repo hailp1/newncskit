@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { BlogPost, BlogCategory, BlogTag } from '@/types/blog';
+import type { BlogPost, BlogCategory, BlogTag } from '@/services/blog';
 
 interface BlogSidebarProps {
   popularPosts: BlogPost[];
@@ -70,9 +70,9 @@ export function BlogSidebar({ popularPosts, categories, tags, onSearch }: BlogSi
                     {post.title}
                   </Link>
                   <div className="flex items-center text-xs text-gray-500 space-x-2">
-                    <span>{post.views.toLocaleString()} lượt xem</span>
+                    <span>{post.view_count.toLocaleString()} lượt xem</span>
                     <span>•</span>
-                    <span>{post.likes.toLocaleString()} lượt thích</span>
+                    <span>{post.like_count.toLocaleString()} lượt thích</span>
                   </div>
                 </div>
               </div>

@@ -19,8 +19,8 @@ import { UserRole } from '@/lib/permissions/constants'
 
 interface UserFilters {
   search: string
-  subscription_type: string
-  is_active: string
+  subscriptionType: string
+  isActive: string
   role: string
 }
 
@@ -30,8 +30,8 @@ export default function UserManagementPage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
-    subscription_type: '',
-    is_active: '',
+    subscriptionType: '',
+    isActive: '',
     role: ''
   })
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -60,11 +60,11 @@ export default function UserManagementPage() {
         page: currentPage,
         limit: 20,
         search: filters.search || undefined,
-        subscription_type: filters.subscription_type as any || undefined,
-        is_active: filters.is_active ? filters.is_active === 'true' : undefined,
+        subscriptionType: filters.subscriptionType as any || undefined,
+        status: filters.isActive || undefined,
         role: filters.role as UserRole || undefined,
-        sort_by: 'created_at',
-        sort_order: 'desc'
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
       }
 
       const response = await userServiceClient.getUsers(serviceFilters)
@@ -100,14 +100,14 @@ export default function UserManagementPage() {
 
       const result = await userServiceClient.bulkAction(selectedUsers, action)
       
-      if (result.success_count > 0) {
-        setSuccess(`Đã ${actionLabels[action]} thành công ${result.success_count} người dùng`)
+      if (result.successCount > 0) {
+        setSuccess(`Đã ${actionLabels[action]} thành công ${result.successCount} người dùng`)
         setSelectedUsers([])
         fetchUsers()
       }
 
-      if (result.failure_count > 0) {
-        setError(`Không thể ${actionLabels[action]} ${result.failure_count} người dùng`)
+      if (result.failureCount > 0) {
+        setError(`Không thể ${actionLabels[action]} ${result.failureCount} người dùng`)
       }
 
       // Auto-hide success message after 3 seconds
@@ -175,7 +175,7 @@ export default function UserManagementPage() {
   }
 
   const getStatusBadge = (user: UserProfile) => {
-    if (!user.is_active) {
+    if (user.status !== 'active') {
       return <Badge variant="destructive">Tạm khóa</Badge>
     }
     return <Badge variant="secondary">Hoạt động</Badge>
@@ -291,8 +291,8 @@ export default function UserManagementPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Gói dịch vụ</label>
               <select
-                value={filters.subscription_type}
-                onChange={(e) => setFilters({...filters, subscription_type: e.target.value})}
+                value={filters.subscriptionType}
+                onChange={(e) => setFilters({...filters, subscriptionType: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Tất cả gói</option>
@@ -305,8 +305,8 @@ export default function UserManagementPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
               <select
-                value={filters.is_active}
-                onChange={(e) => setFilters({...filters, is_active: e.target.value})}
+                value={filters.isActive}
+                onChange={(e) => setFilters({...filters, isActive: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Tất cả trạng thái</option>
@@ -452,7 +452,7 @@ export default function UserManagementPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.map((user) => {
-                    const displayName = user.full_name || user.email.split('@')[0]
+                    const displayName = user.fullName || user.email.split('@')[0]
                     const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
                     
                     return (
@@ -474,9 +474,9 @@ export default function UserManagementPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              {user.avatar_url ? (
+                              {user.avatarUrl ? (
                                 <img
-                                  src={user.avatar_url}
+                                  src={user.avatarUrl}
                                   alt={displayName}
                                   className="h-10 w-10 rounded-full object-cover"
                                 />
@@ -513,17 +513,17 @@ export default function UserManagementPage() {
                           </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getSubscriptionBadge(user.subscription_type)}
+                          {getSubscriptionBadge(user.subscriptionType)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(user)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                          {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            {user.is_active ? (
+                            {user.status === 'active' ? (
                               <Button
                                 size="sm"
                                 variant="outline"

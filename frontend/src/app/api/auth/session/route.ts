@@ -3,22 +3,14 @@
  * Returns current user session information
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const session = await getServerSession(authOptions)
     
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      )
-    }
-
     if (!session) {
       return NextResponse.json(
         { success: false, authenticated: false },
@@ -31,8 +23,7 @@ export async function GET() {
       authenticated: true,
       user: session.user,
       session: {
-        access_token: session.access_token,
-        expires_at: session.expires_at,
+        expires: session.expires,
       },
     })
   } catch (error) {

@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
-    "noImplicitAny": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -14,13 +17,19 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -28,16 +37,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "src/test/**/*",
-    "src/__tests__/**/*"
+    "node_modules"
   ]
 }

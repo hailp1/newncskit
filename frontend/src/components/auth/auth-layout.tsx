@@ -25,14 +25,14 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   illustrationContent,
 }) => {
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[40%_60%] transition-all duration-300">
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[40%_60%] transition-all duration-300 bg-gray-50">
       {/* Form Panel - Left side on desktop, full width on mobile/tablet */}
       <main 
-        className="flex items-center justify-center px-4 py-8 sm:py-12 sm:px-6 md:px-8 lg:px-8 bg-white transition-all duration-300"
+        className="flex items-center justify-center px-4 py-8 sm:py-12 sm:px-6 md:px-8 lg:px-12 bg-white lg:bg-gray-50 transition-all duration-300"
         role="main"
         aria-label={mode === 'login' ? 'Biểu mẫu đăng nhập' : 'Biểu mẫu đăng ký'}
       >
-        <div className="w-full max-w-md space-y-4 sm:space-y-6">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8 bg-white lg:bg-transparent lg:shadow-none shadow-lg lg:rounded-none rounded-xl p-6 sm:p-8 lg:p-0">
           {children}
         </div>
       </main>

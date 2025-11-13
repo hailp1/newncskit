@@ -7,12 +7,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info } from 'lucide-react'
 
 interface OAuthFallbackInstructionsProps {
-  provider: 'google' | 'linkedin'
+  provider: 'google' | 'linkedin' | 'orcid'
   errorType: 'popup_blocked' | 'access_denied' | 'general'
 }
 
 export function OAuthFallbackInstructions({ provider, errorType }: OAuthFallbackInstructionsProps) {
-  const providerName = provider === 'google' ? 'Google' : 'LinkedIn'
+  const providerName = provider === 'google' ? 'Google' : provider === 'linkedin' ? 'LinkedIn' : 'ORCID'
 
   const getInstructions = () => {
     switch (errorType) {

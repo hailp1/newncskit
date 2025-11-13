@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { AuthProviderWrapper } from "@/components/auth/session-provider-wrapper";
 import { LazyAuthModal } from "@/components/auth/lazy-auth-modal";
 import { ToastProvider } from "@/components/ui/toast";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+// import { SpeedInsights } from "@vercel/speed-insights/next"; // Disabled to fix 404 error
+import { BrandProvider } from "@/contexts/BrandContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -56,13 +58,17 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={inter.className}>
-        <ToastProvider>
-          <AuthProvider>
-            {children}
-            <LazyAuthModal />
-          </AuthProvider>
-        </ToastProvider>
-        <SpeedInsights />
+        <BrandProvider>
+          <AuthProviderWrapper>
+            <ToastProvider>
+              <AuthProvider>
+                {children}
+                <LazyAuthModal />
+              </AuthProvider>
+            </ToastProvider>
+          </AuthProviderWrapper>
+        </BrandProvider>
+        {/* <SpeedInsights /> Disabled to fix 404 error */}
       </body>
     </html>
   );

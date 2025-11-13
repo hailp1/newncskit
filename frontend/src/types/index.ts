@@ -11,9 +11,6 @@ export * from './admin';
 // Blog types
 export * from './blog';
 
-// Supabase types (if exists)
-export * from './supabase';
-
 // Workflow types
 export * from './workflow';
 

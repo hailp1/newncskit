@@ -15,13 +15,11 @@ class ApiClient {
 
   constructor() {
     this.cache = new Map();
-    // Use backend URL for API calls, fallback to localhost for development
-    const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL || 
-                      process.env.BACKEND_API_URL || 
-                      'http://localhost:8001';
+    // Use Next.js API routes (no external backend needed)
+    const baseURL = '';  // Empty string means same origin (Next.js API routes)
     
     this.config = {
-      baseURL: backendURL,
+      baseURL,
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000,

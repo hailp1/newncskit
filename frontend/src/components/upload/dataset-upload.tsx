@@ -23,17 +23,17 @@ export function DatasetUpload({
     const result = await uploadDataset(file, projectId)
     
     if (onUploadSuccess) {
-      onUploadSuccess(result)
+      onUploadSuccess({ path: result, fullPath: result })
     }
   }
 
   return (
     <FileUpload
       onUpload={handleUpload}
-      accept=".csv,.xlsx,.xls,.json"
+      accept=".csv,.xlsx,.json"
       maxSize={50} // 50MB for datasets
       label="Upload Dataset"
-      description="Drag and drop your CSV, Excel, or JSON file here"
+      description="Drag and drop your CSV, Excel (.xlsx), or JSON file here"
       className={className}
     />
   )

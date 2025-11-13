@@ -72,6 +72,7 @@ const adminNavigation = [
   { name: 'Question Bank', href: '/admin/questions', icon: BookOpenIcon },
   { name: 'Revenue Management', href: '/admin/revenue', icon: KeyIcon },
   { name: 'Manage Posts', href: '/admin/posts', icon: DocumentTextIcon },
+  { name: 'Blog Categories', href: '/blog-admin/categories', icon: FolderIcon },
   { name: 'Token System', href: '/admin/tokens', icon: KeyIcon },
   { name: 'Permissions', href: '/admin/permissions', icon: CogIcon },
   { name: 'Rewards & Tasks', href: '/admin/rewards', icon: KeyIcon },

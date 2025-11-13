@@ -440,7 +440,7 @@ export class ErrorHandler {
       case ErrorType.SESSION_EXPIRED:
         errorMessage.action = {
           label: 'Đăng nhập',
-          href: '/login',
+          href: '/auth/login',
         };
         break;
       
@@ -708,7 +708,7 @@ export class ErrorHandler {
     if (errorMessage.includes('invalid file type') || errorMessage.includes('unsupported format')) {
       return {
         title: 'Định dạng file không hỗ trợ',
-        message: 'Chỉ hỗ trợ các file: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX.',
+        message: 'Chỉ hỗ trợ các file: PDF, DOC, DOCX, TXT, CSV, XLSX.',
         type: 'error'
       };
     }
@@ -946,7 +946,7 @@ export class ErrorHandler {
     if (errorMessage.includes('invalid format') || errorMessage.includes('unsupported')) {
       return {
         title: 'Định dạng file không được hỗ trợ',
-        message: 'Chỉ hỗ trợ file CSV và Excel (.xlsx, .xls). Vui lòng chuyển đổi file sang định dạng phù hợp.',
+        message: 'Chỉ hỗ trợ file CSV và Excel (.xlsx). Vui lòng chuyển đổi file sang định dạng phù hợp.',
         type: 'error',
         action: {
           label: 'Hướng dẫn chuyển đổi',

@@ -192,9 +192,9 @@ npm run dev`}</pre>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Thử đăng nhập tại:</p>
-                <p className="text-sm text-gray-600">http://localhost:3000/login</p>
+                <p className="text-sm text-gray-600">http://localhost:3000/auth/login</p>
               </div>
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button>
                   Đi đến trang đăng nhập
                   <ExternalLink className="h-4 w-4 ml-2" />
@@ -249,7 +249,7 @@ npm run dev`}</pre>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button>Thử đăng nhập</Button>
               </Link>
               <Link href="/test-errors">

@@ -1,5 +1,5 @@
-// Analytics Cache Layer using Supabase
-import { createClient } from '@/lib/supabase/client'
+// Analytics Cache Layer using in-memory cache
+// TODO: Consider using Redis or database-backed cache for production
 import crypto from 'crypto'
 
 export interface CacheEntry {
@@ -12,7 +12,15 @@ export interface CacheEntry {
 const CACHE_TTL = 3600 // 1 hour in seconds
 
 class AnalyticsCache {
-  private supabase = createClient()
+  private cache: Map<string, CacheEntry> = new Map()
+  private cleanupInterval: NodeJS.Timeout | null = null
+
+  constructor() {
+    // Start cleanup interval (every 5 minutes)
+    this.cleanupInterval = setInterval(() => {
+      this.clearExpired()
+    }, 5 * 60 * 1000)
+  }
 
   /**
    * Generate cache key from request
@@ -28,18 +36,19 @@ class AnalyticsCache {
   async get(endpoint: string, params: any): Promise<any | null> {
     try {
       const key = this.generateKey(endpoint, params)
-      const now = new Date().toISOString()
+      const entry = this.cache.get(key)
 
-      const { data, error } = await this.supabase
-        .from('analytics_cache')
-        .select('data, expires_at')
-        .eq('key', key)
-        .gt('expires_at', now)
-        .single()
+      if (!entry) return null
 
-      if (error || !data) return null
+      const now = new Date()
+      const expiresAt = new Date(entry.expires_at)
 
-      return (data as any).data || data
+      if (now > expiresAt) {
+        this.cache.delete(key)
+        return null
+      }
+
+      return entry.data
     } catch (error) {
       console.error('Cache get error:', error)
       return null
@@ -55,16 +64,12 @@ class AnalyticsCache {
       const now = new Date()
       const expiresAt = new Date(now.getTime() + ttl * 1000)
 
-      await this.supabase
-        .from('analytics_cache')
-        .upsert({
-          key,
-          endpoint,
-          params,
-          data: result,
-          created_at: now.toISOString(),
-          expires_at: expiresAt.toISOString()
-        } as any)
+      this.cache.set(key, {
+        key,
+        data: result,
+        created_at: now.toISOString(),
+        expires_at: expiresAt.toISOString()
+      })
     } catch (error) {
       console.error('Cache set error:', error)
       // Don't throw - caching is optional
@@ -76,12 +81,14 @@ class AnalyticsCache {
    */
   async clearExpired(): Promise<void> {
     try {
-      const now = new Date().toISOString()
+      const now = new Date()
 
-      await this.supabase
-        .from('analytics_cache')
-        .delete()
-        .lt('expires_at', now)
+      for (const [key, entry] of this.cache.entries()) {
+        const expiresAt = new Date(entry.expires_at)
+        if (now > expiresAt) {
+          this.cache.delete(key)
+        }
+      }
     } catch (error) {
       console.error('Cache clear error:', error)
     }
@@ -92,10 +99,10 @@ class AnalyticsCache {
    */
   async clearEndpoint(endpoint: string): Promise<void> {
     try {
-      await this.supabase
-        .from('analytics_cache')
-        .delete()
-        .eq('endpoint', endpoint)
+      // Since we don't store endpoint in the in-memory cache,
+      // we'll need to clear all cache for now
+      // TODO: Store endpoint metadata if needed
+      this.cache.clear()
     } catch (error) {
       console.error('Cache clear endpoint error:', error)
     }
@@ -106,13 +113,34 @@ class AnalyticsCache {
    */
   async clearAll(): Promise<void> {
     try {
-      await this.supabase
-        .from('analytics_cache')
-        .delete()
-        .neq('key', '')
+      this.cache.clear()
     } catch (error) {
       console.error('Cache clear all error:', error)
     }
+  }
+
+  /**
+   * Get cache stats
+   */
+  getStats() {
+    return {
+      size: this.cache.size,
+      entries: Array.from(this.cache.values()).map(entry => ({
+        created_at: entry.created_at,
+        expires_at: entry.expires_at
+      }))
+    }
+  }
+
+  /**
+   * Cleanup on shutdown
+   */
+  destroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+    this.cache.clear()
   }
 }
 

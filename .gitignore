@@ -199,3 +199,8 @@ tools/private/
 # Exclude parent directory files
 ../*
 !../README.md
+
+# Django backend (archived - migrated to Next.js)
+# The Django backend has been removed as part of Node.js migration
+# To restore: git checkout <commit-hash> -- backend/
+backend/

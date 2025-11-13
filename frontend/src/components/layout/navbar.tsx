@@ -88,7 +88,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 {/* Admin Panel Button - Show for admin users */}
-                {(user?.user_metadata?.role === 'admin' || 
+                {(user?.role === 'admin' || 
                   user?.email === 'admin@ncskit.com' || user?.email === 'admin@ncskit.org') && (
                   <Link href="/admin">
                     <Button 
@@ -108,7 +108,7 @@ export function Navbar() {
                 >
                   <UserCircleIcon className="w-8 h-8 text-gray-400" />
                   <span>
-                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                    {user?.full_name || user?.name || user?.email?.split('@')[0] || 'User'}
                   </span>
                   <ChevronDownIcon className={cn(
                     "w-4 h-4 transition-transform",
@@ -123,7 +123,7 @@ export function Navbar() {
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
-                          {user?.user_metadata?.full_name || 'User'}
+                          {user?.full_name || user?.name || 'User'}
                         </p>
                         <p className="text-sm text-gray-500">{user?.email}</p>
                       </div>

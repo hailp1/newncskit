@@ -1,0 +1,108 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ncskit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ncskit_secure_password_change_me}
+      POSTGRES_DB: ncskit_production
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ncskit-network
+
+  # R Analytics Service
+  r-analytics:
+    build:
+      context: ./r-analytics
+      dockerfile: Dockerfile
+    container_name: ncskit-r-analytics
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./r-analytics:/app
+      - r_packages:/usr/local/lib/R/site-library
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ncskit-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: ncskit-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-ncskit_secure_password_change_me}@postgres:5432/ncskit_production
+      - NEXTAUTH_URL=https://ncskit.org
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXT_PUBLIC_APP_URL=https://ncskit.org
+      - R_SERVICE_URL=http://r-analytics:8000
+      - NEXT_PUBLIC_ANALYTICS_URL=http://r-analytics:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    volumes:
+      - ./frontend/.next:/app/.next
+      - ./uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ncskit-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      r-analytics:
+        condition: service_healthy
+
+  # Cloudflare Tunnel (Optional - can run separately)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ncskit-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - ncskit-network
+    depends_on:
+      - frontend
+
+volumes:
+  postgres_data:
+    driver: local
+  r_packages:
+    driver: local
+
+networks:
+  ncskit-network:
+    driver: bridge

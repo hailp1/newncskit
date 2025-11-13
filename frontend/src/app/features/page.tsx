@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { MainLayout } from '@/components/layout/main-layout'
 import {
   BeakerIcon,
   DocumentTextIcon,
@@ -108,30 +109,8 @@ const additionalFeatures = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-blue-600">
-                NCSKIT
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-600 hover:text-gray-900">
-                Home
-              </Link>
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
-                Dashboard
-              </Link>
-              <Button asChild>
-                <Link href="/dashboard">Try Demo</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <MainLayout>
+      <div className="bg-white">
 
       {/* Hero Section */}
       <div className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -235,5 +214,6 @@ export default function FeaturesPage() {
         </div>
       </div>
     </div>
+    </MainLayout>
   )
 }

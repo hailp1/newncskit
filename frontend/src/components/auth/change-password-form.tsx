@@ -52,7 +52,7 @@ export function ChangePasswordForm() {
 
     try {
       // Use ProfileService to change password with current password verification
-      await profileService.changePassword(formData.currentPassword, formData.newPassword)
+      await profileService.changePassword('user-id', formData.currentPassword, formData.newPassword)
       
       setSuccess(true)
       setFormData({

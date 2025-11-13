@@ -108,7 +108,7 @@ export function BlogContent() {
       filtered = filtered.filter(post => 
         post.title.toLowerCase().includes(query) ||
         post.excerpt.toLowerCase().includes(query) ||
-        post.tags.some(tag => tag.toLowerCase().includes(query))
+        (post.tags || []).some(tag => tag.toLowerCase().includes(query))
       );
     }
 
@@ -272,7 +272,7 @@ export function BlogContent() {
 
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2 flex-wrap">
-                        {post.tags.slice(0, 2).map((tag) => (
+                        {(post.tags || []).slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
@@ -358,7 +358,7 @@ export function BlogContent() {
                       
                       <div className="md:w-48 flex flex-col justify-between">
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {post.tags.slice(0, 3).map((tag) => (
+                          {(post.tags || []).slice(0, 3).map((tag) => (
                             <Badge key={tag} variant="outline" className="text-xs">
                               <Tag className="h-3 w-3 mr-1" />
                               {tag}

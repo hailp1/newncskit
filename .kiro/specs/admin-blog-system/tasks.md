@@ -175,15 +175,24 @@
   - Archive post (soft delete)
   - _Requirements: 6.5_
 
-- [ ] 11. Create blog categories & tags API
-- [ ] 11.1 Implement GET `/api/blog/categories` route
+- [x] 11. Create blog categories & tags API
+
+
+
+
+- [x] 11.1 Implement GET `/api/blog/categories` route
+
   - Return all categories with post counts
+
+
   - _Requirements: 8.1_
 
-- [ ] 11.2 Implement GET `/api/blog/tags` route
+- [x] 11.2 Implement GET `/api/blog/tags` route
+
   - Return all tags with usage counts
   - Support autocomplete for tag suggestions
   - _Requirements: 8.2, 8.5_
+
 
 ## Phase 5: Admin UI Components
 
@@ -192,12 +201,16 @@
   - Implement `AdminDashboard` component
   - Add stat cards for users, posts, activities
   - Add recent activities list
+
+
   - Add charts for analytics
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
 - [ ] 13. Create user management page
   - Create `app/admin/users/page.tsx`
   - Implement `UserTable` component with pagination
+
+
   - Add search and filter functionality
   - Add role and status badges
   - Add actions menu (edit, suspend, delete)
@@ -245,7 +258,8 @@
   - Implement view count tracking
   - _Requirements: 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 19. Create post editor page
+- [x] 19. Create post editor page
+
   - Create `app/blog/create/page.tsx` and `app/blog/edit/[id]/page.tsx`
   - Implement `PostEditor` component
   - Integrate rich text editor (TipTap or similar)
@@ -257,7 +271,9 @@
   - Add save draft and publish buttons
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 6.2, 11.2_
 
-- [ ] 20. Create rich text editor component
+- [x] 20. Create rich text editor component
+
+
   - Implement `RichTextEditor` component using TipTap
   - Add formatting toolbar (bold, italic, headings, lists)
   - Add image upload functionality

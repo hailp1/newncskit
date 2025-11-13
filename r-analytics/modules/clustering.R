@@ -1,76 +1,54 @@
-# Text Clustering Module
-library(tm)
-library(text2vec)
-library(cluster)
+# Clustering Analysis Module
 
-cluster_texts <- function(texts, n_clusters = 5) {
-  start_time <- Sys.time()
-  
-  # Create corpus
-  corpus <- Corpus(VectorSource(texts))
-  
-  # Text preprocessing
-  corpus <- tm_map(corpus, content_transformer(tolower))
-  corpus <- tm_map(corpus, removePunctuation)
-  corpus <- tm_map(corpus, removeNumbers)
-  corpus <- tm_map(corpus, removeWords, stopwords("english"))
-  corpus <- tm_map(corpus, stripWhitespace)
-  
-  # Create document-term matrix
-  dtm <- DocumentTermMatrix(corpus)
-  
-  # Remove sparse terms
-  dtm <- removeSparseTerms(dtm, 0.99)
-  
-  # Convert to matrix
-  dtm_matrix <- as.matrix(dtm)
-  
-  # Handle case where we have fewer documents than clusters
-  actual_clusters <- min(n_clusters, nrow(dtm_matrix) - 1)
-  
-  # Perform k-means clustering
-  if (nrow(dtm_matrix) >= actual_clusters) {
-    kmeans_result <- kmeans(dtm_matrix, centers = actual_clusters, nstart = 25)
-    
-    # Calculate silhouette score
-    if (nrow(dtm_matrix) > actual_clusters) {
-      dist_matrix <- dist(dtm_matrix)
-      sil <- silhouette(kmeans_result$cluster, dist_matrix)
-      silhouette_score <- mean(sil[, 3])
-    } else {
-      silhouette_score <- 0
-    }
-    
-    # Organize results by cluster
-    clusters_list <- lapply(1:actual_clusters, function(i) {
-      cluster_indices <- which(kmeans_result$cluster == i)
-      list(
-        id = i,
-        texts = texts[cluster_indices],
-        size = length(cluster_indices),
-        centroid = as.vector(kmeans_result$centers[i, ])
-      )
-    })
-  } else {
-    # Fallback: each text is its own cluster
-    clusters_list <- lapply(1:length(texts), function(i) {
-      list(
-        id = i,
-        texts = texts[i],
-        size = 1,
-        centroid = as.vector(dtm_matrix[i, ])
-      )
-    })
-    silhouette_score <- 0
+#' Perform k-means clustering
+#' @param data Data frame with numeric columns
+#' @param n_clusters Number of clusters
+#' @param columns Columns to use for clustering
+#' @return List with clustering results
+perform_clustering <- function(data, n_clusters = 3, columns = NULL) {
+  # Select numeric columns if not specified
+  if (is.null(columns)) {
+    columns <- names(data)[sapply(data, is.numeric)]
   }
   
-  end_time <- Sys.time()
-  processing_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
+  if (length(columns) == 0) {
+    stop("No numeric columns found for clustering")
+  }
+  
+  # Prepare data
+  cluster_data <- data[, columns, drop = FALSE]
+  cluster_data <- na.omit(cluster_data)
+  
+  if (nrow(cluster_data) < n_clusters) {
+    stop("Not enough data points for clustering")
+  }
+  
+  # Perform k-means clustering
+  set.seed(123)
+  kmeans_result <- kmeans(cluster_data, centers = n_clusters, nstart = 25)
+  
+  # Prepare results
+  results <- data.frame(
+    cluster = kmeans_result$cluster,
+    cluster_data
+  )
+  
+  # Cluster centers
+  centers <- as.data.frame(kmeans_result$centers)
+  centers$cluster <- 1:n_clusters
+  
+  # Cluster sizes
+  sizes <- as.data.frame(table(kmeans_result$cluster))
+  names(sizes) <- c("cluster", "size")
   
   list(
-    clusters = clusters_list,
-    silhouetteScore = round(silhouette_score, 4),
-    nClusters = length(clusters_list),
-    processingTime = round(processing_time, 3)
+    success = TRUE,
+    results = results,
+    centers = centers,
+    sizes = sizes,
+    total_ss = kmeans_result$totss,
+    within_ss = kmeans_result$tot.withinss,
+    between_ss = kmeans_result$betweenss,
+    method = "kmeans"
   )
 }

@@ -1,11 +1,11 @@
 /**
  * User Service (Client-Side)
- * Manages user CRUD operations, role management, and bulk actions for client components
+ * Manages user CRUD operations via API routes
+ * Refactored to use fetch API instead of Supabase
  * Implements requirements: 1.1, 1.2, 3.1, 3.2, 6.2, 6.3, 7.1, 8.1, 8.5
  */
 
-import { createClient } from '@/lib/supabase/client'
-import { UserRole, Permission } from '@/lib/permissions/constants'
+import { UserRole } from '@/lib/permissions/constants'
 
 /**
  * User profile interface matching database schema
@@ -13,18 +13,17 @@ import { UserRole, Permission } from '@/lib/permissions/constants'
 export interface UserProfile {
   id: string
   email: string
-  full_name: string | null
-  avatar_url: string | null
+  fullName: string | null
+  avatarUrl: string | null
   institution: string | null
-  orcid_id: string | null
-  research_domains: string[] | null
+  orcidId: string | null
+  researchDomains: string[] | null
   role: UserRole
-  subscription_type: 'free' | 'premium' | 'institutional'
-  is_active: boolean
+  subscriptionType: 'free' | 'premium' | 'institutional'
   status: string | null
-  created_at: string
-  updated_at: string
-  last_login_at?: string | null
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string | null
 }
 
 /**
@@ -36,10 +35,9 @@ export interface UserFilters {
   search?: string
   role?: UserRole
   status?: string
-  subscription_type?: 'free' | 'premium' | 'institutional'
-  is_active?: boolean
-  sort_by?: 'created_at' | 'updated_at' | 'email' | 'full_name'
-  sort_order?: 'asc' | 'desc'
+  subscriptionType?: 'free' | 'premium' | 'institutional'
+  sortBy?: 'createdAt' | 'updatedAt' | 'email' | 'fullName'
+  sortOrder?: 'asc' | 'desc'
 }
 
 /**
@@ -50,92 +48,52 @@ export interface UserListResponse {
   total: number
   page: number
   limit: number
-  total_pages: number
+  totalPages: number
 }
 
 /**
  * Bulk action result
  */
 export interface BulkActionResult {
-  success_count: number
-  failure_count: number
-  errors: Array<{ user_id: string; error: string }>
+  successCount: number
+  failureCount: number
+  errors: Array<{ userId: string; error: string }>
 }
 
 /**
  * User Service Class (Client-Side)
- * Handles all user-related operations with error handling and retry logic
+ * Handles all user-related operations via API routes
  */
 export class UserServiceClient {
   private readonly MAX_RETRIES = 3
   private readonly RETRY_DELAY = 1000 // 1 second
-  private supabase = createClient()
+  private readonly API_BASE = '/api/users'
 
   /**
    * Get users with pagination and filtering
    * Requirements: 1.1, 1.4
    */
   async getUsers(filters: UserFilters = {}): Promise<UserListResponse> {
-    const {
-      page = 0,
-      limit = 20,
-      search,
-      role,
-      status,
-      subscription_type,
-      is_active,
-      sort_by = 'created_at',
-      sort_order = 'desc',
-    } = filters
-
     return this.withRetry(async () => {
-      // Build query with pagination
-      let query = this.supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .range(page * limit, (page + 1) * limit - 1)
-        .order(sort_by, { ascending: sort_order === 'asc' })
+      const params = new URLSearchParams()
+      
+      if (filters.page !== undefined) params.append('page', filters.page.toString())
+      if (filters.limit !== undefined) params.append('limit', filters.limit.toString())
+      if (filters.search) params.append('search', filters.search)
+      if (filters.role) params.append('role', filters.role)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.subscriptionType) params.append('subscriptionType', filters.subscriptionType)
+      if (filters.sortBy) params.append('sortBy', filters.sortBy)
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
 
-      // Apply search filter
-      if (search && search.trim()) {
-        query = query.or(
-          `email.ilike.%${search}%,full_name.ilike.%${search}%,institution.ilike.%${search}%`
-        )
+      const response = await fetch(`${this.API_BASE}?${params.toString()}`)
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to fetch users')
       }
 
-      // Apply role filter
-      if (role) {
-        query = query.eq('role', role)
-      }
-
-      // Apply status filter
-      if (status) {
-        query = query.eq('status', status)
-      }
-
-      // Apply subscription type filter
-      if (subscription_type) {
-        query = query.eq('subscription_type', subscription_type)
-      }
-
-      // Apply is_active filter
-      if (is_active !== undefined) {
-        query = query.eq('is_active', is_active)
-      }
-
-      const { data, count, error } = await query
-
-      if (error) {
-        throw new Error(`Failed to fetch users: ${error.message}`)
-      }
-
-      return {
-        users: (data || []) as UserProfile[],
-        total: count || 0,
-        page,
-        limit,
-        total_pages: Math.ceil((count || 0) / limit),
-      }
+      return await response.json()
     })
   }
 
@@ -149,24 +107,14 @@ export class UserServiceClient {
     }
 
     return this.withRetry(async () => {
-      const { data: user, error } = await this.supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          throw new Error(`User not found: ${userId}`)
-        }
-        throw new Error(`Failed to fetch user: ${error.message}`)
+      const response = await fetch(`${this.API_BASE}/${userId}`)
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || `Failed to fetch user: ${userId}`)
       }
 
-      if (!user) {
-        throw new Error(`User not found: ${userId}`)
-      }
-
-      return user as UserProfile
+      return await response.json()
     })
   }
 
@@ -183,40 +131,20 @@ export class UserServiceClient {
     }
 
     return this.withRetry(async () => {
-      // Get current user to check permissions
-      const { data: { user: currentUser } } = await this.supabase.auth.getUser()
-      
-      if (!currentUser) {
-        throw new Error('Not authenticated')
+      const response = await fetch(`${this.API_BASE}/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update user')
       }
 
-      // Prepare update data
-      const updateData: any = {
-        ...data,
-        updated_at: new Date().toISOString(),
-      }
-
-      // Remove fields that shouldn't be updated directly
-      delete updateData.id
-      delete updateData.created_at
-      delete updateData.email
-
-      const { data: updatedUser, error } = await (this.supabase
-        .from('profiles') as any)
-        .update(updateData)
-        .eq('id', userId)
-        .select()
-        .single()
-
-      if (error) {
-        throw new Error(`Failed to update user: ${error.message}`)
-      }
-
-      if (!updatedUser) {
-        throw new Error(`User not found: ${userId}`)
-      }
-
-      return updatedUser as UserProfile
+      return await response.json()
     })
   }
 
@@ -239,16 +167,17 @@ export class UserServiceClient {
     }
 
     return this.withRetry(async () => {
-      const { error } = await (this.supabase
-        .from('profiles') as any)
-        .update({
-          role: newRole,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
+      const response = await fetch(`${this.API_BASE}/${userId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole }),
+      })
 
-      if (error) {
-        throw new Error(`Failed to update role: ${error.message}`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update role')
       }
     })
   }
@@ -266,17 +195,17 @@ export class UserServiceClient {
     }
 
     return this.withRetry(async () => {
-      const { error } = await (this.supabase
-        .from('profiles') as any)
-        .update({
-          is_active: isActive,
-          status: isActive ? 'active' : 'suspended',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
+      const response = await fetch(`${this.API_BASE}/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive }),
+      })
 
-      if (error) {
-        throw new Error(`Failed to update status: ${error.message}`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update status')
       }
     })
   }
@@ -299,55 +228,26 @@ export class UserServiceClient {
       throw new Error(`Invalid action: ${action}`)
     }
 
-    const result: BulkActionResult = {
-      success_count: 0,
-      failure_count: 0,
-      errors: [],
-    }
-
-    // Process each user
-    for (const userId of userIds) {
-      try {
-        if (action === 'activate') {
-          await this.toggleUserStatus(userId, true)
-        } else if (action === 'suspend') {
-          await this.toggleUserStatus(userId, false)
-        } else if (action === 'delete') {
-          await this.deleteUser(userId)
-        }
-        result.success_count++
-      } catch (error) {
-        result.failure_count++
-        result.errors.push({
-          user_id: userId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        })
-      }
-    }
-
-    return result
-  }
-
-  /**
-   * Delete user (soft delete)
-   */
-  private async deleteUser(userId: string): Promise<void> {
-    const { error } = await (this.supabase
-      .from('profiles') as any)
-      .update({
-        is_active: false,
-        status: 'deleted',
-        updated_at: new Date().toISOString(),
+    return this.withRetry(async () => {
+      const response = await fetch(`${this.API_BASE}/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userIds, action }),
       })
-      .eq('id', userId)
 
-    if (error) {
-      throw new Error(`Failed to delete user: ${error.message}`)
-    }
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to perform bulk action')
+      }
+
+      return await response.json()
+    })
   }
 
   /**
-   * Retry wrapper for database operations
+   * Retry wrapper for API operations
    * Requirements: 8.5
    */
   private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
@@ -365,7 +265,8 @@ export class UserServiceClient {
           lastError.message.includes('Insufficient permissions') ||
           lastError.message.includes('not found') ||
           lastError.message.includes('required') ||
-          lastError.message.includes('Not authenticated')
+          lastError.message.includes('Not authenticated') ||
+          lastError.message.includes('Unauthorized')
         ) {
           throw lastError
         }

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import {
   generateCorrelationId,
   createErrorResponse,
@@ -8,11 +11,10 @@ import {
   getCorsHeaders,
 } from '@/lib/api-middleware';
 import { DataHealthService } from '@/services/data-health.service';
-import { ApiError, toApiError } from '../lib/errors';
 import { parseCsvContent } from '../lib/parser';
-import { getSupabaseClient } from '../lib/supabase';
-import { uploadCsvFile } from '../lib/storage';
-import type { AnalysisProject, AnalysisVariableInsert } from '@/types/analysis-db';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 // Handle OPTIONS for CORS preflight
 export async function OPTIONS() {
@@ -28,12 +30,9 @@ export async function POST(request: NextRequest) {
   try {
     logRequest(request, correlationId);
 
-    // Get Supabase client
-    const supabase = await getSupabaseClient(correlationId);
-
-    // Check authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Check authentication with NextAuth
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
       return createErrorResponse('Unauthorized', 401, correlationId);
     }
 
@@ -75,76 +74,64 @@ export async function POST(request: NextRequest) {
       healthReport = null;
     }
 
-    // Try to upload CSV file to Supabase Storage
-    const uploadResult = await uploadCsvFile(supabase, {
-      userId: session.user.id,
-      file,
-      fileContent,
-      correlationId,
-    });
-
-    // Create project in database
-    // @ts-ignore - Supabase type inference issue with analysis tables
-    const projectResult = await (supabase
-      .from('analysis_projects') as any)
-      .insert({
-        user_id: session.user.id,
-        name: name || file.name.replace('.csv', ''),
-        description: `Uploaded on ${new Date().toLocaleDateString()}${uploadResult.fromStorage ? '' : ' (CSV stored inline)'}`,
-        csv_file_path: uploadResult.path,
-        csv_file_size: file.size,
-        row_count: allRows.length - 1,
-        column_count: csvHeaders.length,
-        status: 'draft', // Valid status: draft, configured, analyzing, completed, error
-      })
-      .select()
-      .single();
-    
-    const project = projectResult.data as AnalysisProject | null;
-    const projectError = projectResult.error;
-
-    if (projectError || !project) {
-      throw new ApiError(`Failed to create project: ${projectError?.message || 'Unknown error'}`, {
-        status: 500,
-        details: { correlationId, supabaseError: projectError },
-      });
+    // Save CSV file to local storage
+    const uploadsDir = join(process.cwd(), 'uploads', 'csv');
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
     }
+    
+    const fileName = `${Date.now()}-${file.name}`;
+    const filePath = join(uploadsDir, fileName);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await writeFile(filePath, buffer);
+    
+    const relativePath = `uploads/csv/${fileName}`;
+    console.log(`[Upload] ${correlationId}: File saved to ${relativePath}`);
+
+    // Create project in database with Prisma
+    const project = await prisma.analysisProject.create({
+      data: {
+        userId: session.user.id,
+        name: name || file.name.replace('.csv', ''),
+        description: `Uploaded on ${new Date().toLocaleDateString()}`,
+        csvFilePath: relativePath,
+        csvFileSize: file.size,
+        rowCount: allRows.length - 1,
+        columnCount: csvHeaders.length,
+        status: 'draft',
+      }
+    });
 
     console.log(`[Upload] ${correlationId}: Project created: ${project.id}`);
 
-    // Create variables in database
-    const variables: AnalysisVariableInsert[] = csvHeaders.map((header) => ({
-      project_id: project.id,  // Column name is 'project_id' not 'analysis_project_id'
-      column_name: header,
-      display_name: header,
-      data_type: 'numeric' as const, // Will be detected properly later
-      is_demographic: false,
-      missing_count: 0,
-      unique_count: 0,
-    }));
+    console.log(`[Upload] ${correlationId}: Project created: ${project.id}`);
 
-    console.log(`[Upload] ${correlationId}: Inserting ${variables.length} variables`);
-    // @ts-ignore - Supabase type inference issue with analysis tables
-    const variablesResult = await (supabase
-      .from('analysis_variables') as any)
-      .insert(variables)
-      .select();
+    // Create variables in database with Prisma
+    console.log(`[Upload] ${correlationId}: Inserting ${csvHeaders.length} variables`);
     
-    const insertedVariables = variablesResult.data;
-    const variablesError = variablesResult.error;
+    try {
+      const variables = await prisma.analysisVariable.createMany({
+        data: csvHeaders.map((header) => ({
+          projectId: project.id,
+          columnName: header,
+          displayName: header,
+          dataType: 'numeric',
+          isDemographic: false,
+          missingCount: 0,
+          uniqueCount: 0,
+        }))
+      });
 
-    if (variablesError) {
+      console.log(`[Upload] ${correlationId}: Created ${variables.count} variables successfully`);
+    } catch (variablesError) {
       // This is critical - without variables, the project is unusable
       // Try to delete the project and fail the upload
-      await supabase.from('analysis_projects').delete().eq('id', project.id);
+      console.error(`[Upload] ${correlationId}: Failed to create variables:`, variablesError);
+      await prisma.analysisProject.delete({ where: { id: project.id } });
 
-      throw new ApiError(`Failed to create variables: ${variablesError?.message || 'Unknown error'}`, {
-        status: 500,
-        details: { correlationId, supabaseError: variablesError, projectId: project.id },
-      });
+      const errorMessage = variablesError instanceof Error ? variablesError.message : 'Unknown error';
+      throw new Error(`Failed to create variables: ${errorMessage}`);
     }
-
-    console.log(`[Upload] ${correlationId}: Created ${insertedVariables?.length || 0} variables successfully`);
 
     const responseData = {
       project: {
@@ -163,13 +150,9 @@ export async function POST(request: NextRequest) {
     return createSuccessResponse(responseData, correlationId);
 
   } catch (error) {
-    const apiError = toApiError(error, 'Upload failed');
-    console.error(`[Upload] ${correlationId}: Error:`, apiError, { cause: apiError.cause });
-    return createErrorResponse(
-      apiError,
-      apiError.status,
-      correlationId
-    );
+    console.error(`[Upload] ${correlationId}: Error:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    return createErrorResponse(errorMessage, 500, correlationId);
   }
 }
 

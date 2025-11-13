@@ -1,69 +1,34 @@
 /**
- * Force refresh authentication state from database
- * Use this when user role or profile has been updated in database
+ * Force refresh authentication state
+ * Use this when user role or profile has been updated
+ * Now using NextAuth instead of Supabase
  */
 
-import { createClient } from '@/lib/supabase/client'
+import { getSession } from 'next-auth/react'
+import type { User } from '@/store/auth'
 
-export async function forceRefreshAuth() {
+export async function forceRefreshAuth(): Promise<User | null> {
   try {
-    const supabase = createClient()
+    // Get fresh session from NextAuth
+    const session = await getSession()
     
-    // Add timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 5000)
-    )
-    
-    // Get current session with timeout
-    const sessionPromise = supabase.auth.getSession()
-    const { data: { session }, error: sessionError } = await Promise.race([
-      sessionPromise,
-      timeoutPromise
-    ]) as any
-    
-    if (sessionError) {
-      console.error('Session error:', sessionError)
-      return null
-    }
-
-    if (!session) {
+    if (!session?.user) {
       console.log('No active session')
       return null
     }
 
-    // Fetch fresh profile data from database with timeout
-    const profilePromise = supabase
-      .from('profiles')
-      .select('role, full_name, avatar_url, subscription_type, is_active')
-      .eq('id', session.user.id)
-      .single()
-      
-    const { data: userProfile, error: profileError } = await Promise.race([
-      profilePromise,
-      timeoutPromise
-    ]) as any
-
-    if (profileError) {
-      console.error('Profile fetch error:', profileError)
-      return null
-    }
-
-    if (!userProfile) {
-      console.error('No profile found')
-      return null
-    }
-
-    // Return enriched user data
-    const profile = userProfile as any
-    return {
-      ...session.user,
-      role: profile.role ?? null,
-      full_name: profile.full_name ?? null,
-      avatar_url: profile.avatar_url ?? null,
+    // Convert NextAuth user to our User type
+    const user: User = {
+      id: (session.user as any).id || '',
+      email: session.user.email || '',
+      name: session.user.name,
+      full_name: session.user.name,
+      role: (session.user as any).role || 'user',
+      avatar_url: session.user.image || null,
       status: 'active',
-      subscription_type: profile.subscription_type ?? 'free',
-      is_active: profile.is_active ?? true,
     }
+
+    return user
   } catch (error) {
     console.error('Force refresh error:', error)
     return null

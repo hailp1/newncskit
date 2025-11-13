@@ -53,12 +53,7 @@ export default function SystemConfigPage() {
 
   const fetchConfigs = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
-      const response = await fetch(`${apiUrl}/api/admin/config/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
+      const response = await fetch('/api/admin/config')
 
       if (response.ok) {
         const data = await response.json()
@@ -73,12 +68,7 @@ export default function SystemConfigPage() {
 
   const fetchConfigsByCategory = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
-      const response = await fetch(`${apiUrl}/api/admin/config/by_category/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
+      const response = await fetch('/api/admin/config/by-category')
 
       if (response.ok) {
         const data = await response.json()

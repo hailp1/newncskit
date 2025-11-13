@@ -1,4 +1,7 @@
 import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { VariableGroupingService } from '@/services/variable-grouping.service';
 import { DemographicService } from '@/services/demographic.service';
 import { RoleSuggestionService } from '@/services/role-suggestion.service';
@@ -8,8 +11,6 @@ import {
   generateCorrelationId,
   logRequest,
 } from '@/lib/api-middleware';
-import { getSupabaseClient } from '../lib/supabase';
-import { toApiError } from '../lib/errors';
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
@@ -17,7 +18,12 @@ export async function POST(request: NextRequest) {
   try {
     logRequest(request, correlationId);
 
-    const supabase = await getSupabaseClient(correlationId);
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return createErrorResponse('Unauthorized', 401, correlationId);
+    }
+
     const body = await request.json();
     const { projectId } = body;
 
@@ -25,48 +31,35 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Project ID is required', 400, correlationId);
     }
 
-    // Load project from database
-    const { data: project, error: projectError } = await supabase
-      .from('analysis_projects')
-      .select('*')
-      .eq('id', projectId)
-      .single();
+    // Load project from database with Prisma
+    const project = await prisma.analysisProject.findUnique({
+      where: { id: projectId }
+    });
 
-    if (projectError || !project) {
+    if (!project) {
       return createErrorResponse('Project not found', 404, correlationId);
     }
 
-    // Load variables from database
-    console.log('[Group] Loading variables for project:', projectId);
-    const { data: dbVariables, error: variablesError } = await supabase
-      .from('analysis_variables')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at');
+    // Load variables from database with Prisma
+    console.log(`[Group] ${correlationId}: Loading variables for project:`, projectId);
+    const dbVariables = await prisma.analysisVariable.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'asc' }
+    });
 
-    if (variablesError) {
-      console.error('[Group] Database error:', variablesError);
-      console.error('[Group] Error details:', JSON.stringify(variablesError, null, 2));
-      return createErrorResponse(
-        `Failed to load variables: ${variablesError.message || 'Unknown error'}`,
-        500,
-        correlationId
-      );
-    }
-
-    console.log('[Group] Loaded', dbVariables?.length || 0, 'variables');
+    console.log(`[Group] ${correlationId}: Loaded ${dbVariables.length} variables`);
 
     // Convert database variables to AnalysisVariable format
-    const variables = (dbVariables || []).map((v: any) => ({
+    const variables = dbVariables.map((v) => ({
       id: v.id,
-      projectId: v.project_id,
-      columnName: v.column_name,
-      displayName: v.display_name,
-      dataType: v.data_type || 'numeric',
-      isDemographic: v.is_demographic || false,
-      missingCount: v.missing_count || 0,
-      uniqueCount: v.unique_count || 0,
-      createdAt: v.created_at
+      projectId: v.projectId,
+      columnName: v.columnName,
+      displayName: v.displayName,
+      dataType: (v.dataType || 'numeric') as 'numeric' | 'categorical' | 'text' | 'date',
+      isDemographic: v.isDemographic || false,
+      missingCount: v.missingCount || 0,
+      uniqueCount: v.uniqueCount || 0,
+      createdAt: v.createdAt.toISOString()
     }));
 
     if (variables.length === 0) {
@@ -118,8 +111,8 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
-    const apiError = toApiError(error, 'Grouping failed');
-    console.error(`[Group] ${correlationId}: Error`, apiError, { cause: apiError.cause });
-    return createErrorResponse(apiError, apiError.status, correlationId);
+    console.error(`[Group] ${correlationId}: Error:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Grouping failed';
+    return createErrorResponse(errorMessage, 500, correlationId);
   }
 }

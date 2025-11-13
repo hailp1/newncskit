@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Calendar, Clock, User, Eye, Heart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import type { BlogPost } from '@/types/blog';
+import type { BlogPost } from '@/services/blog';
 
 interface BlogCardProps {
   post: BlogPost;
@@ -24,8 +24,8 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
           <div className={`relative overflow-hidden ${featured ? 'h-64' : 'h-48'}`}>
             <Link href={`/blog/${post.slug}`}>
               <Image
-                src={post.featured_image}
-                alt={post.featured_image_alt || post.title}
+                src={typeof post.featured_image === 'string' ? post.featured_image : (post.featured_image.cdn_url || post.featured_image.storage_path || '')}
+                alt={post.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                 sizes={featured ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 768px) 100vw, 33vw"}
@@ -33,13 +33,13 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
             </Link>
             
             {/* Category Badge */}
-            {post.category && typeof post.category === 'object' && (
+            {post.categories && post.categories.length > 0 && (
               <div className="absolute top-4 left-4">
                 <Badge 
                   className="text-white border-0"
-                  style={{ backgroundColor: post.category.color }}
+                  style={{ backgroundColor: post.categories[0].color }}
                 >
-                  {post.category.name}
+                  {post.categories[0].name}
                 </Badge>
               </div>
             )}
@@ -57,15 +57,19 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
           {/* Tags */}
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {post.tags.slice(0, 3).map(tag => (
-                <Link
-                  key={tag}
-                  href={`/blog?tag=${encodeURIComponent(tag)}`}
-                  className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
-                >
-                  #{tag}
-                </Link>
-              ))}
+              {post.tags.slice(0, 3).map(tag => {
+                const tagName = typeof tag === 'string' ? tag : tag.name;
+                const tagSlug = typeof tag === 'string' ? tag : tag.slug;
+                return (
+                  <Link
+                    key={tagName}
+                    href={`/blog?tag=${encodeURIComponent(tagSlug)}`}
+                    className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                  >
+                    #{tagName}
+                  </Link>
+                );
+              })}
             </div>
           )}
 
@@ -90,7 +94,9 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <User className="h-4 w-4 mr-1" />
-                {post.author.name}
+                {post.author.first_name && post.author.last_name 
+                  ? `${post.author.first_name} ${post.author.last_name}` 
+                  : post.author.username}
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
@@ -101,11 +107,11 @@ export function BlogCard({ post, featured = false, showExcerpt = true }: BlogCar
             <div className="flex items-center space-x-3">
               <div className="flex items-center">
                 <Eye className="h-4 w-4 mr-1" />
-                {post.views.toLocaleString()}
+                {post.view_count.toLocaleString()}
               </div>
               <div className="flex items-center">
                 <Heart className="h-4 w-4 mr-1" />
-                {post.likes.toLocaleString()}
+                {post.like_count.toLocaleString()}
               </div>
             </div>
           </div>

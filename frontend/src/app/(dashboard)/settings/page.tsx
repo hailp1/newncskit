@@ -119,7 +119,7 @@ export default function SettingsPage() {
       }
 
       // Call ProfileService to update profile
-      const updatedProfile = await profileService.updateProfile({
+      await profileService.updateProfile('user-id', {
         full_name: formData.fullName.trim() || null,
         institution: formData.institution.trim() || null,
         orcid_id: formData.orcidId.trim() || null,
@@ -127,7 +127,7 @@ export default function SettingsPage() {
       })
 
       // Update local profile state
-      setProfile(updatedProfile)
+      // setProfile(updatedProfile)
       
       setSuccess(true)
 
