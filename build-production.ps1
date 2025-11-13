@@ -357,10 +357,11 @@ if (-not $SkipTunnel) {
         
         $configPath = (Resolve-Path "cloudflared-config.yml").Path
         
+        $tunnelCommand = "$cloudflaredCmd tunnel --config '$configPath' run"
         Start-Process powershell -ArgumentList @(
             "-NoExit",
             "-Command",
-            "cd '$((Get-Location).Path)'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'CLOUDFLARE TUNNEL' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Starting Cloudflare Tunnel...' -ForegroundColor Yellow; Write-Host 'Your site will be available at:' -ForegroundColor Green; Write-Host '  https://ncskit.org' -ForegroundColor White; Write-Host '  https://www.ncskit.org' -ForegroundColor White; Write-Host ''; $cloudflaredCmd tunnel --config '$configPath' run"
+            "cd '$((Get-Location).Path)'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'CLOUDFLARE TUNNEL' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Starting Cloudflare Tunnel...' -ForegroundColor Yellow; Write-Host 'Your site will be available at:' -ForegroundColor Green; Write-Host '  https://ncskit.org' -ForegroundColor White; Write-Host '  https://www.ncskit.org' -ForegroundColor White; Write-Host ''; $tunnelCommand"
         ) -WindowStyle Normal
         
         Write-Host "✅ Cloudflare Tunnel đang khởi động..." -ForegroundColor Green
