@@ -7,6 +7,18 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check if Theory model exists in Prisma client
+    if (!prisma.theory) {
+      return NextResponse.json(
+        { 
+          error: 'Database not ready', 
+          message: 'Theories table does not exist. Please run: npx prisma migrate dev',
+          success: false
+        },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const group = searchParams.get('group')
     const domain = searchParams.get('domain')
@@ -78,8 +90,29 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[GET /api/theories] Error:', error)
+    
+    // Check for specific Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as any
+      if (prismaError.code === 'P2021' || prismaError.code === 'P2001') {
+        // Table does not exist
+        return NextResponse.json(
+          { 
+            error: 'Database table not found', 
+            message: 'Theories table does not exist. Please run: npx prisma migrate dev',
+            success: false
+          },
+          { status: 503 }
+        )
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch theories', message: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to fetch theories', 
+        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false
+      },
       { status: 500 }
     )
   }

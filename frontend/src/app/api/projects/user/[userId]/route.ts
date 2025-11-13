@@ -38,24 +38,15 @@ export async function GET(
     const projects = await prisma.project.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
     })
 
     // Transform to match expected format
     const transformedProjects = projects.map((project: any) => ({
       id: project.id,
-      title: project.name || project.title || 'Untitled Project',
+      title: project.title || 'Untitled Project',
       description: project.description || '',
-      business_domain_id: project.categoryId || 0,
-      business_domain_name: project.category?.name || 'Unknown Domain',
+      business_domain_id: project.businessDomainId || 0,
+      business_domain_name: 'Unknown Domain', // Project model doesn't have category relation
       selected_models: project.selectedModels || [],
       selected_model_names: [],
       research_outline: project.researchOutline || {},

@@ -170,10 +170,23 @@ export default function ModelTheoriesPage() {
     async function loadTheories() {
       try {
         setLoading(true)
-        const response = await fetch('/api/theories?limit=1000')
+        // Create abort controller for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        
+        const response = await fetch('/api/theories?limit=1000', {
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        }
+        
         const data = await response.json()
         
-        if (data.success) {
+        if (data.success && data.theories) {
           setTheories(data.theories)
           setFilteredTheories(data.theories)
           
@@ -182,9 +195,24 @@ export default function ModelTheoriesPage() {
           const uniqueDomains = [...new Set(data.theories.map((t: Theory) => t.domain).filter(Boolean))]
           setGroups(uniqueGroups.sort() as string[])
           setDomains(uniqueDomains.sort() as string[])
+        } else if (data.error) {
+          // API returned an error (e.g., table doesn't exist)
+          console.error('API error:', data.error, data.message)
+          setTheories([])
+          setFilteredTheories([])
+        } else {
+          console.warn('API returned unexpected format:', data)
+          setTheories([])
+          setFilteredTheories([])
         }
       } catch (error) {
         console.error('Error loading theories:', error)
+        // Show user-friendly error message
+        if (error instanceof Error) {
+          if (error.name === 'AbortError' || error.message.includes('timeout')) {
+            console.error('Request timeout - database may not be ready or theories table does not exist')
+          }
+        }
       } finally {
         setLoading(false)
       }
@@ -303,10 +331,26 @@ export default function ModelTheoriesPage() {
         <div className="text-center py-12">
           <p className="text-gray-500">Đang tải dữ liệu...</p>
         </div>
+      ) : theories.length === 0 && !loading ? (
+        <Card>
+          <CardContent className="py-12 text-center space-y-4">
+            <p className="text-gray-500 font-semibold">Chưa có dữ liệu lý thuyết</p>
+            <div className="text-sm text-gray-400 space-y-2">
+              <p>Để sử dụng chức năng này, cần:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Chạy migration: <code className="bg-gray-100 px-2 py-1 rounded">npx prisma migrate dev</code></li>
+                <li>Import dữ liệu: <code className="bg-gray-100 px-2 py-1 rounded">npx ts-node scripts/import-theories.ts</code></li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
       ) : filteredTheories.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-500">Không tìm thấy lý thuyết nào phù hợp</p>
+            <p className="text-gray-500">Không tìm thấy lý thuyết nào phù hợp với bộ lọc</p>
+            <Button variant="outline" onClick={handleResetFilters} className="mt-4">
+              Xóa bộ lọc
+            </Button>
           </CardContent>
         </Card>
       ) : (
