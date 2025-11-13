@@ -50,12 +50,9 @@ function getBaseUrl(): string {
 }
 
 export const authOptions: NextAuthOptions = {
-  // Set base URL explicitly for OAuth callbacks
-  // This ensures OAuth redirects use the correct domain
-  baseUrl: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  
   // Note: PrismaAdapter doesn't work well with CredentialsProvider
   // adapter: PrismaAdapter(prisma),
+  // NextAuth will automatically use NEXTAUTH_URL environment variable for OAuth callbacks
   providers: [
     // Email/Password Login
     CredentialsProvider({
@@ -141,9 +138,10 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development',
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // Use baseUrl from NextAuth (which uses authOptions.baseUrl or detects from request)
-      // This ensures OAuth callbacks use the correct domain
-      const actualBaseUrl = baseUrl || getBaseUrl()
+      // Prioritize NEXTAUTH_URL from environment for production OAuth callbacks
+      // This ensures OAuth redirects use the correct domain (ncskit.org) instead of localhost
+      const envBaseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL
+      const actualBaseUrl = envBaseUrl || baseUrl || getBaseUrl()
       
       // If url is relative, prepend baseUrl
       if (url.startsWith('/')) {
