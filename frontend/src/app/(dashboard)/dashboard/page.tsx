@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton'
+import { useToast } from '@/hooks/use-toast'
 import {
   PlusIcon,
   BeakerIcon,
@@ -21,6 +22,7 @@ import Link from 'next/link'
 function DashboardContent() {
   const { user, logout, updateUser } = useAuthStore()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const { showSuccess, showError } = useToast()
 
   const handleRefreshAuth = async () => {
     setIsRefreshing(true)
@@ -28,13 +30,13 @@ function DashboardContent() {
       const freshUserData = await forceRefreshAuth()
       if (freshUserData) {
         updateUser(freshUserData)
-        alert('Profile refreshed successfully!')
+        showSuccess("Success", "Profile refreshed successfully!")
       } else {
-        alert('Failed to refresh profile')
+        showError("Error", "Failed to refresh profile. Please try again.")
       }
     } catch (error) {
       console.error('Refresh error:', error)
-      alert('Error refreshing profile')
+      showError("Error", "An error occurred while refreshing your profile.")
     } finally {
       setIsRefreshing(false)
     }

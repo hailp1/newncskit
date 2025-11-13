@@ -26,7 +26,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           },
           {
             "h-10 px-4 py-2 min-h-[44px]": size === 'default',
-            "h-9 rounded-md px-3 min-h-[36px]": size === 'sm',
+            "h-10 rounded-md px-3 min-h-[44px]": size === 'sm',
             "h-12 rounded-md px-8 min-h-[48px] text-base": size === 'lg',
             "h-10 w-10 min-h-[44px] min-w-[44px]": size === 'icon',
           },
