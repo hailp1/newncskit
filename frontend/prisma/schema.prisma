@@ -395,3 +395,31 @@ model BrandSettings {
 
   @@map("brand_settings")
 }
+
+// ============================================
+// Research Theories & Models
+// ============================================
+
+model Theory {
+  id                Int      @id @default(autoincrement())
+  theory            String   @db.VarChar(255)
+  constructsFull    String?  @map("constructs_full") @db.Text
+  constructsCode    String?  @map("constructs_code") @db.VarChar(255)
+  noteVi            String?  @map("note_vi") @db.Text
+  group             String?  @db.VarChar(100)
+  domain            String?  @db.VarChar(255)
+  dependentVariable String?  @map("dependent_variable") @db.VarChar(255)
+  reference         String?  @db.VarChar(255)
+  applicationVi     String?  @map("application_vi") @db.Text
+  definitionLong    String?  @map("definition_long") @db.Text
+  constructsDetailed Json?   @map("constructs_detailed") @db.JsonB
+  sampleScales      Json?    @map("sample_scales") @db.JsonB
+  relatedTheories   Json?    @map("related_theories") @db.JsonB
+  limitations       String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([group])
+  @@index([domain])
+  @@map("theories")
+}
