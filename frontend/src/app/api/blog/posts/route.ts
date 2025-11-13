@@ -361,12 +361,20 @@ export async function GET(request: NextRequest) {
       updated_at: post.updatedAt.toISOString(),
     }))
 
+    // Get base URL from environment or request
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 
+      (request.headers.get('x-forwarded-proto') && request.headers.get('host')
+        ? `${request.headers.get('x-forwarded-proto')}://${request.headers.get('host')}`
+        : request.url.split('?')[0].replace(/\/api\/blog\/posts.*$/, ''))
+    
+    const apiPath = '/api/blog/posts'
+    
     // Return format matching blogService expectation
     return NextResponse.json({
       results: transformedPosts,
       count: total,
-      next: page * limit < total ? `${request.url.split('?')[0]}?page=${page + 1}&limit=${limit}` : undefined,
-      previous: page > 1 ? `${request.url.split('?')[0]}?page=${page - 1}&limit=${limit}` : undefined,
+      next: page * limit < total ? `${baseUrl}${apiPath}?page=${page + 1}&limit=${limit}` : undefined,
+      previous: page > 1 ? `${baseUrl}${apiPath}?page=${page - 1}&limit=${limit}` : undefined,
     })
   } catch (error) {
     console.error('[GET /api/blog/posts] Error fetching posts:', error)
