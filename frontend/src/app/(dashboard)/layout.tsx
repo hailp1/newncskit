@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { useAuthStore } from '@/store/auth'
 import { useNetworkStatus } from '@/hooks/use-network-status'
 import { isAdmin } from '@/lib/auth-utils'
+import { cn } from '@/lib/utils'
 import { Wifi, WifiOff, Loader2, UserIcon, ShieldCheckIcon } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -61,44 +62,48 @@ export default function DashboardLayout({
                 <span className="text-xl font-bold text-gray-900">NCSKIT</span>
               </Link>
 
-              <nav className="hidden md:flex items-center space-x-1">
+              <nav className="hidden md:flex items-center space-x-2">
                 <Link
                   href="/dashboard"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                     pathname === '/dashboard'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  )}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/projects"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                     pathname.startsWith('/projects')
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  )}
                 >
                   Projects
                 </Link>
                 <Link
                   href="/analysis"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                     pathname.startsWith('/analysis')
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  )}
                 >
                   Analysis
                 </Link>
                 <Link
                   href="/blog"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                     pathname.startsWith('/blog')
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  )}
                 >
                   Blog
                 </Link>
@@ -106,11 +111,12 @@ export default function DashboardLayout({
                 {userIsAdmin && (
                   <Link
                     href="/admin"
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+                    className={cn(
+                      'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5',
                       pathname.startsWith('/admin')
-                        ? 'bg-red-100 text-red-700'
+                        ? 'bg-red-50 text-red-700 font-semibold shadow-sm'
                         : 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                    }`}
+                    )}
                   >
                     <ShieldCheckIcon className="h-4 w-4" />
                     Admin
@@ -121,15 +127,19 @@ export default function DashboardLayout({
 
             {/* User Info */}
             {user && (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-700">
-                  <UserIcon className="h-5 w-5 text-gray-400" />
-                  <span className="hidden sm:inline">{user.full_name || user.email}</span>
-                  {user.role && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 capitalize">
-                      {user.role}
-                    </span>
-                  )}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-semibold">
+                    {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="text-gray-700 font-medium">{user.full_name || user.email}</span>
+                    {user.role && (
+                      <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 capitalize">
+                        {user.role}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

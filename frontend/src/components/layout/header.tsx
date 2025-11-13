@@ -100,7 +100,7 @@ export function Header() {
           {/* Tablet/Desktop Navigation */}
           <div className={cn(
             'hidden md:flex md:items-center',
-            isTablet ? 'md:space-x-4' : 'md:space-x-6' // Responsive spacing
+            isTablet ? 'md:space-x-3' : 'md:space-x-4' // Responsive spacing
           )}>
             {isAuthenticated ? (
               // Authenticated Navigation
@@ -112,15 +112,15 @@ export function Header() {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                        'flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-blue-50 text-blue-700 font-semibold'
+                          ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       )}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      <item.icon className="h-4 w-4" aria-hidden="true" />
-                      {isDesktop && <span>{item.name}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                      {isDesktop && <span className="whitespace-nowrap">{item.name}</span>}
                     </Link>
                   )
                 })}
@@ -135,11 +135,12 @@ export function Header() {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-blue-50 text-blue-700 font-semibold'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       )}
+                      aria-current={isActive ? 'page' : undefined}
                     >
                       {item.name}
                     </Link>
@@ -160,99 +161,106 @@ export function Header() {
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={cn(
-                    'flex items-center space-x-2 rounded-full bg-gray-50 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    isMobile ? 'p-1.5 touch-target' : 'p-2' // Touch-friendly on mobile
+                    'flex items-center space-x-2 rounded-lg bg-gray-50 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200',
+                    isMobile ? 'p-2 touch-target' : 'p-2.5' // Touch-friendly on mobile
                   )}
+                  aria-label="User menu"
+                  aria-expanded={userMenuOpen}
                 >
-                  <UserIcon className="h-5 w-5 text-gray-600" />
-                  <span className="hidden sm:block text-gray-700">{user.full_name}</span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-600" />
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-semibold">
+                    {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:block text-gray-700 font-medium max-w-[120px] truncate">{user.full_name || user.email}</span>
+                  <ChevronDownIcon className={cn(
+                    'h-4 w-4 text-gray-600 transition-transform duration-200',
+                    userMenuOpen && 'transform rotate-180'
+                  )} />
                 </button>
 
                 {userMenuOpen && (
                   <div className={cn(
-                    'absolute right-0 mt-2 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50',
+                    'absolute right-0 mt-2 rounded-lg bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5 z-50 border border-gray-200',
                     isMobile ? 'w-64 max-w-[calc(100vw-2rem)]' : 'w-56' // Responsive width
                   )}>
-                    <div className="px-4 py-2 border-b border-gray-100">
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                       <p className={cn(
-                        'font-medium text-gray-900 truncate',
+                        'font-semibold text-gray-900 truncate',
                         isMobile ? 'text-base' : 'text-sm'
                       )}>{user.full_name || 'User'}</p>
                       <p className={cn(
-                        'text-gray-500 truncate',
+                        'text-gray-500 truncate mt-0.5',
                         isMobile ? 'text-sm' : 'text-xs'
                       )}>{user.email}</p>
                       <p className={cn(
-                        'text-blue-600 capitalize mt-1',
+                        'text-blue-600 capitalize mt-1 font-medium',
                         isMobile ? 'text-sm' : 'text-xs'
                       )}>{user.role || 'user'}</p>
                     </div>
                     <Link
                       href="/profile"
                       className={cn(
-                        'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        'flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors duration-200',
+                        isMobile ? 'text-base' : 'text-sm'
                       )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <UserIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
-                      Quản lý tài khoản
+                      <UserIcon className={cn('mr-3 text-gray-400', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
+                      <span>Quản lý tài khoản</span>
                     </Link>
                     <Link
                       href="/settings"
                       className={cn(
-                        'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        'flex items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors duration-200',
+                        isMobile ? 'text-base' : 'text-sm'
                       )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <Cog6ToothIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
-                      Cài đặt
+                      <Cog6ToothIcon className={cn('mr-3 text-gray-400', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
+                      <span>Cài đặt</span>
                     </Link>
                     <button
                       onClick={handleRefreshProfile}
                       disabled={isRefreshing}
                       className={cn(
-                        'flex w-full items-center px-4 py-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        'flex w-full items-center px-4 py-2.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200',
+                        isMobile ? 'text-base' : 'text-sm'
                       )}
                     >
                       <ArrowPathIcon className={cn(
-                        'mr-3',
+                        'mr-3 text-gray-400',
                         isMobile ? 'h-5 w-5' : 'h-4 w-4',
                         isRefreshing && 'animate-spin'
                       )} />
-                      Làm mới thông tin
+                      <span>Làm mới thông tin</span>
                     </button>
                     {isAdmin && (
                       <>
                         <div className="border-t border-gray-100 my-1"></div>
                         <Link
                           href="/admin"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          <ShieldCheckIcon className="mr-3 h-4 w-4" />
-                          Admin Panel
+                          <ShieldCheckIcon className="mr-3 h-4 w-4 text-red-500" />
+                          <span>Admin Panel</span>
                         </Link>
                         <Link
                           href="/admin/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          <Cog6ToothIcon className="mr-3 h-4 w-4" />
-                          Cài đặt Admin
+                          <Cog6ToothIcon className="mr-3 h-4 w-4 text-gray-400" />
+                          <span>Cài đặt Admin</span>
                         </Link>
                       </>
                     )}
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
                     >
                       <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
-                      Đăng xuất
+                      <span>Đăng xuất</span>
                     </button>
                   </div>
                 )}
@@ -300,8 +308,8 @@ export function Header() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="space-y-1 pb-3 pt-2">
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="space-y-1 pb-3 pt-3">
               {isAuthenticated ? (
                 <>
                   {navigation.map((item) => {
@@ -310,45 +318,50 @@ export function Header() {
                       <Link
                         key={item.name}
                         href={item.href}
-                        className={`flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium ${
+                        className={cn(
+                          'flex items-center space-x-2 rounded-lg px-3 py-2.5 text-base font-medium transition-colors duration-200',
                           isActive
-                            ? 'bg-blue-100 text-blue-700'
+                            ? 'bg-blue-50 text-blue-700 font-semibold'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
+                        )}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <item.icon className="h-5 w-5" />
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
                         <span>{item.name}</span>
                       </Link>
                     )
                   })}
                   {user && (
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="px-3 py-2">
-                        <p className="text-base font-medium text-gray-900">{user.full_name}</p>
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <div className="px-3 py-2 mb-2 bg-gray-50 rounded-lg">
+                        <p className="text-base font-semibold text-gray-900">{user.full_name || 'User'}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-xs text-blue-600 capitalize mt-1 font-medium">{user.role || 'user'}</p>
                       </div>
                       <Link
                         href="/profile"
-                        className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        className="flex items-center space-x-2 rounded-lg px-3 py-2.5 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Profile
+                        <UserIcon className="h-5 w-5" />
+                        <span>Profile</span>
                       </Link>
                       <Link
                         href="/settings"
-                        className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        className="flex items-center space-x-2 rounded-lg px-3 py-2.5 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Settings
+                        <Cog6ToothIcon className="h-5 w-5" />
+                        <span>Settings</span>
                       </Link>
-                      {user.role === 'admin' && (
+                      {isAdmin && (
                         <Link
                           href="/admin"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          className="flex items-center space-x-2 rounded-lg px-3 py-2.5 text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          Admin Panel
+                          <ShieldCheckIcon className="h-5 w-5" />
+                          <span>Admin Panel</span>
                         </Link>
                       )}
                       <button
@@ -356,9 +369,10 @@ export function Header() {
                           handleLogout()
                           setMobileMenuOpen(false)
                         }}
-                        className="block w-full rounded-md px-3 py-2 text-left text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        className="flex items-center space-x-2 w-full rounded-lg px-3 py-2.5 text-left text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
                       >
-                        Sign out
+                        <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                        <span>Sign out</span>
                       </button>
                     </div>
                   )}
@@ -371,25 +385,26 @@ export function Header() {
                       <Link
                         key={item.name}
                         href={item.href}
-                        className={`block rounded-md px-3 py-2 text-base font-medium ${
+                        className={cn(
+                          'block rounded-lg px-3 py-2.5 text-base font-medium transition-colors duration-200',
                           isActive
-                            ? 'bg-blue-100 text-blue-700'
+                            ? 'bg-blue-50 text-blue-700 font-semibold'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
+                        )}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {item.name}
                       </Link>
                     )
                   })}
-                  <div className="border-t border-gray-200 pt-4">
+                  <div className="border-t border-gray-200 pt-3 mt-3">
                     <button
                       onClick={() => {
                         openLogin()
                         setMobileMenuOpen(false)
                       }}
                       onTouchStart={preloadAuthModal}
-                      className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      className="block w-full text-left rounded-lg px-3 py-2.5 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                     >
                       Login
                     </button>
@@ -399,7 +414,7 @@ export function Header() {
                         setMobileMenuOpen(false)
                       }}
                       onTouchStart={preloadAuthModal}
-                      className="block w-full text-left rounded-md px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700"
+                      className="block w-full text-left rounded-lg px-3 py-2.5 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors mt-2"
                     >
                       Sign Up
                     </button>
