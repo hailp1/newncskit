@@ -279,7 +279,7 @@ export default function HomeNewPage() {
                   <div className="absolute -top-3 -left-3 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
                     {index + 1}
                   </div>
-                  <Link href={stage.href}>
+                  <Link href={stage.href} className="block">
                     <CardHeader>
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
                         <stage.icon className="h-6 w-6 text-blue-600 group-hover:text-white transition-colors" />
@@ -292,6 +292,36 @@ export default function HomeNewPage() {
                   </Link>
                 </Card>
               ))}
+            </div>
+            
+            {/* Additional Internal Links Section for SEO */}
+            <div className="mt-16 text-center">
+              <p className="text-gray-600 mb-6">Explore our research tools and resources:</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="/model_theories" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Model Theories
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link href="/analysis" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Data Analysis
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link href="/projects" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Research Projects
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link href="/topics" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Research Topics
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link href="/journals" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Journal Finder
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link href="/blog" className="text-blue-600 hover:text-blue-700 font-medium underline">
+                  Research Blog
+                </Link>
+              </div>
             </div>
           </div>
         </section>
