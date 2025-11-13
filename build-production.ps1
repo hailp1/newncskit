@@ -269,10 +269,16 @@ if ($ServiceMode) {
     
     $frontendFullPath = (Get-Location).Path
     
+    # Load .env.production into the new PowerShell session
+    $envLoadScript = ""
+    if (Test-Path "$frontendFullPath\.env.production") {
+        $envLoadScript = "Get-Content '$frontendFullPath\.env.production' | ForEach-Object { if (`$_ -match '^\s*([^#][^=]+)=(.*)$') { `$key = `$matches[1].Trim(); `$value = `$matches[2].Trim(); [Environment]::SetEnvironmentVariable(`$key, `$value, 'Process') } }; "
+    }
+    
     Start-Process powershell -ArgumentList @(
         "-NoExit",
         "-Command",
-        "cd '$frontendFullPath'; `$env:NODE_ENV='production'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'NEXT.JS PRODUCTION SERVER' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Starting production server...' -ForegroundColor Yellow; Write-Host 'Local: http://localhost:3000' -ForegroundColor Green; Write-Host 'Public: https://ncskit.org' -ForegroundColor Green; Write-Host ''; npm start"
+        "cd '$frontendFullPath'; $envLoadScript`$env:NODE_ENV='production'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'NEXT.JS PRODUCTION SERVER' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Environment Variables:' -ForegroundColor Yellow; Write-Host \"  NEXTAUTH_URL: `$env:NEXTAUTH_URL\" -ForegroundColor Gray; Write-Host \"  NEXT_PUBLIC_APP_URL: `$env:NEXT_PUBLIC_APP_URL\" -ForegroundColor Gray; Write-Host ''; Write-Host 'Starting production server...' -ForegroundColor Yellow; Write-Host 'Local: http://localhost:3000' -ForegroundColor Green; Write-Host 'Public: https://ncskit.org' -ForegroundColor Green; Write-Host 'OAuth Callback: https://ncskit.org/api/auth/callback/google' -ForegroundColor Green; Write-Host ''; npm start"
     ) -WindowStyle Normal
     
     Write-Host "✅ Production server dang khoi dong..." -ForegroundColor Green

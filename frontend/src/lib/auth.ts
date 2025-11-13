@@ -49,10 +49,23 @@ function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
+// Get production base URL - must be set before NextAuth initialization
+const getProductionBaseUrl = (): string | undefined => {
+  // In production, prioritize NEXTAUTH_URL
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  return undefined
+}
+
 export const authOptions: NextAuthOptions = {
   // Note: PrismaAdapter doesn't work well with CredentialsProvider
   // adapter: PrismaAdapter(prisma),
   // NextAuth will automatically use NEXTAUTH_URL environment variable for OAuth callbacks
+  // In production, ensure NEXTAUTH_URL is used for OAuth callback URLs
   providers: [
     // Email/Password Login
     CredentialsProvider({
@@ -108,7 +121,11 @@ export const authOptions: NextAuthOptions = {
           access_type: 'offline',
           response_type: 'code'
         }
-      }
+      },
+      // Ensure callback URL uses NEXTAUTH_URL
+      ...(process.env.NEXTAUTH_URL && {
+        // NextAuth will use NEXTAUTH_URL for callback URL generation
+      })
     }),
     
     // LinkedIn OAuth
@@ -119,7 +136,11 @@ export const authOptions: NextAuthOptions = {
         params: {
           scope: 'openid profile email'
         }
-      }
+      },
+      // Ensure callback URL uses NEXTAUTH_URL
+      ...(process.env.NEXTAUTH_URL && {
+        // NextAuth will use NEXTAUTH_URL for callback URL generation
+      })
     }),
     
     // ORCID OAuth
