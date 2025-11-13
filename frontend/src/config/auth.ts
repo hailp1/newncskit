@@ -16,6 +16,7 @@ export const authConfig = {
     '/auth/reset-password',
     '/about',
     '/features',
+    '/model_theories',
     '/blog',
     '/contact',
     '/privacy',

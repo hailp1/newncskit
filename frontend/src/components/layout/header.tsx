@@ -42,6 +42,7 @@ const navigation = [
 const publicNavigation = [
   { name: 'Home', href: '/' },
   { name: 'Features', href: '/features' },
+  { name: 'Model Theories', href: '/model_theories', icon: AcademicCapIcon },
   { name: 'Blog', href: '/blog' },
   { name: 'About', href: '/about' },
 ]
@@ -144,19 +145,21 @@ export function Header() {
               // Public Navigation
               <>
                 {publicNavigation.slice(0, isTablet ? 2 : publicNavigation.length).map((item) => {
-                  const isActive = pathname === item.href
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        'flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                         isActive
                           ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       )}
                     >
-                      {item.name}
+                      {item.icon && <item.icon className="h-4 w-4" aria-hidden="true" />}
+                      {isDesktop && <span>{item.name}</span>}
+                      {!isDesktop && !item.icon && <span>{item.name}</span>}
                     </Link>
                   )
                 })}
@@ -381,19 +384,20 @@ export function Header() {
               ) : (
                 <>
                   {publicNavigation.map((item) => {
-                    const isActive = pathname === item.href
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
-                        className={`block rounded-md px-3 py-2 text-base font-medium ${
+                        className={`flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium ${
                           isActive
                             ? 'bg-blue-100 text-blue-700'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        {item.name}
+                        {item.icon && <item.icon className="h-5 w-5" />}
+                        <span>{item.name}</span>
                       </Link>
                     )
                   })}
