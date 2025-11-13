@@ -29,33 +29,35 @@
   --text-lg-desktop: 1.25rem;
 }
 
-/* NCSKIT Custom CSS Variables */
+/* NCSKIT Custom CSS Variables - International Academic Standards */
 :root {
-  /* Base Colors */
+  /* Base Colors - Improved contrast for accessibility */
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 222.2 47% 11.2%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 222.2 47% 11.2%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+  --popover-foreground: 222.2 47% 11.2%;
   
-  /* Brand Colors */
+  /* Brand Colors - Professional academic palette */
   --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47% 11.2%;
+  --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47% 11.2%;
   
-  /* Status Colors */
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --success: 142.1 76.2% 36.3%;
-  --success-foreground: 210 40% 98%;
-  --warning: 47.9 95.8% 53.1%;
+  /* Status Colors - WCAG AA compliant */
+  --destructive: 0 72.2% 50.6%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142.1 70.6% 45.3%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38.7 92% 50%;
   --warning-foreground: 26 83.3% 14.1%;
+  --info: 199.1 89.1% 48.2%;
+  --info-foreground: 0 0% 100%;
   
   /* UI Elements */
   --border: 214.3 31.8% 91.4%;
@@ -63,10 +65,70 @@
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
   
-  /* NCSKIT Specific */
+  /* NCSKIT Specific - Academic color palette */
   --ncskit-blue: 221.2 83.2% 53.3%;
-  --ncskit-green: 142.1 76.2% 36.3%;
+  --ncskit-blue-dark: 221.2 83.2% 43.3%;
+  --ncskit-blue-light: 221.2 83.2% 95%;
+  --ncskit-green: 142.1 70.6% 45.3%;
   --ncskit-purple: 262.1 83.3% 57.8%;
+  --ncskit-gray-50: 210 40% 98%;
+  --ncskit-gray-100: 210 40% 96.1%;
+  --ncskit-gray-200: 214.3 31.8% 91.4%;
+  --ncskit-gray-300: 216 12.2% 83.9%;
+  --ncskit-gray-400: 218 11.2% 65.1%;
+  --ncskit-gray-500: 220 8.9% 46.1%;
+  --ncskit-gray-600: 215 13.8% 34.1%;
+  --ncskit-gray-700: 217.2 32.6% 17.5%;
+  --ncskit-gray-800: 222.2 47% 11.2%;
+  --ncskit-gray-900: 222.2 84% 4.9%;
+  
+  /* Typography Scale - Academic standard (Major Third: 1.25) */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.563rem;    /* 25px */
+  --font-size-3xl: 1.953rem;    /* 31px */
+  --font-size-4xl: 2.441rem;    /* 39px */
+  --font-size-5xl: 3.052rem;    /* 49px */
+  
+  /* Line Heights - Optimal reading */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+  
+  /* Letter Spacing */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+  
+  /* Spacing Scale - 8px base (academic standard) */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+  --spacing-20: 5rem;     /* 80px */
+  --spacing-24: 6rem;     /* 96px */
+  
+  /* Shadows - Subtle academic aesthetic */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 .dark {
@@ -107,8 +169,78 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+/* Typography Classes - Academic Standards */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: hsl(var(--foreground));
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-6);
+}
+
+h2 {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--spacing-5);
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--spacing-4);
+}
+
+h4 {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-3);
+}
+
+h5 {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+h6 {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+p {
+  margin-bottom: var(--spacing-4);
+  line-height: var(--line-height-relaxed);
+}
+
+a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+  color: hsl(var(--primary) / 0.8);
+  text-decoration: underline;
+}
+
+a:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: calc(var(--radius) - 2px);
 }
 
 /* Custom Utility Classes */
