@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2, WifiOff, RefreshCw } from 'lucide-react'
+import { SparklesIcon } from '@heroicons/react/24/outline'
 import { cn } from '@/lib/utils'
 import { parseSupabaseError, AuthErrorType } from '@/lib/errors/auth-errors'
 import { retryAsync, isRetryableError } from '@/lib/utils/retry'
@@ -318,7 +319,7 @@ export function AuthForm({
       'w-full transition-all duration-300',
       isModal ? 'max-w-md' : 'max-w-md mx-auto'
     )}>
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
@@ -452,10 +453,10 @@ export function AuthForm({
                 type="text"
                 autoComplete="name"
                 required
-                className={cn(
-                  'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
-                  validationErrors.fullName ? 'border-red-500' : 'border-gray-300'
-                )}
+              className={cn(
+                'appearance-none relative block w-full px-3 py-3 md:py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 text-base md:text-sm min-h-[44px]',
+                validationErrors.fullName ? 'border-red-500' : 'border-gray-300'
+              )}
                 placeholder="Họ và tên"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
 import { forceRefreshAuth } from '@/lib/force-refresh-auth'
 import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton'
+import { useToast } from '@/hooks/use-toast'
 import {
   PlusIcon,
   BeakerIcon,
@@ -21,6 +22,7 @@ import Link from 'next/link'
 function DashboardContent() {
   const { user, logout, updateUser } = useAuthStore()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const { showSuccess, showError } = useToast()
 
   const handleRefreshAuth = async () => {
     setIsRefreshing(true)
@@ -28,13 +30,13 @@ function DashboardContent() {
       const freshUserData = await forceRefreshAuth()
       if (freshUserData) {
         updateUser(freshUserData)
-        alert('Profile refreshed successfully!')
+        showSuccess("Success", "Profile refreshed successfully!")
       } else {
-        alert('Failed to refresh profile')
+        showError("Error", "Failed to refresh profile. Please try again.")
       }
     } catch (error) {
       console.error('Refresh error:', error)
-      alert('Error refreshing profile')
+      showError("Error", "An error occurred while refreshing your profile.")
     } finally {
       setIsRefreshing(false)
     }
@@ -89,63 +91,72 @@ function DashboardContent() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
-              Welcome back, {user?.email || 'Guest'}! 👋
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-xl p-6 md:p-8 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 bg-white/20 rounded-full text-sm font-medium">
+              <SparklesIcon className="w-4 h-4" />
+              <span>Dashboard</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 tracking-tight">
+              Welcome back, {user?.full_name || user?.email || 'Guest'}! 👋
             </h1>
-            <p className="text-blue-100">
+            <p className="text-blue-100 text-base md:text-lg">
               Ready to advance your research today?
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm text-blue-100">Role</p>
-              <p className="font-semibold">{user?.role === 'user' ? 'Researcher' : user?.role || 'Guest'}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm text-blue-100 mb-1">Role</p>
+              <p className="font-semibold text-lg capitalize">{user?.role === 'user' ? 'Researcher' : user?.role || 'Guest'}</p>
             </div>
-            <UserIcon className="h-12 w-12 text-blue-200" />
+            <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 border-2 border-white/30">
+              <UserIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* User Info Card */}
       {user && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UserIcon className="h-5 w-5 mr-2" />
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center text-xl font-semibold">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 mr-3">
+                <UserIcon className="h-5 w-5 text-blue-600" />
+              </div>
               Account Information
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium">{user.email || 'Not logged in'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Email</p>
+                <p className="font-semibold text-gray-900 break-all">{user.email || 'Not available'}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium">{user.email || 'Guest User'}</p>
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Full Name</p>
+                <p className="font-semibold text-gray-900">{user.full_name || 'Not set'}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Account Type</p>
-                <p className="font-medium">{user.role || 'Guest'}</p>
+              <div className="p-4 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Account Type</p>
+                <p className="font-semibold text-gray-900 capitalize">{user.role || 'Guest'}</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t flex gap-2">
+            <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3">
               <Button 
                 onClick={handleRefreshAuth} 
                 variant="outline" 
                 size="sm"
                 disabled={isRefreshing}
+                className="min-w-[140px]"
               >
                 <ArrowPathIcon className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh Profile
               </Button>
-              <Button onClick={logout} variant="outline" size="sm">
+              <Button onClick={logout} variant="outline" size="sm" className="min-w-[100px]">
                 Logout
               </Button>
             </div>
@@ -174,19 +185,26 @@ function DashboardContent() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Quick Actions</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {quickActions.map((action) => (
-            <Card key={action.title} className="hover:shadow-lg transition-shadow cursor-pointer">
-              <Link href={action.href}>
+            <Card 
+              key={action.title} 
+              className="group hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-200 hover:border-blue-300 bg-white"
+            >
+              <Link href={action.href} className="block h-full">
                 <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-lg ${action.color}`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-300`}>
                       <action.icon className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">{action.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -196,15 +214,17 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Demo Notice */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <SparklesIcon className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="text-sm font-medium text-blue-800">Welcome to NCSKIT</p>
-              <p className="text-xs text-blue-700">
-                Your research management platform is ready to use.
+      {/* Welcome Notice */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100">
+              <SparklesIcon className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-semibold text-blue-900 mb-1">Welcome to NCSKIT</p>
+              <p className="text-sm text-blue-700 leading-relaxed">
+                Your research management platform is ready to use. Start by creating a new project or analyzing your data.
               </p>
             </div>
           </div>
