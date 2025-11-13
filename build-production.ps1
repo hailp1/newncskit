@@ -269,13 +269,26 @@ if ($ServiceMode) {
     
     $frontendFullPath = (Get-Location).Path
     
-    # Load .env.production into the new PowerShell session
-    $envLoadScript = ""
+    # Load .env.production environment variables
+    $envVars = @{}
     if (Test-Path "$frontendFullPath\.env.production") {
-        $envLoadScript = "Get-Content '$frontendFullPath\.env.production' | ForEach-Object { if (`$_ -match '^\s*([^#][^=]+)=(.*)$') { `$key = `$matches[1].Trim(); `$value = `$matches[2].Trim(); [Environment]::SetEnvironmentVariable(`$key, `$value, 'Process') } }; "
+        Get-Content "$frontendFullPath\.env.production" | ForEach-Object {
+            if ($_ -match '^\s*([^#][^=]+)=(.*)$') {
+                $key = $matches[1].Trim()
+                $value = $matches[2].Trim()
+                $envVars[$key] = $value
+            }
+        }
     }
     
-    $command = "cd '$frontendFullPath'; $envLoadScript`$env:NODE_ENV='production'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'NEXT.JS PRODUCTION SERVER' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Environment Variables:' -ForegroundColor Yellow; Write-Host '  NEXTAUTH_URL: ' -NoNewline; Write-Host `$env:NEXTAUTH_URL -ForegroundColor Gray; Write-Host '  NEXT_PUBLIC_APP_URL: ' -NoNewline; Write-Host `$env:NEXT_PUBLIC_APP_URL -ForegroundColor Gray; Write-Host ''; Write-Host 'Starting production server...' -ForegroundColor Yellow; Write-Host 'Local: http://localhost:3000' -ForegroundColor Green; Write-Host 'Public: https://ncskit.org' -ForegroundColor Green; Write-Host 'OAuth Callback: https://ncskit.org/api/auth/callback/google' -ForegroundColor Green; Write-Host ''; npm start"
+    # Build command with environment variables
+    $envVarsString = ""
+    foreach ($key in $envVars.Keys) {
+        $val = $envVars[$key] -replace "'", "''"
+        $envVarsString += "`$env:$key='$val'; "
+    }
+    
+    $command = "cd '$frontendFullPath'; $envVarsString`$env:NODE_ENV='production'; Write-Host '========================================' -ForegroundColor Cyan; Write-Host 'NEXT.JS PRODUCTION SERVER' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Environment Variables:' -ForegroundColor Yellow; Write-Host '  NEXTAUTH_URL: ' -NoNewline; Write-Host `$env:NEXTAUTH_URL -ForegroundColor Gray; Write-Host '  NEXT_PUBLIC_APP_URL: ' -NoNewline; Write-Host `$env:NEXT_PUBLIC_APP_URL -ForegroundColor Gray; Write-Host ''; Write-Host 'Starting production server...' -ForegroundColor Yellow; Write-Host 'Local: http://localhost:3000' -ForegroundColor Green; Write-Host 'Public: https://ncskit.org' -ForegroundColor Green; Write-Host 'OAuth Callback: https://ncskit.org/api/auth/callback/google' -ForegroundColor Green; Write-Host ''; npm start"
     
     Start-Process powershell -ArgumentList @(
         "-NoExit",
