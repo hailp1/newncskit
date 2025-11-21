@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useAuthModal } from '@/hooks/use-auth-modal'
 import { AuthForm } from './auth-form'
 
@@ -70,6 +71,11 @@ export function AuthModal() {
           aria-modal="true"
           style={{ willChange: 'transform, opacity' }}
         >
+          <VisuallyHidden>
+            <Dialog.Title>
+              {mode === 'login' ? 'Đăng nhập vào NCSKIT' : 'Tạo tài khoản NCSKIT'}
+            </Dialog.Title>
+          </VisuallyHidden>
           {/* Close Button */}
           <Dialog.Close
             className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-sm opacity-70 ring-offset-white transition-all duration-200 hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none min-w-[44px] min-h-[44px] flex items-center justify-center"

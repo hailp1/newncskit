@@ -35,10 +35,21 @@ Follow these steps to configure OAuth providers for NCSKIT:
 4. Name: `NCSKIT Web Client`
 5. Authorized redirect URIs:
    ```
-   http://localhost:3000/api/auth/callback/google
+   https://<your-project-ref>.supabase.co/auth/v1/callback
    ```
+   *(Replace `<your-project-ref>` with your Supabase project ID, e.g., `ujcsqwegzchvsxigydcl`)*
 6. Click "Create"
 7. **Copy the Client ID and Client Secret**
+
+### 1.1 🔧 Supabase Configuration (Crucial)
+
+1. Go to Supabase Dashboard -> Authentication -> Providers -> Google
+2. Enable Google
+3. Paste Client ID and Client Secret
+4. Go to Authentication -> URL Configuration
+5. Add the following to **Redirect URLs**:
+   - `http://localhost:3000/auth/callback`
+   - `https://ncskit.org/auth/callback` (for production)
 
 ### 2. 💼 LinkedIn OAuth Setup
 
@@ -56,8 +67,9 @@ Follow these steps to configure OAuth providers for NCSKIT:
 1. Go to "Auth" tab in your app
 2. Add "Authorized redirect URLs":
    ```
-   http://localhost:3000/api/auth/callback/linkedin
+   https://<your-project-ref>.supabase.co/auth/v1/callback
    ```
+   *(Replace `<your-project-ref>` with your Supabase project ID)*
 3. In "OAuth 2.0 scopes", request:
    - `r_liteprofile` (Basic profile info)
    - `r_emailaddress` (Email address)

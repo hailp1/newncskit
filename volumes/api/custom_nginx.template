@@ -1,0 +1,2 @@
+# Custom Kong NGINX directives for Supabase local stack
+# Keeping file minimal; extend as needed for headers or caching.

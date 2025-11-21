@@ -20,10 +20,12 @@ export async function GET() {
     }
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, authenticated: false },
-        { status: 401 }
-      )
+      return NextResponse.json({
+        success: true,
+        authenticated: false,
+        user: null,
+        session: null,
+      })
     }
 
     return NextResponse.json({

@@ -7,6 +7,23 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
+function buildCookieOptions(options: Record<string, unknown> = {}) {
+  const result: Record<string, unknown> = {
+    ...options,
+    sameSite: options.sameSite ?? 'lax',
+    secure: options.secure ?? process.env.NODE_ENV === 'production',
+  }
+
+  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN
+  if (cookieDomain) {
+    result.domain = cookieDomain
+  } else if (!options.domain) {
+    delete result.domain
+  }
+
+  return result
+}
+
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -18,17 +35,18 @@ export async function createClient() {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: any = {}) {
           try {
-            cookieStore.set({ name, value, ...options })
+            const cookieOptions = buildCookieOptions(options)
+            cookieStore.set({ name, value, ...cookieOptions })
           } catch (error) {
             // Handle cookie setting errors in Server Components
-            // This can happen when trying to set cookies in Server Components
           }
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: any = {}) {
           try {
-            cookieStore.set({ name, value: '', ...options })
+            const cookieOptions = buildCookieOptions(options)
+            cookieStore.set({ name, value: '', ...cookieOptions })
           } catch (error) {
             // Handle cookie removal errors
           }

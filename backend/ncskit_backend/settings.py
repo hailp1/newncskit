@@ -261,8 +261,8 @@ LOGGING = {
         },
     },
 }
-# O
-Auth Configuration
+
+# OAuth Configuration
 OAUTH_PROVIDERS = {
     'google': {
         'client_id': config('GOOGLE_CLIENT_ID', default=''),

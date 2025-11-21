@@ -58,18 +58,27 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       // Redirect to login with return URL
-      const redirectUrl = new URL('/auth/login', request.url)
+      // CRITICAL: Use public URL to avoid redirecting to localhost inside Tunnel
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ncskit.org'
+      const redirectUrl = new URL('/auth/login', baseUrl)
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
   }
 
   // If user is authenticated and trying to access auth pages, redirect to dashboard
-  if (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')) {
+  // BUT exclude /auth/callback which is needed for OAuth completion
+  if ((pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')) && !pathname.includes('/auth/callback')) {
     const user = await requireAuth(request)
     
     if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      // If there's a callbackUrl, redirect there instead of dashboard
+      const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
+      if (callbackUrl) {
+        return NextResponse.redirect(new URL(callbackUrl))
+      }
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ncskit.org'
+      return NextResponse.redirect(new URL('/dashboard', baseUrl))
     }
   }
 

@@ -1,0 +1,183 @@
+# Run Supabase Locally with Docker
+# This file is generated for local development and self-hosting
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: supabase/postgres:15.1.0.147
+    container_name: supabase-db
+    healthcheck:
+      test: pg_isready -U postgres -h localhost
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+    restart: unless-stopped
+    ports:
+      - "54322:5432"
+    env_file:
+      - supabase_env
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  # Supabase Studio (Dashboard UI)
+  studio:
+    image: supabase/studio:latest
+    container_name: supabase-studio
+    restart: unless-stopped
+    ports:
+      - "54323:3000"
+    env_file:
+      - supabase_env
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      SUPABASE_URL: http://kong:8000
+      LOG_LEVEL: info
+
+  # Kong API Gateway
+  kong:
+    image: kong:2.8.1
+    container_name: supabase-kong
+    restart: unless-stopped
+    ports:
+      - "54321:8000"
+      - "54324:8443"
+    env_file:
+      - supabase_env
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth,request-termination
+      KONG_NGINX_HTTP_INCLUDE: /usr/local/kong/custom_nginx.template
+    volumes:
+      - ./volumes/api/kong.yml:/var/lib/kong/kong.yml
+      - ./volumes/api/custom_nginx.template:/usr/local/kong/custom_nginx.template
+
+  # GoTrue (Auth)
+  auth:
+    image: supabase/gotrue:v2.132.3
+    container_name: supabase-auth
+    restart: unless-stopped
+    env_file:
+      - supabase_env
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      # IMPORTANT: This must match your public API URL via Tunnel
+      API_EXTERNAL_URL: ${SUPABASE_PUBLIC_URL:-https://api.ncskit.org}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      # IMPORTANT: This must match your frontend URL via Tunnel
+      GOTRUE_SITE_URL: ${SITE_URL:-https://ncskit.org}
+      # Allow redirects to both main domain and auth callback
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-https://ncskit.org/*,http://localhost:3000/*}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: "true"
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${SUPABASE_PUBLIC_URL:-https://api.ncskit.org}/auth/v1/callback
+      GOTRUE_EXTERNAL_LINKEDIN_ENABLED: "true"
+      GOTRUE_EXTERNAL_LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID}
+      GOTRUE_EXTERNAL_LINKEDIN_SECRET: ${LINKEDIN_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_LINKEDIN_REDIRECT_URI: ${SUPABASE_PUBLIC_URL:-https://api.ncskit.org}/auth/v1/callback
+      GOTRUE_EXTERNAL_LINKEDIN_OIDC_ENABLED: "true"
+      GOTRUE_EXTERNAL_LINKEDIN_OIDC_CLIENT_ID: ${LINKEDIN_CLIENT_ID}
+      GOTRUE_EXTERNAL_LINKEDIN_OIDC_SECRET: ${LINKEDIN_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_LINKEDIN_OIDC_REDIRECT_URI: ${SUPABASE_PUBLIC_URL:-https://api.ncskit.org}/auth/v1/callback
+    depends_on:
+      - db
+
+  # PostgREST (API)
+  rest:
+    image: postgrest/postgrest:v11.2.0
+    container_name: supabase-rest
+    restart: unless-stopped
+    env_file:
+      - supabase_env
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      PGRST_DB_SCHEMAS: "public,storage,graphql_public"
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUC_OPS: "true"
+    depends_on:
+      - db
+
+  # Realtime
+  realtime:
+    image: supabase/realtime:v2.25.22
+    container_name: supabase-realtime
+    restart: unless-stopped
+    env_file:
+      - supabase_env
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET}
+      FLY_ALLOC_ID: fly
+      APP_NAME: ${APP_NAME:-supabase}
+      FLY_APP_NAME: ${FLY_APP_NAME:-supabase}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-changeme}
+    depends_on:
+      - db
+
+  # Storage
+  storage:
+    image: supabase/storage-api:v0.43.11
+    container_name: supabase-storage
+    restart: unless-stopped
+    env_file:
+      - supabase_env
+    environment:
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      SERVICE_KEY: ${SERVICE_KEY:-}
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+    volumes:
+      - storage-data:/var/lib/storage
+    depends_on:
+      - db
+      - rest
+
+  # PostgreSQL Meta (Schema management)
+  meta:
+    image: supabase/postgres-meta:v0.68.0
+    container_name: supabase-meta
+    restart: unless-stopped
+    env_file:
+      - supabase_env
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    depends_on:
+      - db
+
+volumes:
+  db-data:
+  storage-data:

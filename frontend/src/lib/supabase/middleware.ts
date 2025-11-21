@@ -7,8 +7,30 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/supabase'
 
+function buildCookieOptions(request: NextRequest, options: Record<string, unknown> = {}) {
+  const host = request.headers.get('host') ?? ''
+  const isHttps = request.nextUrl.protocol === 'https:' || process.env.NODE_ENV === 'production'
+  const envDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN
+  const derivedDomain = envDomain ?? (host.endsWith('ncskit.org') ? '.ncskit.org' : undefined)
+
+  const result: Record<string, unknown> = {
+    ...options,
+    sameSite: options.sameSite ?? 'lax',
+    secure: options.secure ?? isHttps,
+  }
+
+  if (derivedDomain) {
+    result.domain = derivedDomain
+  } else if (!options.domain) {
+    delete result.domain
+  }
+
+  return result
+}
+
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
+  // Create an initial response
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -22,38 +44,36 @@ export async function updateSession(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: any = {}) {
+          const cookieOptions = buildCookieOptions(request, options)
+
+          // Update the request cookies (so downstream sees new values)
           request.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          
+          // Update the response cookies (so browser gets them)
           response.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: any = {}) {
+          const cookieOptions = buildCookieOptions(request, options)
+
           request.cookies.set({
             name,
             value: '',
-            ...options,
+            ...cookieOptions,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          
           response.cookies.set({
             name,
             value: '',
-            ...options,
+            ...cookieOptions,
           })
         },
       },

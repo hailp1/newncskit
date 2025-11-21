@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
@@ -52,8 +52,21 @@ export function Header() {
   const { user, isAuthenticated, logout, updateUser } = useAuthStore()
   const { openLogin, openRegister } = useAuthModal()
   const { isMobile, isTablet, isDesktop } = useViewport()
+  const [hasMounted, setHasMounted] = useState(false)
   const pathname = usePathname()
   const isAdmin = checkIsAdmin(user)
+
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  const {
+    isMobile: viewportMobile,
+    isTablet: viewportTablet,
+    isDesktop: viewportDesktop,
+  } = hasMounted
+    ? { isMobile, isTablet, isDesktop }
+    : { isMobile: false, isTablet: false, isDesktop: true }
 
   const handleLogout = async () => {
     await logout()
@@ -92,7 +105,7 @@ export function Header() {
               </div>
               <span className={cn(
                 'font-bold text-gray-900',
-                isMobile ? 'text-lg' : 'text-xl' // Responsive font size
+                viewportMobile ? 'text-lg' : 'text-xl' // Responsive font size
               )}>NCSKIT</span>
             </Link>
           </div>
@@ -100,12 +113,12 @@ export function Header() {
           {/* Tablet/Desktop Navigation */}
           <div className={cn(
             'hidden md:flex md:items-center',
-            isTablet ? 'md:space-x-4' : 'md:space-x-6' // Responsive spacing
+            viewportTablet ? 'md:space-x-4' : 'md:space-x-6' // Responsive spacing
           )}>
             {isAuthenticated ? (
               // Authenticated Navigation
               <>
-                {navigation.slice(0, isTablet ? 4 : navigation.length).map((item) => {
+                {navigation.slice(0, viewportTablet ? 4 : navigation.length).map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                   return (
                     <Link
@@ -119,7 +132,7 @@ export function Header() {
                       )}
                     >
                       <item.icon className="h-4 w-4" />
-                      {isDesktop && <span>{item.name}</span>}
+                      {viewportDesktop && <span>{item.name}</span>}
                     </Link>
                   )
                 })}
@@ -127,7 +140,7 @@ export function Header() {
             ) : (
               // Public Navigation
               <>
-                {publicNavigation.slice(0, isTablet ? 2 : publicNavigation.length).map((item) => {
+                {publicNavigation.slice(0, viewportTablet ? 2 : publicNavigation.length).map((item) => {
                   const isActive = pathname === item.href
                   return (
                     <Link
@@ -151,7 +164,7 @@ export function Header() {
           {/* Right side */}
           <div className={cn(
             'flex items-center',
-            isMobile ? 'space-x-2' : 'space-x-4' // Responsive spacing
+            viewportMobile ? 'space-x-2' : 'space-x-4' // Responsive spacing
           )}>
             {isAuthenticated && user ? (
               // User Menu
@@ -160,7 +173,7 @@ export function Header() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={cn(
                     'flex items-center space-x-2 rounded-full bg-gray-50 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    isMobile ? 'p-1.5 touch-target' : 'p-2' // Touch-friendly on mobile
+                    viewportMobile ? 'p-1.5 touch-target' : 'p-2' // Touch-friendly on mobile
                   )}
                 >
                   <UserIcon className="h-5 w-5 text-gray-600" />
@@ -171,42 +184,42 @@ export function Header() {
                 {userMenuOpen && (
                   <div className={cn(
                     'absolute right-0 mt-2 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50',
-                    isMobile ? 'w-64 max-w-[calc(100vw-2rem)]' : 'w-56' // Responsive width
+                      viewportMobile ? 'w-64 max-w-[calc(100vw-2rem)]' : 'w-56' // Responsive width
                   )}>
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className={cn(
                         'font-medium text-gray-900 truncate',
-                        isMobile ? 'text-base' : 'text-sm'
+                          viewportMobile ? 'text-base' : 'text-sm'
                       )}>{user.full_name || 'User'}</p>
                       <p className={cn(
                         'text-gray-500 truncate',
-                        isMobile ? 'text-sm' : 'text-xs'
+                          viewportMobile ? 'text-sm' : 'text-xs'
                       )}>{user.email}</p>
                       <p className={cn(
                         'text-blue-600 capitalize mt-1',
-                        isMobile ? 'text-sm' : 'text-xs'
+                          viewportMobile ? 'text-sm' : 'text-xs'
                       )}>{user.role || 'user'}</p>
                     </div>
                     <Link
                       href="/profile"
                       className={cn(
                         'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        viewportMobile ? 'text-base touch-target' : 'text-sm'
                       )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <UserIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
+                      <UserIcon className={cn('mr-3', viewportMobile ? 'h-5 w-5' : 'h-4 w-4')} />
                       Quản lý tài khoản
                     </Link>
                     <Link
                       href="/settings"
                       className={cn(
                         'flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        viewportMobile ? 'text-base touch-target' : 'text-sm'
                       )}
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <Cog6ToothIcon className={cn('mr-3', isMobile ? 'h-5 w-5' : 'h-4 w-4')} />
+                      <Cog6ToothIcon className={cn('mr-3', viewportMobile ? 'h-5 w-5' : 'h-4 w-4')} />
                       Cài đặt
                     </Link>
                     <button
@@ -214,12 +227,12 @@ export function Header() {
                       disabled={isRefreshing}
                       className={cn(
                         'flex w-full items-center px-4 py-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50',
-                        isMobile ? 'text-base touch-target' : 'text-sm'
+                        viewportMobile ? 'text-base touch-target' : 'text-sm'
                       )}
                     >
                       <ArrowPathIcon className={cn(
                         'mr-3',
-                        isMobile ? 'h-5 w-5' : 'h-4 w-4',
+                        viewportMobile ? 'h-5 w-5' : 'h-4 w-4',
                         isRefreshing && 'animate-spin'
                       )} />
                       Làm mới thông tin
@@ -264,8 +277,8 @@ export function Header() {
                   onMouseEnter={preloadAuthModal}
                   onFocus={preloadAuthModal}
                   variant="outline" 
-                  size={isMobile ? 'sm' : 'default'}
-                  className={isMobile ? 'touch-target' : ''}
+                        size={viewportMobile ? 'sm' : 'default'}
+                        className={viewportMobile ? 'touch-target' : ''}
                 >
                   Login
                 </Button>
@@ -273,8 +286,8 @@ export function Header() {
                   onClick={openRegister}
                   onMouseEnter={preloadAuthModal}
                   onFocus={preloadAuthModal}
-                  size={isMobile ? 'sm' : 'default'}
-                  className={isMobile ? 'touch-target' : ''}
+                        size={viewportMobile ? 'sm' : 'default'}
+                        className={viewportMobile ? 'touch-target' : ''}
                 >
                   Sign Up
                 </Button>

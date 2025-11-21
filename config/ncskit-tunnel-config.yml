@@ -2,39 +2,31 @@
 credentials-file: C:\Users\OWNER\.cloudflared\bce1d1b0-1f68-4b83-a7d8-6aa36095346f.json
 
 ingress:
+  # Frontend
   - hostname: ncskit.org
-    service: http://localhost:3000
-    originRequest:
-      httpHostHeader: ncskit.org
+    service: http://127.0.0.1:3000
   - hostname: www.ncskit.org
-    service: http://localhost:3000
-    originRequest:
-      httpHostHeader: www.ncskit.org
+    service: http://127.0.0.1:3000
+
+  # Supabase Local (API Gateway / Kong)
+  # Exposes Auth, Rest, Storage via one port (54321)
+  # CRITICAL: originRequest setting needed for proper Host header forwarding in OAuth
   - hostname: api.ncskit.org
-    service: http://localhost:8000
+    service: http://127.0.0.1:54321
     originRequest:
       httpHostHeader: api.ncskit.org
-  - hostname: admin.ncskit.org
-    service: http://localhost:8000
-    originRequest:
-      httpHostHeader: admin.ncskit.org
-  - hostname: health.ncskit.org
-    service: http://localhost:8000
-    originRequest:
-      httpHostHeader: health.ncskit.org
-  - hostname: blog.ncskit.org
-    service: http://localhost:3000
-    originRequest:
-      httpHostHeader: blog.ncskit.org
-  - hostname: docs.ncskit.org
-    service: http://localhost:3000
-    originRequest:
-      httpHostHeader: docs.ncskit.org
-  - hostname: dashboard.ncskit.org
-    service: http://localhost:3000
-    originRequest:
-      httpHostHeader: dashboard.ncskit.org
-  - service: http_status:404
 
-loglevel: info
-logfile: cloudflared.log
+  # Supabase Studio (Dashboard)
+  - hostname: admin.ncskit.org
+    service: http://127.0.0.1:54323
+
+  # Django Backend
+  - hostname: backend.ncskit.org
+    service: http://127.0.0.1:8001
+
+  # R Analytics Service
+  - hostname: r.ncskit.org
+    service: http://127.0.0.1:8000
+
+  # Catch-all
+  - service: http_status:404

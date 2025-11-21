@@ -4,6 +4,24 @@
 
 import { createClient } from './client'
 
+function getAppUrl() {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return 'http://localhost:3000'
+}
+
+function buildRedirectPath(path: string) {
+  const base = getAppUrl().replace(/\/$/, '')
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${normalizedPath}`
+}
+
 export interface SignUpData {
   email: string
   password: string
@@ -24,12 +42,12 @@ export async function signUp({ email, password, fullName }: SignUpData) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        full_name: fullName,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+        emailRedirectTo: buildRedirectPath('/auth/callback'),
       },
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
-    },
   })
 
   if (error) throw error
@@ -51,23 +69,8 @@ export async function signIn({ email, password }: SignInData) {
   return data
 }
 
-/**
- * Check if popup was blocked
- */
-function checkPopupBlocked(popup: Window | null): boolean {
-  if (!popup) return true
-  
-  try {
-    // Check if popup is closed immediately (blocked)
-    if (popup.closed) return true
-    
-    // Try to access popup properties
-    popup.focus()
-    return false
-  } catch (e) {
-    return true
-  }
-}
+// checkPopupBlocked function removed as we are using redirect flow
+
 
 /**
  * Sign in with Google OAuth
@@ -79,30 +82,15 @@ export async function signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: buildRedirectPath('/auth/callback'),
         skipBrowserRedirect: false,
       },
     })
 
     if (error) throw error
 
-    // Check if popup was blocked (for popup mode)
-    if (data.url) {
-      const popup = window.open(data.url, '_blank', 'popup=yes,width=600,height=700')
-      
-      if (checkPopupBlocked(popup)) {
-        throw new Error('Popup blocked. Please allow popups for this site.')
-      }
-    }
-
     return data
   } catch (error) {
-    // Enhance error message for OAuth-specific issues
-    if (error instanceof Error) {
-      if (error.message.includes('popup')) {
-        throw new Error('Cửa sổ đăng nhập bị chặn. Vui lòng cho phép popup và thử lại.')
-      }
-    }
     throw error
   }
 }
@@ -117,30 +105,15 @@ export async function signInWithLinkedIn() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: buildRedirectPath('/auth/callback'),
         skipBrowserRedirect: false,
       },
     })
 
     if (error) throw error
 
-    // Check if popup was blocked (for popup mode)
-    if (data.url) {
-      const popup = window.open(data.url, '_blank', 'popup=yes,width=600,height=700')
-      
-      if (checkPopupBlocked(popup)) {
-        throw new Error('Popup blocked. Please allow popups for this site.')
-      }
-    }
-
     return data
   } catch (error) {
-    // Enhance error message for OAuth-specific issues
-    if (error instanceof Error) {
-      if (error.message.includes('popup')) {
-        throw new Error('Cửa sổ đăng nhập bị chặn. Vui lòng cho phép popup và thử lại.')
-      }
-    }
     throw error
   }
 }
@@ -161,7 +134,7 @@ export async function resetPassword(email: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
+    redirectTo: buildRedirectPath('/auth/reset-password'),
   })
 
   if (error) throw error
